@@ -27,27 +27,55 @@
         <parameter>
           <name>accessKey</name>
           <type>java.lang.String</type>
+          <required>true</required>
+          <editable>true</editable>
+          <description></description>
+        </parameter>
+        <parameter>
+          <name>description</name>
+          <type>java.lang.String</type>
           <required>false</required>
+          <editable>true</editable>
+          <description></description>
+        </parameter>
+        <parameter>
+          <name>functionName</name>
+          <type>java.lang.String</type>
+          <required>false</required>
+          <editable>true</editable>
+          <description></description>
+        </parameter>
+        <parameter>
+          <name>handler</name>
+          <type>java.lang.String</type>
+          <required>true</required>
           <editable>true</editable>
           <description></description>
         </parameter>
         <parameter>
           <name>jarFile</name>
           <type>java.lang.String</type>
-          <required>false</required>
+          <required>true</required>
           <editable>true</editable>
           <description></description>
         </parameter>
         <parameter>
-          <name>lambdaRole</name>
+          <name>lambdaRoleArn</name>
           <type>java.lang.String</type>
-          <required>false</required>
+          <required>true</required>
           <editable>true</editable>
           <description></description>
         </parameter>
         <parameter>
           <name>regionName</name>
           <type>java.lang.String</type>
+          <required>false</required>
+          <editable>true</editable>
+          <description></description>
+        </parameter>
+        <parameter>
+          <name>runtime</name>
+          <type>com.amazonaws.services.lambda.model.Runtime</type>
           <required>false</required>
           <editable>true</editable>
           <description></description>
@@ -62,17 +90,21 @@
         <parameter>
           <name>secretKey</name>
           <type>java.lang.String</type>
-          <required>false</required>
+          <required>true</required>
           <editable>true</editable>
           <description></description>
         </parameter>
       </parameters>
       <configuration>
         <accessKey implementation="java.lang.String" default-value="${accessKey}"/>
+        <description implementation="java.lang.String" default-value="">${description}</description>
+        <functionName implementation="java.lang.String" default-value="function-1">${functionName}</functionName>
+        <handler implementation="java.lang.String" default-value="${handler}"/>
         <jarFile implementation="java.lang.String" default-value="${jarFile}"/>
-        <lambdaRole implementation="java.lang.String" default-value="${lambdaRole}"/>
+        <lambdaRoleArn implementation="java.lang.String" default-value="${lambdaRoleArn}"/>
         <regionName implementation="java.lang.String" default-value="us-east-1">${region}</regionName>
-        <s3Bucket implementation="java.lang.String" default-value="nrby-lambda-functions">${s3Bucket}</s3Bucket>
+        <runtime implementation="com.amazonaws.services.lambda.model.Runtime" default-value="Java8">${runtime}</runtime>
+        <s3Bucket implementation="java.lang.String" default-value="lambda-function-code">${s3Bucket}</s3Bucket>
         <secretKey implementation="java.lang.String" default-value="${secretKey}"/>
       </configuration>
     </mojo>

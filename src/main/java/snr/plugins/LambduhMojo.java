@@ -1,9 +1,10 @@
 package snr.plugins;
 
 /**
+ * A Maven plugin allowing a jar built as a part of a Maven project to be
+ * deployed 
  * @author Sean N. Roy
  */
-
 import java.io.File;
 
 import org.apache.maven.plugin.AbstractMojo;
@@ -20,33 +21,50 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.lambda.AWSLambdaClient;
+import com.amazonaws.services.lambda.model.CreateFunctionRequest;
+import com.amazonaws.services.lambda.model.CreateFunctionResult;
+import com.amazonaws.services.lambda.model.FunctionCode;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.lambda.model.Runtime;
 
-@Mojo(name = "lambda-function")
+@Mojo(name = "deploy-lambda")
 public class LambduhMojo
     extends AbstractMojo
 {
 	final Logger logger = LoggerFactory.getLogger( LambduhMojo.class );
 	
-	@Parameter(defaultValue = "${accessKey}")
+	@Parameter(required=true, defaultValue = "${accessKey}")
 	private String accessKey;
 	
-	@Parameter(defaultValue = "${secretKey}")
+	@Parameter(required=true, defaultValue = "${secretKey}")
 	private String secretKey;
 	
-	@Parameter(defaultValue = "${jarFile}")
+	@Parameter(required=true, defaultValue = "${jarFile}")
 	private String jarFile;
-	
-	@Parameter(defaultValue = "${lambdaRole}")
-	private String lambdaRole;
 	
 	@Parameter(property = "region", defaultValue = "us-east-1")
 	private String regionName;
 	
-	@Parameter(property = "s3Bucket", defaultValue = "nrby-lambda-functions")
+	@Parameter(property = "s3Bucket", defaultValue = "lambda-function-code")
 	private String s3Bucket;
 	
+	@Parameter(property = "description", defaultValue = "")
+	private String description;
+	
+	@Parameter(required=true, defaultValue = "${lambdaRoleArn}")
+	private String lambdaRoleArn;
+	
+	@Parameter(property = "functionName", defaultValue = "function-1")
+	private String functionName;
+	
+	@Parameter(required=true, defaultValue = "${handler}")
+	private String handler;
+	
+	@Parameter(property = "runtime", defaultValue = "Java8")
+	private Runtime runtime;
+	
+	private String fileName;
 	private Region region;
 	
 	private AWSCredentials credentials;
@@ -60,15 +78,35 @@ public class LambduhMojo
     	lambdaClient = new AWSLambdaClient(credentials);
     	
     	region = Region.getRegion(Regions.fromName(regionName));
+    	lambdaClient.setRegion(region);
+    	
+    	String [] pieces = jarFile.split(File.separator);
+    	fileName = pieces[pieces.length - 1];
     	
     	try {
 	    	uploadJarToS3(credentials);
-	    	
-	    	lambdaClient.setRegion(region);
+	    	deployLambdaFunction();
     	} catch(Exception e) {
     		logger.error(e.getMessage());
     		logger.trace(e.getMessage(), e);
     	}
+    }
+    
+    private void deployLambdaFunction() {
+    	CreateFunctionRequest createFunctionRequest = new CreateFunctionRequest();
+    	createFunctionRequest.setDescription(description);
+    	createFunctionRequest.setRole(lambdaRoleArn);
+    	createFunctionRequest.setFunctionName(functionName);
+    	createFunctionRequest.setHandler(handler);
+    	createFunctionRequest.setRuntime(runtime);
+    	
+    	FunctionCode functionCode = new FunctionCode();
+    	functionCode.setS3Bucket(s3Bucket);
+    	functionCode.setS3Key(fileName);
+    	createFunctionRequest.setCode(functionCode);
+    	
+    	CreateFunctionResult result = lambdaClient.createFunction(createFunctionRequest);
+    	logger.info("Function deployed: " + result.getFunctionArn());
     }
     
     private void uploadJarToS3(AWSCredentials credentials) throws Exception {
@@ -76,10 +114,9 @@ public class LambduhMojo
     	
     	if (bucket != null) {
     		File file = new File(jarFile);
-    		String [] pieces = jarFile.split(File.separator);
     		
     		logger.info("Uploading " + jarFile + " to AWS S3 bucket " + s3Bucket);
-    		s3Client.putObject(s3Bucket, pieces[pieces.length-1], file);
+    		s3Client.putObject(s3Bucket, fileName, file);
     		logger.info("Upload complete");
     		
     	} else {
@@ -87,7 +124,6 @@ public class LambduhMojo
     				     "try running maven with -X to get full " +
     				     "debug output");
     	}
-    	
     }
     
     private Bucket getBucket() {
