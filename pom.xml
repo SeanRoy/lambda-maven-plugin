@@ -5,8 +5,19 @@
   <artifactId>lambduh-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
   <version>1.0-SNAPSHOT</version>
+  
   <name>lambduh-maven-plugin Maven Mojo</name>
+  <description>A maven plugin that deploys functions to AWS Lambda</description>
   <url>http://maven.apache.org</url>
+  
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  
   <dependencies>
     <dependency>
       <groupId>org.apache.maven</groupId>
@@ -21,7 +32,12 @@
     </dependency>
     <dependency>
 	  <groupId>com.amazonaws</groupId>
-	  <artifactId>aws-java-sdk</artifactId>
+	  <artifactId>aws-java-sdk-lambda</artifactId>
+	  <version>1.10.4.1</version>
+	</dependency>
+	<dependency>
+	  <groupId>com.amazonaws</groupId>
+	  <artifactId>aws-java-sdk-s3</artifactId>
 	  <version>1.10.4.1</version>
 	</dependency>
     <dependency>

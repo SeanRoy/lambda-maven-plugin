@@ -23,10 +23,11 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.lambda.AWSLambdaClient;
 import com.amazonaws.services.lambda.model.CreateFunctionRequest;
 import com.amazonaws.services.lambda.model.CreateFunctionResult;
+import com.amazonaws.services.lambda.model.DeleteFunctionRequest;
 import com.amazonaws.services.lambda.model.FunctionCode;
+import com.amazonaws.services.lambda.model.Runtime;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.Bucket;
-import com.amazonaws.services.lambda.model.Runtime;
 
 @Mojo(name = "deploy-lambda")
 public class LambduhMojo
@@ -34,10 +35,10 @@ public class LambduhMojo
 {
 	final Logger logger = LoggerFactory.getLogger( LambduhMojo.class );
 	
-	@Parameter(required=true, defaultValue = "${accessKey}")
+	@Parameter(property="accessKey", defaultValue = "${accessKey}")
 	private String accessKey;
 	
-	@Parameter(required=true, defaultValue = "${secretKey}")
+	@Parameter(property="secretKey", defaultValue = "${secretKey}")
 	private String secretKey;
 	
 	@Parameter(required=true, defaultValue = "${jarFile}")
@@ -64,6 +65,15 @@ public class LambduhMojo
 	@Parameter(property = "runtime", defaultValue = "Java8")
 	private Runtime runtime;
 	
+	/**
+	 *  Lambda function execution timeout. Defaults to maximum allowed.
+	 */
+	@Parameter(property = "timeout", defaultValue = "60")
+	private int timeout;
+	
+	@Parameter(property = "memorySize", defaultValue = "128")
+	private int memorySize;
+	
 	private String fileName;
 	private Region region;
 	
@@ -73,9 +83,17 @@ public class LambduhMojo
 	
     public void execute() throws MojoExecutionException
     {
-    	credentials = new BasicAWSCredentials(accessKey, secretKey);
-    	s3Client = new AmazonS3Client(credentials);
-    	lambdaClient = new AWSLambdaClient(credentials);
+    	if ( accessKey != null && secretKey != null )
+    	{
+    		credentials = new BasicAWSCredentials(accessKey, secretKey);
+    		s3Client = new AmazonS3Client(credentials);
+    		lambdaClient = new AWSLambdaClient(credentials);
+    	}
+    	else
+    	{
+    		s3Client = new AmazonS3Client();
+    		lambdaClient = new AWSLambdaClient();
+    	}
     	
     	region = Region.getRegion(Regions.fromName(regionName));
     	lambdaClient.setRegion(region);
@@ -84,32 +102,49 @@ public class LambduhMojo
     	fileName = pieces[pieces.length - 1];
     	
     	try {
-	    	uploadJarToS3(credentials);
+	    	uploadJarToS3();
 	    	deployLambdaFunction();
     	} catch(Exception e) {
     		logger.error(e.getMessage());
     		logger.trace(e.getMessage(), e);
+    		throw new MojoExecutionException(e.getMessage());
     	}
     }
     
-    private void deployLambdaFunction() {
+    private CreateFunctionResult createFunction() {
     	CreateFunctionRequest createFunctionRequest = new CreateFunctionRequest();
     	createFunctionRequest.setDescription(description);
     	createFunctionRequest.setRole(lambdaRoleArn);
     	createFunctionRequest.setFunctionName(functionName);
     	createFunctionRequest.setHandler(handler);
     	createFunctionRequest.setRuntime(runtime);
+    	createFunctionRequest.setTimeout(timeout);
+    	createFunctionRequest.setMemorySize(memorySize);
     	
     	FunctionCode functionCode = new FunctionCode();
     	functionCode.setS3Bucket(s3Bucket);
     	functionCode.setS3Key(fileName);
     	createFunctionRequest.setCode(functionCode);
     	
-    	CreateFunctionResult result = lambdaClient.createFunction(createFunctionRequest);
+    	return lambdaClient.createFunction(createFunctionRequest);
+    }
+    
+    private void deployLambdaFunction() {
+    	// Attempt to delete it first
+    	try {
+	    	DeleteFunctionRequest deleteRequest = new DeleteFunctionRequest();
+	    	// Why the hell didn't they make this a static method?
+	    	deleteRequest = deleteRequest.withFunctionName(functionName);
+	    	lambdaClient.deleteFunction(deleteRequest);
+    	} catch(Exception ignored) {
+    		// function didn't exist in the first place.
+    	}
+    	
+    	CreateFunctionResult result = createFunction();
     	logger.info("Function deployed: " + result.getFunctionArn());
     }
     
-    private void uploadJarToS3(AWSCredentials credentials) throws Exception {
+    private void uploadJarToS3() throws Exception {
     	Bucket bucket = getBucket();
     	
     	if (bucket != null) {
