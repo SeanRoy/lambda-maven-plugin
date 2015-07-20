@@ -4,9 +4,9 @@ The lambduh Maven plugin allows you to deploy your [AWS Lambda](http://aws.amazo
 as a part of your usual Maven build process.
 
 ### Usage
-group id: snr.plugins<br />
-artifact id: lambduh-maven-plugin<br />
-version:1.0.0<br />
+`group id: snr.plugins`<br />
+`artifact id: lambduh-maven-plugin`<br />
+`version:1.0.0`<br />
 
 `mvn lambduh:deploy-lambda`
 
