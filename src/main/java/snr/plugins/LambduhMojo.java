@@ -42,8 +42,8 @@ public class LambduhMojo
 	@Parameter(property="secretKey", defaultValue = "${secretKey}")
 	private String secretKey;
 	
-	@Parameter(required=true, defaultValue = "${jarFile}")
-	private String jarFile;
+	@Parameter(required=true, defaultValue = "${functionCode}")
+	private String functionCode;
 	
 	@Parameter(property = "region", defaultValue = "us-east-1")
 	private String regionName;
@@ -102,7 +102,7 @@ public class LambduhMojo
     	region = Region.getRegion(Regions.fromName(regionName));
     	lambdaClient.setRegion(region);
     	
-    	String [] pieces = jarFile.split(File.separator);
+    	String [] pieces = functionCode.split(File.separator);
     	fileName = pieces[pieces.length - 1];
     	
     	try {
@@ -169,9 +169,9 @@ public class LambduhMojo
     	Bucket bucket = getBucket();
     	
     	if (bucket != null) {
-    		File file = new File(jarFile);
+    		File file = new File(functionCode);
     		
-    		logger.info("Uploading " + jarFile + " to AWS S3 bucket " + s3Bucket);
+    		logger.info("Uploading " + functionCode + " to AWS S3 bucket " + s3Bucket);
     		s3Client.putObject(s3Bucket, fileName, file);
     		logger.info("Upload complete");
     		

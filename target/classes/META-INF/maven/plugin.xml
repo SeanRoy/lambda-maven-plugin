@@ -7,7 +7,7 @@
   <description>A maven plugin that deploys functions to AWS Lambda</description>
   <groupId>snr.plugins</groupId>
   <artifactId>lambduh-maven-plugin</artifactId>
-  <version>1.0</version>
+  <version>1.0.0</version>
   <goalPrefix>lambduh</goalPrefix>
   <isolatedRealm>false</isolatedRealm>
   <inheritedByDefault>true</inheritedByDefault>
@@ -43,6 +43,13 @@ deployed to AWS lambda.</description>
           <description></description>
         </parameter>
         <parameter>
+          <name>functionCode</name>
+          <type>java.lang.String</type>
+          <required>true</required>
+          <editable>true</editable>
+          <description></description>
+        </parameter>
+        <parameter>
           <name>functionName</name>
           <type>java.lang.String</type>
           <required>false</required>
@@ -51,13 +58,6 @@ deployed to AWS lambda.</description>
         </parameter>
         <parameter>
           <name>handler</name>
-          <type>java.lang.String</type>
-          <required>true</required>
-          <editable>true</editable>
-          <description></description>
-        </parameter>
-        <parameter>
-          <name>jarFile</name>
           <type>java.lang.String</type>
           <required>true</required>
           <editable>true</editable>
@@ -116,9 +116,9 @@ deployed to AWS lambda.</description>
       <configuration>
         <accessKey implementation="java.lang.String" default-value="${accessKey}">${accessKey}</accessKey>
         <description implementation="java.lang.String" default-value="">${description}</description>
+        <functionCode implementation="java.lang.String" default-value="${functionCode}"/>
         <functionName implementation="java.lang.String" default-value="function-1">${functionName}</functionName>
         <handler implementation="java.lang.String" default-value="${handler}"/>
-        <jarFile implementation="java.lang.String" default-value="${jarFile}"/>
         <lambdaRoleArn implementation="java.lang.String" default-value="${lambdaRoleArn}"/>
         <memorySize implementation="int" default-value="128">${memorySize}</memorySize>
         <regionName implementation="java.lang.String" default-value="us-east-1">${region}</regionName>
