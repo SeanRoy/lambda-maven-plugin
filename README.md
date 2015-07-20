@@ -5,7 +5,9 @@ as a part of your usual Maven build process.
 
 ### Usage
 group id: snr.plugins
+
 artifact id: lambduh-maven-plugin
+
 version:1.0.0
 
 `mvn lambduh:deploy-lambda`
