@@ -80,7 +80,7 @@
   
   <build>
   	<plugins>
-  		<plugin>
+           <plugin>
   			<groupId>org.apache.maven.plugins</groupId>
   			<artifactId>maven-source-plugin</artifactId>
   			<executions>
@@ -91,8 +91,8 @@
 			      </goals>
 			    </execution>
 			</executions>
-  		</plugin>
-  		<plugin>
+            </plugin>
+            <plugin>
   			<groupId>org.apache.maven.plugins</groupId>
   			<artifactId>maven-javadoc-plugin</artifactId>
 			<executions>
@@ -103,8 +103,8 @@
 			      </goals>
 			    </execution>
 			</executions>
-  		</plugin>
-  		<plugin>
+            </plugin>
+            <plugin>
 	      <groupId>org.apache.maven.plugins</groupId>
 	      <artifactId>maven-gpg-plugin</artifactId>
 	      <executions>
@@ -117,6 +117,17 @@
 	        </execution>
 	      </executions>
 	    </plugin>
+            <plugin>
+              <groupId>org.sonatype.plugins</groupId>
+              <artifactId>nexus-staging-maven-plugin</artifactId>
+              <extensions>true</extensions>
+              <configuration>
+                <serverId>ossrh</serverId>
+                <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                <keepStagingRepositoryOnFailure>false</keepStagingRepositoryOnFailure>
+              </configuration>
+            </plugin>
   	</plugins>
   </build>
 </project>
