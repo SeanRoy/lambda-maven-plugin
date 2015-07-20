@@ -29,3 +29,8 @@ Your AWS credentials may be set on the command line or in the plugin configurati
 `secretKey` are not explicitly defined, the plugin will look for them in your environment or in your
 ~/.aws/credentials file
 
+### Caveats
+As of 7/20/2015, this has yet to be tested with NodeJs code.
+
+### TODO
+* Allow upload of function code directly to AWS Lambda instead of using S3.
