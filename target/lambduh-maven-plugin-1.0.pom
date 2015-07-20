@@ -4,7 +4,7 @@
   <groupId>snr.plugins</groupId>
   <artifactId>lambduh-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
-  <version>1.0.0</version>
+  <version>1.0</version>
   
   <name>lambduh-maven-plugin Maven Mojo</name>
   <description>A maven plugin that deploys functions to AWS Lambda</description>
@@ -18,20 +18,7 @@
     </license>
   </licenses>
   
-  <developers>
-    <developer>
-      <name>Sean N. Roy</name>
-      <email>Sean.Roy@gmail.com</email>
-      <organizationUrl>https://github.com/SeanRoy/lambduh-maven-plugin</organizationUrl>
-    </developer>
-  </developers>
   
-  <scm>
-    <connection>scm:git:git@github.com:SeanRoy/lambduh-maven-plugin.git</connection>
-    <developerConnection>scm:git:git@github.com:SeanRoy/lambduh-maven-plugin.git</developerConnection>
-    <url>git@github.com:SeanRoy/lambduh-maven-plugin.git</url>
-  </scm>
-
   <dependencies>
     <dependency>
       <groupId>org.apache.maven</groupId>
@@ -66,18 +53,6 @@
     	<version>1.7.12</version>
     </dependency>
   </dependencies>
-  
-  <distributionManagement>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-    <repository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-  </distributionManagement>
-  
   <build>
   	<plugins>
   		<plugin>

@@ -1,3 +1,6 @@
 # ignore .class
-.class
+*.class
 .settings
+*.asc
+*.jar
+*.swp

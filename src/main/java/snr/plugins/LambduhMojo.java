@@ -2,7 +2,7 @@ package snr.plugins;
 
 /**
  * A Maven plugin allowing a jar built as a part of a Maven project to be
- * deployed 
+ * deployed to AWS lambda.
  * @author Sean N. Roy
  */
 import java.io.File;
@@ -28,6 +28,7 @@ import com.amazonaws.services.lambda.model.FunctionCode;
 import com.amazonaws.services.lambda.model.Runtime;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.Bucket;
+
 
 @Mojo(name = "deploy-lambda")
 public class LambduhMojo
@@ -81,6 +82,9 @@ public class LambduhMojo
 	private AmazonS3Client s3Client;
 	private AWSLambdaClient lambdaClient;
 	
+	/**
+	 * The entry point into the AWS lambda function.
+	 */
     public void execute() throws MojoExecutionException
     {
     	if ( accessKey != null && secretKey != null )
@@ -111,6 +115,12 @@ public class LambduhMojo
     	}
     }
     
+    /**
+     * Makes a create function call on behalf of the caller, deploying the
+     * function code to AWS lambda.
+     * @return A CreateFunctionResult indicating the success or failure of
+     *         the request.
+     */
     private CreateFunctionResult createFunction() {
     	CreateFunctionRequest createFunctionRequest = new CreateFunctionRequest();
     	createFunctionRequest.setDescription(description);
@@ -129,6 +139,12 @@ public class LambduhMojo
     	return lambdaClient.createFunction(createFunctionRequest);
     }
     
+    /**
+     * Attempts to delete an existing function of the same name then deploys
+     * the function code to AWS Lambda.
+     * TODO: Attempt to do an update with versioning if the function already
+     * TODO: exists.
+     */
     private void deployLambdaFunction() {
     	// Attempt to delete it first
     	try {
@@ -144,6 +160,11 @@ public class LambduhMojo
     	logger.info("Function deployed: " + result.getFunctionArn());
     }
     
+    /**
+     * The Lambda function will be deployed from AWS S3. This method uploads
+     * the function code to S3 in preparation of deployment.
+     * @throws Exception
+     */
     private void uploadJarToS3() throws Exception {
     	Bucket bucket = getBucket();
     	
@@ -161,6 +182,11 @@ public class LambduhMojo
     	}
     }
     
+    /**
+     * Attempts to return an existing bucket named <code>s3Bucket</code> if
+     * it exists.  If it does not exist, it attempts to create it.
+     * @return An AWS S3 bucket with name <code>s3Bucket</code>
+     */
     private Bucket getBucket() {
     	Bucket bucket = null;
     	
