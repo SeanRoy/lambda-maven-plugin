@@ -54,7 +54,7 @@ public class LambduhMojo extends AbstractMojo {
     @Parameter(required = true, defaultValue = "${lambdaRoleArn}")
     private String lambdaRoleArn;
 
-    @Parameter(property = "functionName", defaultValue = "function-1")
+    @Parameter(property = "functionName", defaultValue = "${functionName}")
     private String functionName;
 
     @Parameter(required = true, defaultValue = "${handler}")

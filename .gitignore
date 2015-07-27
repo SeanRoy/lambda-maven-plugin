@@ -4,3 +4,4 @@
 *.asc
 *.jar
 *.swp
+*/target/*
