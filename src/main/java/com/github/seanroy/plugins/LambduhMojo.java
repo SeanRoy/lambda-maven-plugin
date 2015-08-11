@@ -6,6 +6,7 @@ package com.github.seanroy.plugins;
  * @author Sean N. Roy
  */
 import java.io.File;
+import java.util.regex.Pattern;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -95,7 +96,8 @@ public class LambduhMojo extends AbstractMojo {
         region = Region.getRegion(Regions.fromName(regionName));
         lambdaClient.setRegion(region);
 
-        String[] pieces = functionCode.split(File.separator);
+        String pattern = Pattern.quote(File.separator);
+        String[] pieces = functionCode.split(pattern);
         fileName = pieces[pieces.length - 1];
 
         try {
