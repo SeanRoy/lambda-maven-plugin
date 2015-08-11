@@ -39,3 +39,6 @@ As of 7/20/2015, this has yet to be tested with NodeJs code.
 ### TODO
 * Allow upload of function code directly to AWS Lambda instead of using S3.
 * Add ability to update/delete functions.
+
+### Releases
+1.0.2 Fixed PatternSyntaxException on windows https://github.com/SeanRoy/lambduh-maven-plugin/issues/1
