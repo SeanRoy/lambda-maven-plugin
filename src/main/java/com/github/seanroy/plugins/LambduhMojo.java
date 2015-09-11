@@ -6,6 +6,7 @@ package com.github.seanroy.plugins;
  * @author Sean N. Roy
  */
 import java.io.File;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.maven.plugin.AbstractMojo;
@@ -174,7 +175,8 @@ public class LambduhMojo extends AbstractMojo {
 
         } else {
             logger.error("Failed to create bucket " + s3Bucket
-                    + "try running maven with -X to get full " + "debug output");
+                    + ". try running maven with -X to get full "
+                    + "debug output");
         }
     }
 
@@ -185,7 +187,10 @@ public class LambduhMojo extends AbstractMojo {
      * @return An AWS S3 bucket with name <code>s3Bucket</code>
      */
     private Bucket getBucket() {
-        Bucket bucket = null;
+        Bucket bucket = getExistingBucket();
+        if (bucket != null) {
+            return bucket;
+        }
 
         try {
             bucket = s3Client.createBucket(s3Bucket,
@@ -198,5 +203,15 @@ public class LambduhMojo extends AbstractMojo {
         }
 
         return bucket;
+    }
+
+    private Bucket getExistingBucket() {
+        List<Bucket> buckets = s3Client.listBuckets();
+        for (Bucket bucket : buckets) {
+            if (bucket.getName().equals(s3Bucket)) {
+                return bucket;
+            }
+        }
+        return null;
     }
 }
