@@ -44,7 +44,7 @@ public class LambduhMojo extends AbstractMojo {
     @Parameter(required = true, defaultValue = "${functionCode}")
     private String functionCode;
 
-    @Parameter(property = "region", defaultValue = "us-east-1")
+    @Parameter(alias = "region", property = "region", defaultValue = "us-east-1")
     private String regionName;
 
     @Parameter(property = "s3Bucket", defaultValue = "lambda-function-code")
