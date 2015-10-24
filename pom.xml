@@ -4,7 +4,7 @@
   <groupId>com.github.seanroy</groupId>
   <artifactId>lambduh-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
-  <version>1.0.2</version>
+  <version>1.0.3-SNAPSHOT</version>
   
   <name>lambduh-maven-plugin Maven Mojo</name>
   <description>A maven plugin that deploys functions to AWS Lambda</description>
@@ -25,7 +25,11 @@
       <organizationUrl>https://github.com/SeanRoy/lambduh-maven-plugin</organizationUrl>
     </developer>
   </developers>
-  
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
   <scm>
     <connection>scm:git:git@github.com:SeanRoy/lambduh-maven-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:SeanRoy/lambduh-maven-plugin.git</developerConnection>
