@@ -4,5 +4,7 @@
 *.asc
 *.jar
 *.swp
+.idea
+*.iml
 target
 pom.xml.versionsBackup

@@ -9,6 +9,7 @@ import java.io.File;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -85,14 +86,18 @@ public class LambduhMojo extends AbstractMojo {
      * The entry point into the AWS lambda function.
      */
     public void execute() throws MojoExecutionException {
+        DefaultAWSCredentialsProviderChain defaultChain = new DefaultAWSCredentialsProviderChain();
         if (accessKey != null && secretKey != null) {
             credentials = new BasicAWSCredentials(accessKey, secretKey);
-            s3Client = new AmazonS3Client(credentials);
-            lambdaClient = new AWSLambdaClient(credentials);
-        } else {
-            s3Client = new AmazonS3Client();
-            lambdaClient = new AWSLambdaClient();
         }
+        else if (defaultChain.getCredentials()!=null)
+        {
+            credentials = defaultChain.getCredentials();
+        }
+
+        s3Client = (credentials==null)?new AmazonS3Client():new AmazonS3Client(credentials);
+        lambdaClient = (credentials==null)?new AWSLambdaClient():new AWSLambdaClient(credentials);
+
 
         region = Region.getRegion(Regions.fromName(regionName));
         lambdaClient.setRegion(region);
