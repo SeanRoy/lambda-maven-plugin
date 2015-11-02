@@ -44,5 +44,7 @@ As of 7/20/2015, this has yet to be tested with NodeJs code.
 1.0.2 Fixed PatternSyntaxException on windows https://github.com/SeanRoy/lambduh-maven-plugin/issues/1
 
 1.0.3 Fixed a bug where getting a bucket fails if existing. Thanks buri17
+
       Fixed problem with region specification. Thanks buri17
+
       Adding ability to pull creds from the default provider. Thanks Chris Weiss
