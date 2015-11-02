@@ -6,7 +6,7 @@ as a part of your usual Maven build process.
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambduh-maven-plugin`<br />
-`version:1.0.0`<br />
+`version:1.0.3`<br />
 
 `mvn lambduh:deploy-lambda`
 
