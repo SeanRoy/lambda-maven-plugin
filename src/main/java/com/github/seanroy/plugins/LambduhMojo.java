@@ -9,7 +9,6 @@ import java.io.File;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -21,6 +20,7 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.lambda.AWSLambdaClient;
@@ -31,6 +31,7 @@ import com.amazonaws.services.lambda.model.FunctionCode;
 import com.amazonaws.services.lambda.model.Runtime;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.GetBucketLocationRequest;
 
 @Mojo(name = "deploy-lambda")
 public class LambduhMojo extends AbstractMojo {
@@ -193,23 +194,24 @@ public class LambduhMojo extends AbstractMojo {
      */
     private Bucket getBucket() {
         Bucket bucket = getExistingBucket();
-        if (bucket != null) {
-            return bucket;
-        }
 
-        try {
-            bucket = s3Client.createBucket(s3Bucket,
-                    com.amazonaws.services.s3.model.Region.US_Standard);
-            logger.info("Created bucket " + s3Bucket);
-        } catch (AmazonServiceException ase) {
-            logger.error(ase.getMessage());
-        } catch (AmazonClientException ace) {
-            logger.error(ace.getMessage());
+        if (bucket == null) {
+            try {
+                bucket = s3Client.createBucket(s3Bucket,
+                        com.amazonaws.services.s3.model.Region.US_Standard);
+                logger.info("Created bucket " + s3Bucket);
+            } catch (AmazonServiceException ase) {
+                logger.error(ase.getMessage());
+            } catch (AmazonClientException ace) {
+                logger.error(ace.getMessage());
+            }
         }
 
         return bucket;
     }
 
+    // TODO: Get existing bucket via GetBucketLocationRequest rather than
+    // TODO: looping through every single bucket. Could be a lot!.
     private Bucket getExistingBucket() {
         List<Bucket> buckets = s3Client.listBuckets();
         for (Bucket bucket : buckets) {
