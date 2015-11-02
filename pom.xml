@@ -131,7 +131,21 @@
                 <autoReleaseAfterClose>true</autoReleaseAfterClose>
                 <keepStagingRepositoryOnFailure>false</keepStagingRepositoryOnFailure>
               </configuration>
-            </plugin>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-plugin-plugin</artifactId>
+            <version>3.2</version>
+            <executions>
+                <execution>
+                    <id>default-descriptor</id>
+                    <goals>
+                        <goal>descriptor</goal>
+                    </goals>
+                    <phase>process-classes</phase>
+                </execution>
+            </executions>
+        </plugin>
   	</plugins>
   </build>
 </project>
