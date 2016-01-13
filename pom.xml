@@ -24,6 +24,10 @@
       <email>Sean.Roy@gmail.com</email>
       <organizationUrl>https://github.com/SeanRoy/lambduh-maven-plugin</organizationUrl>
     </developer>
+    <developer>
+      <name>Philip M. White</name>
+      <email>philip@mailworks.org</email>
+    </developer>
   </developers>
 
   <properties>
@@ -51,12 +55,12 @@
     <dependency>
 	  <groupId>com.amazonaws</groupId>
 	  <artifactId>aws-java-sdk-lambda</artifactId>
-	  <version>1.10.4.1</version>
+	  <version>1.10.45</version>
 	</dependency>
 	<dependency>
 	  <groupId>com.amazonaws</groupId>
 	  <artifactId>aws-java-sdk-s3</artifactId>
-	  <version>1.10.4.1</version>
+	  <version>1.10.45</version>
 	</dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -68,6 +72,11 @@
     	<groupId>org.slf4j</groupId>
     	<artifactId>slf4j-api</artifactId>
     	<version>1.7.12</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>1.10</version>
     </dependency>
   </dependencies>
   

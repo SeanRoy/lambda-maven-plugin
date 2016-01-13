@@ -33,6 +33,11 @@ Your AWS credentials may be set on the command line or in the plugin configurati
 `secretKey` are not explicitly defined, the plugin will look for them in your environment or in your
 ~/.aws/credentials file
 
+IAM permissions required by this plugin:
+* actions `s3:GetObject` and `s3:PutObject` on resource `arn:aws:s3:::<s3Bucket>/*`
+* action `s3:ListBucket` on resource `arn:aws:s3:::<s3Bucket>`
+* action `s3:CreateBucket` if you want the plugin to create the S3 bucket you specify.
+
 ### Caveats
 As of 7/20/2015, this has yet to be tested with NodeJs code.
 
