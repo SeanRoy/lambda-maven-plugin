@@ -24,11 +24,14 @@
       <email>Sean.Roy@gmail.com</email>
       <organizationUrl>https://github.com/SeanRoy/lambduh-maven-plugin</organizationUrl>
     </developer>
-    <developer>
+  </developers>
+
+  <contributors>
+    <contributor>
       <name>Philip M. White</name>
       <email>philip@mailworks.org</email>
-    </developer>
-  </developers>
+    </contributor>
+  </contributors>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
