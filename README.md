@@ -45,6 +45,9 @@ As of 7/20/2015, this has yet to be tested with NodeJs code.
 * Allow upload of function code directly to AWS Lambda instead of using S3.
 * Add ability to update/delete functions.
 
+### Developers
+If you are interested in contributing to this project, please note that current development can be found in the SNAPSHOT branch of the coming release.  When making pull requests, please create them against this branch.
+
 ### Releases
 1.0.2 
 * Fixed PatternSyntaxException on windows https://github.com/SeanRoy/lambduh-maven-plugin/issues/1
@@ -53,3 +56,9 @@ As of 7/20/2015, this has yet to be tested with NodeJs code.
 * Fixed a bug where getting a bucket fails if existing. Thanks buri17
 * Fixed problem with region specification. Thanks buri17
 * Adding ability to pull creds from the default provider. Thanks Chris Weiss
+
+1.0.4
+* Fixed issue 8
+* No longer uploads function code to S3 when no changes have been made to speed up
+  development cycle over slow connections.  Thanks Philip M. White.
+* Fixed logging.
