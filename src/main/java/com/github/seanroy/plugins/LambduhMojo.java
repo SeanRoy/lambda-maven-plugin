@@ -176,6 +176,9 @@ public class LambduhMojo extends AbstractMojo {
         try {
             ObjectMetadata currentObj = s3Client.getObjectMetadata(bucket, fileName);
             getLog().info(String.format("Object exists in S3 with MD5 hash %s.", currentObj.getETag()));
+            
+            // This comparison will no longer work if we ever go to multipart uploads.  Etags are not
+            // computed as MD5 sums for multipart uploads in s3.
             remoteIsCurrent = localmd5.equals(currentObj.getETag());
         }
         catch (AmazonClientException ace) {
