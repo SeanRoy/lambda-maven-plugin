@@ -6,9 +6,12 @@ package com.github.seanroy.plugins;
  * @author Sean N. Roy
  */
 import java.io.File;
-import java.util.List;
+import java.io.FileInputStream;
 import java.util.regex.Pattern;
 
+import com.amazonaws.services.s3.model.HeadBucketRequest;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -30,8 +33,6 @@ import com.amazonaws.services.lambda.model.DeleteFunctionRequest;
 import com.amazonaws.services.lambda.model.FunctionCode;
 import com.amazonaws.services.lambda.model.Runtime;
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.Bucket;
-import com.amazonaws.services.s3.model.GetBucketLocationRequest;
 
 @Mojo(name = "deploy-lambda")
 public class LambduhMojo extends AbstractMojo {
@@ -169,20 +170,34 @@ public class LambduhMojo extends AbstractMojo {
      * @throws Exception
      */
     private void uploadJarToS3() throws Exception {
-        Bucket bucket = getBucket();
+        String bucket = getBucket();
+        File file = new File(functionCode);
 
-        if (bucket != null) {
-            File file = new File(functionCode);
+        String localmd5 = DigestUtils.md5Hex(new FileInputStream(file));
+        logger.debug(String.format("Local file's MD5 hash is %s.", localmd5));
 
+        // See if the JAR is already current; if it is, let's not re-upload it.
+        boolean remoteIsCurrent = false;
+        try {
+            ObjectMetadata currentObj = s3Client.getObjectMetadata(bucket, fileName);
+            logger.info(String.format("Object exists in S3 with MD5 hash %s.", currentObj.getETag()));
+            remoteIsCurrent = localmd5.equals(currentObj.getETag());
+        }
+        catch (AmazonClientException ace) {
+            logger.info("Object does not exist in S3 or we cannot access it.");
+        }
+
+        if (remoteIsCurrent) {
+            logger.info("The package already in S3 is up-to-date.");
+        }
+        else {
             logger.info("Uploading " + functionCode + " to AWS S3 bucket "
                     + s3Bucket);
-            s3Client.putObject(s3Bucket, fileName, file);
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentMD5(localmd5);
+            metadata.setContentLength(file.length());
+            s3Client.putObject(s3Bucket, fileName, new FileInputStream(file), metadata);
             logger.info("Upload complete");
-
-        } else {
-            logger.error("Failed to create bucket " + s3Bucket
-                    + ". try running maven with -X to get full "
-                    + "debug output");
         }
     }
 
@@ -190,35 +205,42 @@ public class LambduhMojo extends AbstractMojo {
      * Attempts to return an existing bucket named <code>s3Bucket</code> if it
      * exists. If it does not exist, it attempts to create it.
      * 
-     * @return An AWS S3 bucket with name <code>s3Bucket</code>
+     * @return An AWS S3 bucket with name <code>s3Bucket</code>, or raises an exception
      */
-    private Bucket getBucket() {
-        Bucket bucket = getExistingBucket();
-
-        if (bucket == null) {
+    private String getBucket() {
+        if (bucketExists()) {
+            return s3Bucket;
+        }
+        else {
             try {
-                bucket = s3Client.createBucket(s3Bucket,
+                s3Client.createBucket(s3Bucket,
                         com.amazonaws.services.s3.model.Region.US_Standard);
                 logger.info("Created bucket " + s3Bucket);
+                return s3Bucket;
             } catch (AmazonServiceException ase) {
                 logger.error(ase.getMessage());
+                throw ase;
             } catch (AmazonClientException ace) {
                 logger.error(ace.getMessage());
+                throw ace;
             }
         }
-
-        return bucket;
     }
 
-    // TODO: Get existing bucket via GetBucketLocationRequest rather than
-    // TODO: looping through every single bucket. Could be a lot!.
-    private Bucket getExistingBucket() {
-        List<Bucket> buckets = s3Client.listBuckets();
-        for (Bucket bucket : buckets) {
-            if (bucket.getName().equals(s3Bucket)) {
-                return bucket;
+    private boolean bucketExists() {
+        try {
+            s3Client.headBucket(new HeadBucketRequest(s3Bucket));
+            return true;
+        }
+        catch (AmazonServiceException e) {
+            if (e.getStatusCode() == 404) {
+                return false;
+            }
+            else {
+                // Some other error, but the bucket appears to exist.
+                logger.error(String.format("Got status code %d for bucket named '%s'", e.getStatusCode(), s3Bucket));
+                return true;
             }
         }
-        return null;
     }
 }
