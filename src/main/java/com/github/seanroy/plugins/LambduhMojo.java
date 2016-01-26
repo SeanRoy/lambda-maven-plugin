@@ -16,8 +16,6 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -36,8 +34,6 @@ import com.amazonaws.services.s3.AmazonS3Client;
 
 @Mojo(name = "deploy-lambda")
 public class LambduhMojo extends AbstractMojo {
-    final Logger logger = LoggerFactory.getLogger(LambduhMojo.class);
-
     @Parameter(property = "accessKey", defaultValue = "${accessKey}")
     private String accessKey;
 
@@ -112,8 +108,7 @@ public class LambduhMojo extends AbstractMojo {
             uploadJarToS3();
             deployLambdaFunction();
         } catch (Exception e) {
-            logger.error(e.getMessage());
-            logger.trace(e.getMessage(), e);
+            getLog().error(e.getMessage());
             throw new MojoExecutionException(e.getMessage());
         }
     }
@@ -160,7 +155,7 @@ public class LambduhMojo extends AbstractMojo {
         }
 
         CreateFunctionResult result = createFunction();
-        logger.info("Function deployed: " + result.getFunctionArn());
+        getLog().info("Function deployed: " + result.getFunctionArn());
     }
 
     /**
@@ -174,30 +169,28 @@ public class LambduhMojo extends AbstractMojo {
         File file = new File(functionCode);
 
         String localmd5 = DigestUtils.md5Hex(new FileInputStream(file));
-        logger.debug(String.format("Local file's MD5 hash is %s.", localmd5));
+        getLog().debug(String.format("Local file's MD5 hash is %s.", localmd5));
 
         // See if the JAR is already current; if it is, let's not re-upload it.
         boolean remoteIsCurrent = false;
         try {
             ObjectMetadata currentObj = s3Client.getObjectMetadata(bucket, fileName);
-            logger.info(String.format("Object exists in S3 with MD5 hash %s.", currentObj.getETag()));
+            getLog().info(String.format("Object exists in S3 with MD5 hash %s.", currentObj.getETag()));
             remoteIsCurrent = localmd5.equals(currentObj.getETag());
         }
         catch (AmazonClientException ace) {
-            logger.info("Object does not exist in S3 or we cannot access it.");
+            getLog().info("Object does not exist in S3 or we cannot access it.");
         }
 
         if (remoteIsCurrent) {
-            logger.info("The package already in S3 is up-to-date.");
+            getLog().info("The package already in S3 is up-to-date, not uploading.");
         }
         else {
-            logger.info("Uploading " + functionCode + " to AWS S3 bucket "
+            getLog().info("Uploading " + functionCode + " to AWS S3 bucket "
                     + s3Bucket);
             ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentMD5(localmd5);
-            metadata.setContentLength(file.length());
-            s3Client.putObject(s3Bucket, fileName, new FileInputStream(file), metadata);
-            logger.info("Upload complete");
+            s3Client.putObject(s3Bucket, fileName, file);
+            getLog().info("Upload complete");
         }
     }
 
@@ -215,13 +208,13 @@ public class LambduhMojo extends AbstractMojo {
             try {
                 s3Client.createBucket(s3Bucket,
                         com.amazonaws.services.s3.model.Region.US_Standard);
-                logger.info("Created bucket " + s3Bucket);
+                getLog().info("Created bucket " + s3Bucket);
                 return s3Bucket;
             } catch (AmazonServiceException ase) {
-                logger.error(ase.getMessage());
+                getLog().error(ase.getMessage());
                 throw ase;
             } catch (AmazonClientException ace) {
-                logger.error(ace.getMessage());
+                getLog().error(ace.getMessage());
                 throw ace;
             }
         }
@@ -238,7 +231,7 @@ public class LambduhMojo extends AbstractMojo {
             }
             else {
                 // Some other error, but the bucket appears to exist.
-                logger.error(String.format("Got status code %d for bucket named '%s'", e.getStatusCode(), s3Bucket));
+                getLog().error(String.format("Got status code %d for bucket named '%s'", e.getStatusCode(), s3Bucket));
                 return true;
             }
         }
