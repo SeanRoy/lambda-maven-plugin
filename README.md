@@ -33,12 +33,20 @@ Your AWS credentials may be set on the command line or in the plugin configurati
 `secretKey` are not explicitly defined, the plugin will look for them in your environment or in your
 ~/.aws/credentials file
 
+IAM permissions required by this plugin:
+* actions `s3:GetObject` and `s3:PutObject` on resource `arn:aws:s3:::<s3Bucket>/*`
+* action `s3:ListBucket` on resource `arn:aws:s3:::<s3Bucket>`
+* action `s3:CreateBucket` if you want the plugin to create the S3 bucket you specify.
+
 ### Caveats
 As of 7/20/2015, this has yet to be tested with NodeJs code.
 
 ### TODO
 * Allow upload of function code directly to AWS Lambda instead of using S3.
 * Add ability to update/delete functions.
+
+### Developers
+If you are interested in contributing to this project, please note that current development can be found in the SNAPSHOT branch of the coming release.  When making pull requests, please create them against this branch.
 
 ### Releases
 1.0.2 
@@ -48,3 +56,9 @@ As of 7/20/2015, this has yet to be tested with NodeJs code.
 * Fixed a bug where getting a bucket fails if existing. Thanks buri17
 * Fixed problem with region specification. Thanks buri17
 * Adding ability to pull creds from the default provider. Thanks Chris Weiss
+
+1.0.4
+* Fixed issue 8
+* No longer uploads function code to S3 when no changes have been made to speed up
+  development cycle over slow connections.  Thanks Philip M. White.
+* Fixed logging.
