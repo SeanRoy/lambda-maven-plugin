@@ -121,11 +121,12 @@ public class LambduhMojo extends AbstractMojo {
     }
 
     /**
-     * Makes an update function code call on behalf of the caller, deploying the
-     * function code to AWS lambda.
+     * Makes a get function call on behalf of the caller, returning the function
+     * config and info.
      * 
-     * @return An UpdateFunctionResult indicating the success or failure of the
-     *         request.
+     * @throws ResourceNotFoundException if requested function does not exist
+     * 
+     * @return A GetFunctionResult containing the returned function info.
      */
     private GetFunctionResult getFunction() {
         GetFunctionRequest getFunctionRequest = new GetFunctionRequest();
@@ -177,8 +178,8 @@ public class LambduhMojo extends AbstractMojo {
     }
     
     /**
-     * Makes an update function configuration call on behalf of the caller, deploying the
-     * new function configuration to AWS lambda.
+     * Makes an update function configuration call on behalf of the caller, setting the
+     * new configuration for the given function.
      * 
      * @return An UpdateFunctionConfigurationResult indicating the success or failure of the
      *         request.
@@ -195,6 +196,14 @@ public class LambduhMojo extends AbstractMojo {
         return lambdaClient.updateFunctionConfiguration(updateFunctionRequest);
     }
 
+    /**
+     * Indicates if function configuration received from AWS Lambda differs
+     * from the plugin configuration
+     *  
+     * @param function function data received from a GetFunctionRequest call
+     * 
+     * @return	true if function config. has changed, false otherwise
+     */
     private boolean hasFunctionConfigChanged(GetFunctionResult function) {
     	
     	FunctionConfiguration config = function.getConfiguration();
