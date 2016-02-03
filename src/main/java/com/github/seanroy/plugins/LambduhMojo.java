@@ -199,22 +199,21 @@ public class LambduhMojo extends AbstractMojo {
     /**
      * Indicates if function configuration received from AWS Lambda differs
      * from the plugin configuration
-     *  
+     * 
      * @param function function data received from a GetFunctionRequest call
      * 
      * @return	true if function config. has changed, false otherwise
      */
     private boolean hasFunctionConfigChanged(GetFunctionResult function) {
-    	
-    	FunctionConfiguration config = function.getConfiguration();
-    	if (config == null)
-    		return false;
-    	
-    	return 	!config.getDescription().equals(description) || 
-    			!config.getHandler().equals(handler) || 
-    			!config.getRole().equals(lambdaRoleArn) || 
-    			config.getTimeout().intValue() != timeout || 
-    			config.getMemorySize().intValue() != memorySize;
+        FunctionConfiguration config = function.getConfiguration();
+        if (config == null)
+            return false;
+        
+        return !config.getDescription().equals(description) || 
+            !config.getHandler().equals(handler) || 
+            !config.getRole().equals(lambdaRoleArn) || 
+            config.getTimeout().intValue() != timeout || 
+            config.getMemorySize().intValue() != memorySize;
     }
     
     /**
@@ -222,33 +221,28 @@ public class LambduhMojo extends AbstractMojo {
      * function code to AWS Lambda.
      */
     private void deployLambdaFunction() {
-    	
-    	try {
-    		
+        try {
 	        // Get function, update if exists
 	        try {
-	            
-	        	GetFunctionResult function = getFunction();
+	            GetFunctionResult function = getFunction();
 	            if (function != null) {
-	            	
-	            	// update config if changed
-	            	if (hasFunctionConfigChanged(function))
-	            		updateFunctionConfig();
-	            	
-	            	// update code
-	            	UpdateFunctionCodeResult result = updateFunctionCode();
-	            	getLog().info("Function updated and deployed: " + result.getFunctionArn());
+	                
+	                // update config if changed
+	                if (hasFunctionConfigChanged(function))
+	                    updateFunctionConfig();
+	                
+	                // update code
+	                UpdateFunctionCodeResult result = updateFunctionCode();
+	                getLog().info("Function updated and deployed: " + result.getFunctionArn());
 	            }
-	            
 	        } catch (ResourceNotFoundException notFound) {
-	        	
-	        	// create if function doesn't exist
-	        	CreateFunctionResult result = createFunction();
+	            
+	            // create if function doesn't exist
+	            CreateFunctionResult result = createFunction();
 	            getLog().info("Function created and deployed: " + result.getFunctionArn());
 	        }
-	        
         } catch (Exception ex) {
-        	// error occurred
+            // error occurred
             getLog().error("Error getting / creating / updating function: ", ex);
         }
     }
