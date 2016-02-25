@@ -191,7 +191,6 @@ public class LambduhMojo extends AbstractMojo {
         else {
             getLog().info("Uploading " + functionCode + " to AWS S3 bucket "
                     + s3Bucket);
-            ObjectMetadata metadata = new ObjectMetadata();
             s3Client.putObject(s3Bucket, fileName, file);
             getLog().info("Upload complete");
         }
