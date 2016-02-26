@@ -37,6 +37,11 @@ IAM permissions required by this plugin:
 * actions `s3:GetObject` and `s3:PutObject` on resource `arn:aws:s3:::<s3Bucket>/*`
 * action `s3:ListBucket` on resource `arn:aws:s3:::<s3Bucket>`
 * action `s3:CreateBucket` if you want the plugin to create the S3 bucket you specify.
+* action `lambda:CreateFunction`
+* action `lambda:InvokeFunction`
+* action `lambda:DeleteFunction`
+* action `lambda:GetFunction`
+* action `lambda:UpdateFunctionCode`
 
 ### Caveats
 As of 7/20/2015, this has yet to be tested with NodeJs code.
