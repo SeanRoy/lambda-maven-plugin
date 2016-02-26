@@ -53,10 +53,10 @@
       <version>3.3.3</version>
     </dependency>
     <dependency>
-   	  <groupId>org.apache.maven.plugin-testing</groupId>
-   	  <artifactId>maven-plugin-testing-harness</artifactId>
-   	  <version>3.3.0</version>
-   	  <scope>test</scope>
+      <groupId>org.apache.maven.plugin-testing</groupId>
+      <artifactId>maven-plugin-testing-harness</artifactId>
+      <version>3.3.0</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.plugin-tools</groupId>
@@ -65,39 +65,39 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-	  <groupId>org.apache.maven</groupId>
-	  <artifactId>maven-compat</artifactId>
-	  <version>3.3.3</version>
-	</dependency>
-	<dependency>
-	  <groupId>org.apache.maven</groupId>
-	  <artifactId>maven-core</artifactId>
-	  <version>3.3.3</version>
-	  <scope>test</scope>
-	</dependency>
-	<dependency>
-	<groupId>maven</groupId>
-	  <artifactId>maven-model</artifactId>
-	  <version>3.0.2.javadoc</version>
-	  <type>javadoc.jar</type>
-	  <scope>test</scope>
-	</dependency>
-	<dependency>
-	  <groupId>org.apache.maven</groupId>
-	  <artifactId>maven-aether-provider</artifactId>
-	  <version>3.3.3</version>
-	  <scope>test</scope>
-	</dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-compat</artifactId>
+      <version>3.3.3</version>
+    </dependency>
     <dependency>
-	  <groupId>com.amazonaws</groupId>
-	  <artifactId>aws-java-sdk-lambda</artifactId>
-	  <version>1.10.45</version>
-	</dependency>
-	<dependency>
-	  <groupId>com.amazonaws</groupId>
-	  <artifactId>aws-java-sdk-s3</artifactId>
-	  <version>1.10.45</version>
-	</dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-core</artifactId>
+      <version>3.3.3</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>maven</groupId>
+      <artifactId>maven-model</artifactId>
+      <version>3.0.2.javadoc</version>
+      <type>javadoc.jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-aether-provider</artifactId>
+      <version>3.3.3</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-lambda</artifactId>
+      <version>1.10.45</version>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-s3</artifactId>
+      <version>1.10.45</version>
+    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
