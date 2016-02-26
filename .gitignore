@@ -8,4 +8,4 @@
 *.iml
 target
 pom.xml.versionsBackup
-src/test/resources/test-project/pom.xml
+src/test/resources/test-project/basic-pom.xml

@@ -21,8 +21,8 @@ public class LambduhTest extends AbstractMojoTestCase {
     
     
     @Test
-    public void test() throws Exception {
-        File pom = getTestFile("src/test/resources/test-project/pom.xml");
+    public void testBasic() throws Exception {
+        File pom = getTestFile("src/test/resources/test-project/basic-pom.xml");
         assertNotNull( pom );
         assertTrue( pom.exists() );
 

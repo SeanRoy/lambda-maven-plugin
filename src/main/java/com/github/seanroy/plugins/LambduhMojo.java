@@ -154,16 +154,13 @@ public class LambduhMojo extends AbstractMojo {
             // function didn't exist in the first place.
         }
 
-        getLog().error("*********************** BEFORE **************************");
         try {
             CreateFunctionResult result = createFunction();
             getLog().info("Function deployed: " + result.getFunctionArn());
         } catch( Exception e ){
             e.printStackTrace();
             getLog().error(e.getMessage());
-        }
-        getLog().error("*********************** AFTER **************************");
-        
+        }        
     }
 
     /**
