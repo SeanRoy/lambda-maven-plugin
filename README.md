@@ -48,6 +48,13 @@ As of 7/20/2015, this has yet to be tested with NodeJs code.
 ### Developers
 If you are interested in contributing to this project, please note that current development can be found in the SNAPSHOT branch of the coming release.  When making pull requests, please create them against this branch.
 
+A test harness has been provided which can be run with `mvn test` Please use 
+this and feel free to add additional tests. Note that the basic-pom.xml file
+requires you to add your role arn in order to work.  As such, basic-pom.xml
+has been added to .gitignore so that you don't accidentally commit your role
+to the file.  If you add more pom's as part of enhancing the test suite,
+please remember to add them to .gitignore.
+
 ### Releases
 1.0.2 
 * Fixed PatternSyntaxException on windows https://github.com/SeanRoy/lambduh-maven-plugin/issues/1
@@ -62,3 +69,10 @@ If you are interested in contributing to this project, please note that current 
 * No longer uploads function code to S3 when no changes have been made to speed up
   development cycle over slow connections.  Thanks Philip M. White.
 * Fixed logging.
+
+1.0.5
+* Accidental deployment of release.  Should be functionally equivalent to 
+1.0.4.
+
+1.0.6
+* Issue 19 Added test harness.
