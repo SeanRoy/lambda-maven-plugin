@@ -154,8 +154,13 @@ public class LambduhMojo extends AbstractMojo {
             // function didn't exist in the first place.
         }
 
-        CreateFunctionResult result = createFunction();
-        getLog().info("Function deployed: " + result.getFunctionArn());
+        try {
+            CreateFunctionResult result = createFunction();
+            getLog().info("Function deployed: " + result.getFunctionArn());
+        } catch( Exception e ){
+            e.printStackTrace();
+            getLog().error(e.getMessage());
+        }        
     }
 
     /**
@@ -191,7 +196,6 @@ public class LambduhMojo extends AbstractMojo {
         else {
             getLog().info("Uploading " + functionCode + " to AWS S3 bucket "
                     + s3Bucket);
-            ObjectMetadata metadata = new ObjectMetadata();
             s3Client.putObject(s3Bucket, fileName, file);
             getLog().info("Upload complete");
         }
