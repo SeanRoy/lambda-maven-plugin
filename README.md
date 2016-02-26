@@ -81,3 +81,5 @@ please remember to add them to .gitignore.
 
 1.0.6
 * Issue 19 Added test harness.
+* Update function code if code or configuration has changed instead of
+deleting and recreating every time.  Thanks Guillermo Menendez
