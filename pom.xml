@@ -4,7 +4,7 @@
   <groupId>com.github.seanroy</groupId>
   <artifactId>lambduh-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
-  <version>1.0.4</version>
+  <version>1.0.6</version>
   
   <name>lambduh-maven-plugin Maven Mojo</name>
   <description>A maven plugin that deploys functions to AWS Lambda</description>
@@ -31,6 +31,9 @@
       <name>Philip M. White</name>
       <email>philip@mailworks.org</email>
     </contributor>
+    <contributor>
+      <name>Guillermo Menendez</name>
+    </contributor>
   </contributors>
 
   <properties>
@@ -47,7 +50,13 @@
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-api</artifactId>
-      <version>2.0</version>
+      <version>3.3.3</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven.plugin-testing</groupId>
+      <artifactId>maven-plugin-testing-harness</artifactId>
+      <version>3.3.0</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.plugin-tools</groupId>
@@ -56,19 +65,43 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-	  <groupId>com.amazonaws</groupId>
-	  <artifactId>aws-java-sdk-lambda</artifactId>
-	  <version>1.10.45</version>
-	</dependency>
-	<dependency>
-	  <groupId>com.amazonaws</groupId>
-	  <artifactId>aws-java-sdk-s3</artifactId>
-	  <version>1.10.45</version>
-	</dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-compat</artifactId>
+      <version>3.3.3</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-core</artifactId>
+      <version>3.3.3</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>maven</groupId>
+      <artifactId>maven-model</artifactId>
+      <version>3.0.2.javadoc</version>
+      <type>javadoc.jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-aether-provider</artifactId>
+      <version>3.3.3</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-lambda</artifactId>
+      <version>1.10.45</version>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-s3</artifactId>
+      <version>1.10.45</version>
+    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>3.8.1</version>
+      <version>4.12</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -76,6 +109,7 @@
       <artifactId>commons-codec</artifactId>
       <version>1.10</version>
     </dependency>
+    
   </dependencies>
   
   <distributionManagement>
@@ -90,69 +124,78 @@
   </distributionManagement>
   
   <build>
-  	<plugins>
-           <plugin>
-  			<groupId>org.apache.maven.plugins</groupId>
-  			<artifactId>maven-source-plugin</artifactId>
-  			<executions>
-			    <execution>
-			      <id>attach-sources</id>
-			      <goals>
-			        <goal>jar</goal>
-			      </goals>
-			    </execution>
-			</executions>
-            </plugin>
-            <plugin>
-  			<groupId>org.apache.maven.plugins</groupId>
-  			<artifactId>maven-javadoc-plugin</artifactId>
-			<executions>
-			    <execution>
-			      <id>attach-javadocs</id>
-			      <goals>
-			        <goal>jar</goal>
-			      </goals>
-			    </execution>
-			</executions>
-            </plugin>
-            <plugin>
-	      <groupId>org.apache.maven.plugins</groupId>
-	      <artifactId>maven-gpg-plugin</artifactId>
-	      <executions>
-	        <execution>
-	          <id>sign-artifacts</id>
-	          <phase>verify</phase>
-	          <goals>
-	            <goal>sign</goal>
-	          </goals>
-	        </execution>
-	      </executions>
-	    </plugin>
-            <plugin>
-              <groupId>org.sonatype.plugins</groupId>
-              <artifactId>nexus-staging-maven-plugin</artifactId>
-              <extensions>true</extensions>
-              <configuration>
-                <serverId>ossrh</serverId>
-                <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                <keepStagingRepositoryOnFailure>false</keepStagingRepositoryOnFailure>
-              </configuration>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-plugin-plugin</artifactId>
-            <version>3.2</version>
-            <executions>
-                <execution>
-                    <id>default-descriptor</id>
-                    <goals>
-                        <goal>descriptor</goal>
-                    </goals>
-                    <phase>process-classes</phase>
-                </execution>
-            </executions>
-        </plugin>
-  	</plugins>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.5.1</version>
+        <configuration>
+          <source>1.7</source>
+          <target>1.7</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+  	<executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+	<executions>
+	  <execution>
+	    <id>sign-artifacts</id>
+	    <phase>verify</phase>
+	    <goals>
+	      <goal>sign</goal>
+	    </goals>
+	  </execution>
+	</executions>
+      </plugin>
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <serverId>ossrh</serverId>
+          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+          <autoReleaseAfterClose>true</autoReleaseAfterClose>
+          <keepStagingRepositoryOnFailure>false</keepStagingRepositoryOnFailure>
+         </configuration>
+       </plugin>
+       <plugin>
+         <groupId>org.apache.maven.plugins</groupId>
+         <artifactId>maven-plugin-plugin</artifactId>
+         <version>3.2</version>
+         <executions>
+           <execution>
+             <id>default-descriptor</id>
+             <goals>
+               <goal>descriptor</goal>
+             </goals>
+             <phase>process-classes</phase>
+           </execution>
+         </executions>
+       </plugin>
+     </plugins>
   </build>
 </project>

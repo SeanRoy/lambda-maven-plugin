@@ -9,8 +9,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.regex.Pattern;
 
-import com.amazonaws.services.s3.model.HeadBucketRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -27,10 +25,19 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.lambda.AWSLambdaClient;
 import com.amazonaws.services.lambda.model.CreateFunctionRequest;
 import com.amazonaws.services.lambda.model.CreateFunctionResult;
-import com.amazonaws.services.lambda.model.DeleteFunctionRequest;
 import com.amazonaws.services.lambda.model.FunctionCode;
+import com.amazonaws.services.lambda.model.FunctionConfiguration;
+import com.amazonaws.services.lambda.model.GetFunctionRequest;
+import com.amazonaws.services.lambda.model.GetFunctionResult;
+import com.amazonaws.services.lambda.model.ResourceNotFoundException;
 import com.amazonaws.services.lambda.model.Runtime;
+import com.amazonaws.services.lambda.model.UpdateFunctionCodeRequest;
+import com.amazonaws.services.lambda.model.UpdateFunctionCodeResult;
+import com.amazonaws.services.lambda.model.UpdateFunctionConfigurationRequest;
+import com.amazonaws.services.lambda.model.UpdateFunctionConfigurationResult;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.HeadBucketRequest;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 
 @Mojo(name = "deploy-lambda")
 public class LambduhMojo extends AbstractMojo {
@@ -114,6 +121,21 @@ public class LambduhMojo extends AbstractMojo {
     }
 
     /**
+     * Makes a get function call on behalf of the caller, returning the function
+     * config and info.
+     * 
+     * @throws ResourceNotFoundException if requested function does not exist
+     * 
+     * @return A GetFunctionResult containing the returned function info.
+     */
+    private GetFunctionResult getFunction() {
+        GetFunctionRequest getFunctionRequest = new GetFunctionRequest();
+        getFunctionRequest.setFunctionName(functionName);
+
+        return lambdaClient.getFunction(getFunctionRequest);
+    }
+    
+    /**
      * Makes a create function call on behalf of the caller, deploying the
      * function code to AWS lambda.
      * 
@@ -137,25 +159,92 @@ public class LambduhMojo extends AbstractMojo {
 
         return lambdaClient.createFunction(createFunctionRequest);
     }
+    
+    /**
+     * Makes an update function code call on behalf of the caller, deploying the
+     * new function code to AWS lambda.
+     * 
+     * @return An UpdateFunctionResult indicating the success or failure of the
+     *         request.
+     */
+    private UpdateFunctionCodeResult updateFunctionCode() {
+        UpdateFunctionCodeRequest updateFunctionRequest = new UpdateFunctionCodeRequest();
+        updateFunctionRequest.setS3Bucket(s3Bucket);
+        updateFunctionRequest.setS3Key(fileName);
+        updateFunctionRequest.setFunctionName(functionName);
+        updateFunctionRequest.setPublish(Boolean.TRUE);
+
+        return lambdaClient.updateFunctionCode(updateFunctionRequest);
+    }
+    
+    /**
+     * Makes an update function configuration call on behalf of the caller, setting the
+     * new configuration for the given function.
+     * 
+     * @return An UpdateFunctionConfigurationResult indicating the success or failure of the
+     *         request.
+     */
+    private UpdateFunctionConfigurationResult updateFunctionConfig() {
+        UpdateFunctionConfigurationRequest updateFunctionRequest = new UpdateFunctionConfigurationRequest();
+        updateFunctionRequest.setDescription(description);
+        updateFunctionRequest.setRole(lambdaRoleArn);
+        updateFunctionRequest.setFunctionName(functionName);
+        updateFunctionRequest.setHandler(handler);
+        updateFunctionRequest.setTimeout(timeout);
+        updateFunctionRequest.setMemorySize(memorySize);
+
+        return lambdaClient.updateFunctionConfiguration(updateFunctionRequest);
+    }
 
     /**
+     * Indicates if function configuration received from AWS Lambda differs
+     * from the plugin configuration
+     * 
+     * @param function function data received from a GetFunctionRequest call
+     * 
+     * @return	true if function config. has changed, false otherwise
+     */
+    private boolean hasFunctionConfigChanged(GetFunctionResult function) {
+        FunctionConfiguration config = function.getConfiguration();
+        if (config == null)
+            return false;
+        
+        return !config.getDescription().equals(description) || 
+            !config.getHandler().equals(handler) || 
+            !config.getRole().equals(lambdaRoleArn) || 
+            config.getTimeout().intValue() != timeout || 
+            config.getMemorySize().intValue() != memorySize;
+    }
+    
+    /**
      * Attempts to delete an existing function of the same name then deploys the
-     * function code to AWS Lambda. TODO: Attempt to do an update with
-     * versioning if the function already TODO: exists.
+     * function code to AWS Lambda.
      */
     private void deployLambdaFunction() {
-        // Attempt to delete it first
         try {
-            DeleteFunctionRequest deleteRequest = new DeleteFunctionRequest();
-            // Why the hell didn't they make this a static method?
-            deleteRequest = deleteRequest.withFunctionName(functionName);
-            lambdaClient.deleteFunction(deleteRequest);
-        } catch (Exception ignored) {
-            // function didn't exist in the first place.
+	        // Get function, update if exists
+	        try {
+	            GetFunctionResult function = getFunction();
+	            if (function != null) {
+	                
+	                // update config if changed
+	                if (hasFunctionConfigChanged(function))
+	                    updateFunctionConfig();
+	                
+	                // update code
+	                UpdateFunctionCodeResult result = updateFunctionCode();
+	                getLog().info("Function updated and deployed: " + result.getFunctionArn());
+	            }
+	        } catch (ResourceNotFoundException notFound) {
+	            
+	            // create if function doesn't exist
+	            CreateFunctionResult result = createFunction();
+	            getLog().info("Function created and deployed: " + result.getFunctionArn());
+	        }
+        } catch (Exception ex) {
+            // error occurred
+            getLog().error("Error getting / creating / updating function: ", ex);
         }
-
-        CreateFunctionResult result = createFunction();
-        getLog().info("Function deployed: " + result.getFunctionArn());
     }
 
     /**
@@ -191,7 +280,6 @@ public class LambduhMojo extends AbstractMojo {
         else {
             getLog().info("Uploading " + functionCode + " to AWS S3 bucket "
                     + s3Bucket);
-            ObjectMetadata metadata = new ObjectMetadata();
             s3Client.putObject(s3Bucket, fileName, file);
             getLog().info("Upload complete");
         }
