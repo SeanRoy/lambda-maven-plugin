@@ -49,7 +49,6 @@ As of 7/20/2015, this has yet to be tested with NodeJs code.
 
 ### TODO
 * Allow upload of function code directly to AWS Lambda instead of using S3.
-* Add ability to update/delete functions.
 
 ### Developers
 If you are interested in contributing to this project, please note that current development can be found in the SNAPSHOT branch of the coming release.  When making pull requests, please create them against this branch.
