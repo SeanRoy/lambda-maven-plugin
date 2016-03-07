@@ -22,7 +22,7 @@ deployed to AWS lambda.</description>
       <aggregator>false</aggregator>
       <requiresOnline>false</requiresOnline>
       <inheritedByDefault>true</inheritedByDefault>
-      <implementation>com.github.seanroy.plugins.LambduhMojo</implementation>
+      <implementation>com.github.seanroy.plugins.DeployLambduhMojo</implementation>
       <language>java</language>
       <instantiationStrategy>per-lookup</instantiationStrategy>
       <executionStrategy>once-per-session</executionStrategy>
