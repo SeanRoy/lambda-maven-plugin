@@ -26,8 +26,12 @@ public class LambduhTest extends AbstractMojoTestCase {
         assertNotNull( pom );
         assertTrue( pom.exists() );
 
-        LambduhMojo myMojo = (LambduhMojo) lookupMojo( "deploy-lambda", pom );
-        assertNotNull( myMojo );
-        myMojo.execute();
+        LambduhMojo lambduhMojo = (LambduhMojo) lookupMojo( "deploy-lambda", pom );
+        assertNotNull( lambduhMojo );
+        lambduhMojo.execute();
+        
+        DeleteLambduhMojo deleteMojo = (DeleteLambduhMojo) lookupMojo( "delete-lambda", pom);
+        assertNotNull( deleteMojo );
+        deleteMojo.execute();
     }
 }

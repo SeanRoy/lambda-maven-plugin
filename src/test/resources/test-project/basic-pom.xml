@@ -36,7 +36,8 @@
             SNS Notifier of Region Events
           </description>
           <timeout>60</timeout>
-          <lambdaRoleArn></lambdaRoleArn>
+          <lambdaRoleArn>
+          </lambdaRoleArn>
         </configuration>
       </plugin>
     </plugins>

@@ -91,7 +91,9 @@ public class LambduhMojo extends AbstractMojo {
      * The entry point into the AWS lambda function.
      */
     public void execute() throws MojoExecutionException {
-        DefaultAWSCredentialsProviderChain defaultChain = new DefaultAWSCredentialsProviderChain();
+        DefaultAWSCredentialsProviderChain defaultChain = 
+                new DefaultAWSCredentialsProviderChain();
+        
         if (accessKey != null && secretKey != null) {
             credentials = new BasicAWSCredentials(accessKey, secretKey);
         }
@@ -100,8 +102,10 @@ public class LambduhMojo extends AbstractMojo {
             credentials = defaultChain.getCredentials();
         }
 
-        s3Client = (credentials==null)?new AmazonS3Client():new AmazonS3Client(credentials);
-        lambdaClient = (credentials==null)?new AWSLambdaClient():new AWSLambdaClient(credentials);
+        s3Client = (credentials==null) ?
+                new AmazonS3Client():new AmazonS3Client(credentials);
+        lambdaClient = (credentials==null) ?
+                new AWSLambdaClient():new AWSLambdaClient(credentials);
 
 
         region = Region.getRegion(Regions.fromName(regionName));
