@@ -37,7 +37,6 @@
           </description>
           <timeout>60</timeout>
           <lambdaRoleArn>
-	    arn:aws:iam::280237693431:role/Lambda_Region_Notification_Role
           </lambdaRoleArn>
         </configuration>
       </plugin>
