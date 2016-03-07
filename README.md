@@ -6,9 +6,10 @@ as a part of your usual Maven build process.
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambduh-maven-plugin`<br />
-`version:1.0.6`<br />
+`version:1.1.0`<br />
 
-`mvn lambduh:deploy-lambda`
+`mvn lambduh:deploy-lambda`  Deploy lambduh code
+`mvn lambduh:delete-lambda`  Delete lambduh code from Lambda and S3
 
 ### Configuration
 All of the AWS Lambda configuration parameters may be set within the lambduh plugin configuration or
@@ -83,3 +84,6 @@ please remember to add them to .gitignore.
 * Issue 19 Added test harness.
 * Update function code if code or configuration has changed instead of
 deleting and recreating every time.  Thanks Guillermo Menendez
+
+1.1.0
+* Added delete goal.
