@@ -222,8 +222,7 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
         }
         else {
             try {
-                s3Client.createBucket(s3Bucket,
-                        com.amazonaws.services.s3.model.Region.US_Standard);
+                s3Client.createBucket(s3Bucket, regionName);
                 getLog().info("Created bucket " + s3Bucket);
                 return s3Bucket;
             } catch (AmazonServiceException ase) {
