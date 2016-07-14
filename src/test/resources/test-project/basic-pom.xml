@@ -24,20 +24,23 @@
         <artifactId>lambduh-maven-plugin</artifactId>
         <configuration>
           <functionName>LAMBDUH-TEST</functionName>
-          <functionCode>
-            src/test/resources/test-project/lambduh-test-0.0.1-SNAPSHOT.jar
-          </functionCode>
+          <functionCode>src/test/resources/test-project/lambduh-test-0.0.1-SNAPSHOT.jar</functionCode>
           <handler>com.github.seanroy.lambduh_test.App::main</handler>
           <memorySize>512</memorySize>
-          <regionName>us-east-1</regionName>
+          <regionName>eu-west-1</regionName>
           <runtime>Java8</runtime>
-          <s3Bucket>lambda-function-code</s3Bucket>
-          <description>
-            SNS Notifier of Region Events
-          </description>
+          <s3Bucket>video-lambda-bucket</s3Bucket>
+          <description>SNS Notifier of Region Events</description>
           <timeout>60</timeout>
-          <lambdaRoleArn>
-          </lambdaRoleArn>
+          <lambdaRoleArn>arn:aws:iam::810385116814:role/JemRayfieldsLambdaExecutionRole</lambdaRoleArn>
+          <vpcSecurityGroupsIds>
+            <param>sg-8d16e3e2</param>
+          </vpcSecurityGroupsIds>
+          <vpcSubnetIds>
+            <param>subnet-3a252751</param>
+            <param>subnet-39252752</param>
+            <param>subnet-3b252750</param>
+          </vpcSubnetIds>
         </configuration>
       </plugin>
     </plugins>
