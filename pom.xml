@@ -1,15 +1,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.seanroy</groupId>
   <artifactId>lambduh-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
-  <version>1.1.1</version>
-  
+  <version>1.1.2</version>
+
   <name>lambduh-maven-plugin Maven Mojo</name>
   <description>A maven plugin that deploys functions to AWS Lambda</description>
   <url>http://maven.apache.org</url>
-  
+
   <licenses>
     <license>
       <name>Apache License, Version 2.0</name>
@@ -17,7 +17,7 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
-  
+
   <developers>
     <developer>
       <name>Sean N. Roy</name>
@@ -33,6 +33,10 @@
     </contributor>
     <contributor>
       <name>Guillermo Menendez</name>
+    </contributor>
+    <contributor>
+      <name>Jem Rayfield</name>
+      <email>jem.rayfield@ft.com</email>
     </contributor>
   </contributors>
 
@@ -91,12 +95,12 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-lambda</artifactId>
-      <version>1.10.45</version>
+      <version>1.11.15</version>
     </dependency>
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
-      <version>1.10.45</version>
+      <version>1.11.16</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -109,9 +113,9 @@
       <artifactId>commons-codec</artifactId>
       <version>1.10</version>
     </dependency>
-    
+
   </dependencies>
-  
+
   <distributionManagement>
     <snapshotRepository>
       <id>ossrh</id>
@@ -122,7 +126,7 @@
       <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
     </repository>
   </distributionManagement>
-  
+
   <build>
     <plugins>
       <plugin>
@@ -137,7 +141,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
-  	<executions>
+        <executions>
           <execution>
             <id>attach-sources</id>
             <goals>
@@ -161,15 +165,15 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-gpg-plugin</artifactId>
-	<executions>
-	  <execution>
-	    <id>sign-artifacts</id>
-	    <phase>verify</phase>
-	    <goals>
-	      <goal>sign</goal>
-	    </goals>
-	  </execution>
-	</executions>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.sonatype.plugins</groupId>
@@ -180,22 +184,22 @@
           <nexusUrl>https://oss.sonatype.org/</nexusUrl>
           <autoReleaseAfterClose>true</autoReleaseAfterClose>
           <keepStagingRepositoryOnFailure>false</keepStagingRepositoryOnFailure>
-         </configuration>
-       </plugin>
-       <plugin>
-         <groupId>org.apache.maven.plugins</groupId>
-         <artifactId>maven-plugin-plugin</artifactId>
-         <version>3.2</version>
-         <executions>
-           <execution>
-             <id>default-descriptor</id>
-             <goals>
-               <goal>descriptor</goal>
-             </goals>
-             <phase>process-classes</phase>
-           </execution>
-         </executions>
-       </plugin>
-     </plugins>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-plugin-plugin</artifactId>
+        <version>3.2</version>
+        <executions>
+          <execution>
+            <id>default-descriptor</id>
+            <goals>
+              <goal>descriptor</goal>
+            </goals>
+            <phase>process-classes</phase>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
 </project>

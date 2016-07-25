@@ -1,6 +1,7 @@
 package com.github.seanroy.plugins;
 
 import java.io.File;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.maven.plugin.AbstractMojo;
@@ -62,6 +63,12 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
 
     @Parameter(property = "memorySize", defaultValue = "128")
     protected int memorySize;
+
+    @Parameter(property = "vpcSecurityGroupsIds")
+    protected List<String> vpcSecurityGroupsIds;
+
+    @Parameter(property = "vpcSubnetIds")
+    protected List<String> vpcSubnetIds;
 
     protected String fileName;
     protected Region region;
