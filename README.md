@@ -28,6 +28,8 @@ ${project.build.directory}/${project.build.finalName}.${project.packaging}
 * `runtime` Defaults to Java8 Specifies whether this is Java8 or NodeJs code.
 * `timeout` Defaults to 60 seconds The amount of time in which the function is allowed to run.
 * `memorySize` Defaults to 128M NOTE: Please review the AWS Lambda documentation on this setting as it could have an impact on your billing.
+* `vpcSecurityGroupIds` OPTIONAL A list of one or more ids corresponding to the security groups protecting access to your AWS VPC.
+* `vpcSubnetIds` OPTIONAL A list of subnet ids within your AWS VPC.
 
 ### Credentials
 Your AWS credentials may be set on the command line or in the plugin configuration. If `accessKey` and
@@ -86,3 +88,6 @@ deleting and recreating every time.  Thanks Guillermo Menendez
 
 1.1.0
 * Added delete goal.
+
+1.1.1
+* Added support for Virtual Private Clouds. Thanks Jem Rayfield.
