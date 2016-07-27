@@ -89,5 +89,5 @@ deleting and recreating every time.  Thanks Guillermo Menendez
 1.1.0
 * Added delete goal.
 
-1.1.1
+1.1.1-SNAPSHOT (In development)
 * Added support for Virtual Private Clouds. Thanks Jem Rayfield.
