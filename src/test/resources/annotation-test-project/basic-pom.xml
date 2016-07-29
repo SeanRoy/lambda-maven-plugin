@@ -24,8 +24,7 @@
         <artifactId>lambduh-maven-plugin</artifactId>
         <configuration>
           <functionName>LAMBDUH-TEST</functionName>
-          <functionCode>src/test/resources/test-project/lambduh-test-0.0.1-SNAPSHOT.jar</functionCode>
-          <handler>com.github.seanroy.lambduh_test.App::main</handler>
+          <functionCode>src/test/resources/annotation-test-project/lambduh-test-0.0.1-SNAPSHOT.jar</functionCode>
           <memorySize>512</memorySize>
           <regionName>us-east-1</regionName>
           <runtime>Java8</runtime>

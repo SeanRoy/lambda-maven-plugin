@@ -8,7 +8,7 @@
 
   <name>lambduh-maven-plugin Maven Mojo</name>
   <description>A maven plugin that deploys functions to AWS Lambda</description>
-  <url>http://maven.apache.org</url>
+  <url>https://github.com/SeanRoy/lambduh-maven-plugin</url>
 
   <licenses>
     <license>
@@ -113,7 +113,16 @@
       <artifactId>commons-codec</artifactId>
       <version>1.10</version>
     </dependency>
-
+    <dependency>
+    	<groupId>de.juplo</groupId>
+    	<artifactId>scannotation</artifactId>
+    	<version>1.0.4</version>
+    </dependency>
+    <dependency>
+    	<groupId>com.github.seanroy</groupId>
+    	<artifactId>lambduh-maven-annotations</artifactId>
+    	<version>0.0.1-SNAPSHOT</version>
+    </dependency>
   </dependencies>
 
   <distributionManagement>
@@ -189,7 +198,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
-        <version>3.2</version>
+        <version>3.4</version>
         <executions>
           <execution>
             <id>default-descriptor</id>

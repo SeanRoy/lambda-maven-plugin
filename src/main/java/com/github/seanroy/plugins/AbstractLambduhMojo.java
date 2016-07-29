@@ -1,12 +1,22 @@
 package com.github.seanroy.plugins;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.scannotation.AnnotationDB;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -16,6 +26,7 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.lambda.AWSLambdaClient;
 import com.amazonaws.services.lambda.model.Runtime;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.github.seanroy.annotations.LambduhFunction;
 
 /**
  * Abstracts all common parameter handling and initiation of AWS service
@@ -49,7 +60,7 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
     @Parameter(property = "functionName", defaultValue = "${functionName}")
     protected String functionName;
 
-    @Parameter(required = true, defaultValue = "${handler}")
+    @Parameter(property = "handler", defaultValue = "${handler}")
     protected String handler;
 
     @Parameter(property = "runtime", defaultValue = "Java8")
@@ -77,6 +88,8 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
     protected AmazonS3Client s3Client;
     protected AWSLambdaClient lambdaClient;
     
+    protected List<LambduhFunctionContext> lambduhFunctionContexts = new ArrayList<LambduhFunctionContext>();
+    
     public void execute() throws MojoExecutionException {
         DefaultAWSCredentialsProviderChain defaultChain = 
                 new DefaultAWSCredentialsProviderChain();
@@ -100,6 +113,70 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
         String pattern = Pattern.quote(File.separator);
         String[] pieces = functionCode.split(pattern);
         fileName = pieces[pieces.length - 1];
-
+        
+        try {
+            if (handler == null || handler.isEmpty()) {
+                resolveFunctionsFromAnnotations();
+            } else {
+                if (functionName == null || functionName.isEmpty()) {
+                    throw new Exception(
+                      "<functionName> must be specified when <handler> is specified. " +
+                      "Please review your lambduh-maven-plugin configuration");
+                }
+                lambduhFunctionContexts.add(
+                        new LambduhFunctionContext(functionName, handler));
+            }
+        } catch (Exception e) {
+            getLog().error(e.getMessage());
+            throw new MojoExecutionException(e.getMessage());
+        }
+    }
+    
+    /**
+     * If the user has opted to use annotations to define the methods they wish to deploy,
+     * this method scans their jar file for LambduhFunction annotations and builds a list
+     * of LambduhFunctionContexts from what it finds.
+     */
+    private void resolveFunctionsFromAnnotations() {
+        try {
+            // Scan Jar for LambdaFunction annotations.
+            JarFile jarFile = new JarFile(functionCode);
+            URL [] urls = { new URL("jar:file:" + functionCode + "!/")};
+            AnnotationDB db = new AnnotationDB();
+            db.setScanMethodAnnotations(true);
+            getLog().info("Scanning " + functionCode + " for LambdaFunction annotations.");
+            db.scanArchives(urls);
+            Set<String> s = db.getAnnotationIndex().get(LambduhFunction.class.getName());
+            Iterator<String> iter = s.iterator();
+            
+            URLClassLoader classLoader = URLClassLoader.newInstance(urls);
+            
+            while(iter.hasNext()) {
+                String className = iter.next();
+                
+                try {
+                    Class c = classLoader.loadClass(className);
+                    Arrays.stream(c.getMethods()).forEach(method -> {
+                        LambduhFunction lambduhFunctionAnnotation = method.getAnnotation(LambduhFunction.class);
+                        
+                        if (lambduhFunctionAnnotation != null) {
+                            String functionNameOverride = lambduhFunctionAnnotation.functionName();
+                            String annotatedHandler = className + "::" + method.getName();
+                            
+                            lambduhFunctionContexts.add(
+                                    new LambduhFunctionContext(functionNameOverride, annotatedHandler));
+                        }
+                    });
+                } catch(ClassNotFoundException cnfe) {
+                    getLog().error("Unable to load class " + className + " for annotation scanning.");
+                    getLog().error(cnfe.getMessage());
+                    cnfe.printStackTrace();
+                }
+            }
+        } catch( MalformedURLException mfe ) {
+            mfe.printStackTrace();
+        } catch( IOException ioe ) {
+            ioe.printStackTrace();
+        }
     }
 }

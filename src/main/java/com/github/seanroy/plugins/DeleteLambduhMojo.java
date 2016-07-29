@@ -19,7 +19,13 @@ public class DeleteLambduhMojo extends AbstractLambduhMojo {
         super.execute();
         
         try {
-            deleteFunction();
+            lambduhFunctionContexts.forEach(context -> {
+                try {
+                    deleteFunction(context.getFunctionName());
+                } catch( Exception e ) {
+                    getLog().error(e.getMessage());
+                }
+            });
         } catch ( Exception e ) {
             getLog().error(e.getMessage(), e);
         }
@@ -34,13 +40,13 @@ public class DeleteLambduhMojo extends AbstractLambduhMojo {
      * TODO: prefer the first option.
      * @throws Exception
      */
-    private void deleteFunction() throws Exception {
+    private void deleteFunction(String functionNameOverride) throws Exception {
         // Delete Lambda Function
         DeleteFunctionRequest dfr = new DeleteFunctionRequest()
-        .withFunctionName(functionName);
+        .withFunctionName(functionNameOverride);
         
         lambdaClient.deleteFunction(dfr);
-        getLog().info("Lambda function " + functionName + " successfully deleted.");
+        getLog().info("Lambda function " + functionNameOverride + " successfully deleted.");
         
         s3Client.deleteObject(s3Bucket, fileName);
         getLog().info("Lambda function code successfully removed from S3.");

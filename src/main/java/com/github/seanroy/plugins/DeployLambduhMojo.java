@@ -7,17 +7,41 @@ package com.github.seanroy.plugins;
  */
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Optional;
+import java.util.Set;
+import java.util.jar.JarFile;
 
-import com.amazonaws.services.lambda.model.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.HttpStatus;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.scannotation.AnnotationDB;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.services.lambda.model.CreateFunctionRequest;
+import com.amazonaws.services.lambda.model.CreateFunctionResult;
+import com.amazonaws.services.lambda.model.FunctionCode;
+import com.amazonaws.services.lambda.model.FunctionConfiguration;
+import com.amazonaws.services.lambda.model.GetFunctionRequest;
+import com.amazonaws.services.lambda.model.GetFunctionResult;
+import com.amazonaws.services.lambda.model.ResourceNotFoundException;
+import com.amazonaws.services.lambda.model.UpdateFunctionCodeRequest;
+import com.amazonaws.services.lambda.model.UpdateFunctionCodeResult;
+import com.amazonaws.services.lambda.model.UpdateFunctionConfigurationRequest;
+import com.amazonaws.services.lambda.model.UpdateFunctionConfigurationResult;
+import com.amazonaws.services.lambda.model.VpcConfig;
 import com.amazonaws.services.s3.model.HeadBucketRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.github.seanroy.annotations.LambduhFunction;
+
 
 @Mojo(name = "deploy-lambda")
 public class DeployLambduhMojo extends AbstractLambduhMojo {
@@ -29,9 +53,13 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
 
         try {
             uploadJarToS3();
-            deployLambdaFunction();
+            
+            lambduhFunctionContexts.forEach( 
+                    context -> deployLambdaFunction(context));
+                                                    
         } catch (Exception e) {
-            getLog().error(e.getMessage(), e);
+            getLog().error(e.getMessage());
+            throw new MojoExecutionException(e.getMessage());
         }
     }
 
@@ -43,9 +71,9 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
      *
      * @return A GetFunctionResult containing the returned function info.
      */
-    private GetFunctionResult getFunction() {
+    private GetFunctionResult getFunction(LambduhFunctionContext context) {
         GetFunctionRequest getFunctionRequest = new GetFunctionRequest();
-        getFunctionRequest.setFunctionName(functionName);
+        getFunctionRequest.setFunctionName(context.getFunctionName());
 
         return lambdaClient.getFunction(getFunctionRequest);
     }
@@ -57,12 +85,12 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
      * @return A CreateFunctionResult indicating the success or failure of the
      *         request.
      */
-    private CreateFunctionResult createFunction() {
+    private CreateFunctionResult createFunction(LambduhFunctionContext context) {
         CreateFunctionRequest createFunctionRequest = new CreateFunctionRequest();
         createFunctionRequest.setDescription(description);
         createFunctionRequest.setRole(lambdaRoleArn);
-        createFunctionRequest.setFunctionName(functionName);
-        createFunctionRequest.setHandler(handler);
+        createFunctionRequest.setFunctionName(context.getFunctionName());
+        createFunctionRequest.setHandler(context.getHandlerName());
         createFunctionRequest.setRuntime(runtime);
         createFunctionRequest.setTimeout(timeout);
         createFunctionRequest.setMemorySize(memorySize);
@@ -95,11 +123,11 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
      * @return An UpdateFunctionResult indicating the success or failure of the
      *         request.
      */
-    private UpdateFunctionCodeResult updateFunctionCode() {
+    private UpdateFunctionCodeResult updateFunctionCode(LambduhFunctionContext context) {
         UpdateFunctionCodeRequest updateFunctionRequest = new UpdateFunctionCodeRequest();
         updateFunctionRequest.setS3Bucket(s3Bucket);
         updateFunctionRequest.setS3Key(fileName);
-        updateFunctionRequest.setFunctionName(functionName);
+        updateFunctionRequest.setFunctionName(context.getFunctionName());
         updateFunctionRequest.setPublish(Boolean.TRUE);
 
         return lambdaClient.updateFunctionCode(updateFunctionRequest);
@@ -112,12 +140,12 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
      * @return An UpdateFunctionConfigurationResult indicating the success or failure of the
      *         request.
      */
-    private UpdateFunctionConfigurationResult updateFunctionConfig() {
+    private UpdateFunctionConfigurationResult updateFunctionConfig(LambduhFunctionContext context) {
         UpdateFunctionConfigurationRequest updateFunctionRequest = new UpdateFunctionConfigurationRequest();
         updateFunctionRequest.setDescription(description);
         updateFunctionRequest.setRole(lambdaRoleArn);
-        updateFunctionRequest.setFunctionName(functionName);
-        updateFunctionRequest.setHandler(handler);
+        updateFunctionRequest.setFunctionName(context.getFunctionName());
+        updateFunctionRequest.setHandler(context.getHandlerName());
         updateFunctionRequest.setTimeout(timeout);
         updateFunctionRequest.setMemorySize(memorySize);
         updateFunctionRequest.setVpcConfig(getVpcConfig());
@@ -146,28 +174,27 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
     }
 
     /**
-     * Attempts to delete an existing function of the same name then deploys the
+     * Attempts to update an existing function of the same name then deploys the
      * function code to AWS Lambda.
      */
-    private void deployLambdaFunction() {
+    private void deployLambdaFunction(LambduhFunctionContext context) {
         try {
             // Get function, update if exists
             try {
-                GetFunctionResult function = getFunction();
+                GetFunctionResult function = getFunction(context);
                 if (function != null) {
-
                     // update config if changed
-                    if (hasFunctionConfigChanged(function))
-                        updateFunctionConfig();
-
+                    if (hasFunctionConfigChanged(function)) {
+                        updateFunctionConfig(context);
+                    }
+                    
                     // update code
-                    UpdateFunctionCodeResult result = updateFunctionCode();
+                    UpdateFunctionCodeResult result = updateFunctionCode(context);
                     getLog().info("Function updated and deployed: " + result.getFunctionArn());
                 }
             } catch (ResourceNotFoundException notFound) {
-
                 // create if function doesn't exist
-                CreateFunctionResult result = createFunction();
+                CreateFunctionResult result = createFunction(context);
                 getLog().info("Function created and deployed: " + result.getFunctionArn());
             }
         } catch (Exception ex) {
