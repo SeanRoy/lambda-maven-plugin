@@ -92,3 +92,4 @@ deleting and recreating every time.  Thanks Guillermo Menendez
 
 1.1.1-SNAPSHOT (In development)
 * Added support for Virtual Private Clouds. Thanks Jem Rayfield.
+* Added ability to designate functions for deployment via LambduhFunction annotations. (Details coming soon).
