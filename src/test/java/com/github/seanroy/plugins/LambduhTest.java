@@ -18,11 +18,25 @@ public class LambduhTest extends AbstractMojoTestCase {
     {
         super.tearDown();
     }
-    
-    
+     
     @Test
     public void testBasic() throws Exception {
         File pom = getTestFile("src/test/resources/test-project/basic-pom.xml");
+        assertNotNull( pom );
+        assertTrue( pom.exists() );
+
+        DeployLambduhMojo lambduhMojo = (DeployLambduhMojo) lookupMojo( "deploy-lambda", pom );
+        assertNotNull( lambduhMojo );
+        lambduhMojo.execute();
+        
+        DeleteLambduhMojo deleteMojo = (DeleteLambduhMojo) lookupMojo( "delete-lambda", pom);
+        assertNotNull( deleteMojo );
+        deleteMojo.execute();
+    }
+    
+    @Test
+    public void testAnnotatedFunctions() throws Exception {
+        File pom = getTestFile("src/test/resources/annotation-test-project/basic-pom.xml");
         assertNotNull( pom );
         assertTrue( pom.exists() );
 
