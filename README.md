@@ -8,8 +8,8 @@ as a part of your usual Maven build process.
 `artifact id: lambduh-maven-plugin`<br />
 `version:1.1.1`<br />
 
-`mvn lambduh:deploy-lambda`  Deploy lambda code<br />
-`mvn lambduh:delete-lambda`  Delete lambda code from Lambda and S3<br />
+`mvn lambduh:deploy-lambda`  Deploy lambda code <br />
+`mvn lambduh:delete-lambda`  Delete lambda code from Lambda and S3 <br />
 
 ### Configuration
 All of the AWS Lambda configuration parameters may be set within the lambduh plugin configuration or
