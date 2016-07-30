@@ -3,13 +3,10 @@
 The lambduh Maven plugin allows you to deploy your [AWS Lambda](http://aws.amazon.com/lambda/) functions
 as a part of your usual Maven build process.
 
-Note: This README relates to the current snapshot of lambduh-maven-plugin.  To read the README of the
-current stable release, please visit [README](https://github.com/SeanRoy/lambduh-maven-plugin/tree/master).
-
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambduh-maven-plugin`<br />
-`version:1.1.0`<br />
+`version:1.1.1`<br />
 
 `mvn lambduh:deploy-lambda`  Deploy lambda code<br />
 `mvn lambduh:delete-lambda`  Delete lambda code from Lambda and S3<br />
@@ -128,6 +125,6 @@ deleting and recreating every time.  Thanks Guillermo Menendez
 1.1.0
 * Added delete goal.
 
-1.1.1-SNAPSHOT (In development)
+1.1.1
 * Added support for Virtual Private Clouds. Thanks Jem Rayfield.
 * Added ability to designate functions for deployment via LambduhFunction annotations. (Details coming soon).
