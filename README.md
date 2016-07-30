@@ -3,6 +3,9 @@
 The lambduh Maven plugin allows you to deploy your [AWS Lambda](http://aws.amazon.com/lambda/) functions
 as a part of your usual Maven build process.
 
+Note: This README relates to the current snapshot of lambduh-maven-plugin.  To read the README of the
+current stable release, please visit [README](https://github.com/SeanRoy/lambduh-maven-plugin/tree/master).
+
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambduh-maven-plugin`<br />
