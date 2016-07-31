@@ -35,7 +35,7 @@ Annotations may also be used to specify which of your functions are to be deploy
 if you have multiple functions in the same project jar file to deploy.  In the future I hope to add more configuration parameters to
 the annotation to allow each method's configuration to be completely independent of the others.
 
-To use Annotations, add the following dependency to your project pom.xml:
+To use Annotations, add the following dependency to your project pom.xml:<br />
 `group id: com.github.seanroy`<br />
 `artifact id: lambduh-maven-annotations`<br />
 `version:1.0.0`<br />
