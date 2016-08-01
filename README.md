@@ -128,3 +128,6 @@ deleting and recreating every time.  Thanks Guillermo Menendez
 1.1.1
 * Added support for Virtual Private Clouds. Thanks Jem Rayfield.
 * Added ability to designate functions for deployment via LambduhFunction annotations. (Details coming soon).
+
+1.1.2
+* Fixed invalid dependency to lambduh-maven-annotations
