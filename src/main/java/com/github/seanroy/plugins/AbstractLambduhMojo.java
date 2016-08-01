@@ -24,9 +24,12 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.lambda.AWSLambdaClient;
+import com.amazonaws.services.lambda.model.CreateEventSourceMappingRequest;
 import com.amazonaws.services.lambda.model.Runtime;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.github.seanroy.annotations.LambduhEventSource;
 import com.github.seanroy.annotations.LambduhFunction;
+
 
 /**
  * Abstracts all common parameter handling and initiation of AWS service
@@ -165,6 +168,17 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
                             
                             lambduhFunctionContexts.add(
                                     new LambduhFunctionContext(functionNameOverride, annotatedHandler));
+                            
+                            LambduhEventSource eventSourceAnnotation = method.getAnnotation(LambduhEventSource.class);
+                            
+                            if ( eventSourceAnnotation != null) {
+                                CreateEventSourceMappingRequest request = new CreateEventSourceMappingRequest()
+                                    .withBatchSize(eventSourceAnnotation.batchSize())
+                                    .withEnabled(eventSourceAnnotation.enabled())
+                                    .withEventSourceArn(eventSourceAnnotation.eventSourceArn())
+                                    .withFunctionName(lambduhFunctionAnnotation.functionName())
+                                    .withStartingPosition(eventSourceAnnotation.startingPosition());
+                            }
                         }
                     });
                 } catch(ClassNotFoundException cnfe) {
