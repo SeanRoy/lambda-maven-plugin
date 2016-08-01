@@ -16,6 +16,11 @@
       <version>3.8.1</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.github.seanroy</groupId>
+      <artifactId>lambduh-maven-annotations</artifactId>
+      <version>1.0.0</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -32,7 +37,7 @@
           <s3Bucket>lambda-function-code</s3Bucket>
           <description>SNS Notifier of Region Events</description>
           <timeout>60</timeout>
-          <lambdaRoleArn>INSERT YOUR LAMBDA ROLE ARN HERE</lambdaRoleArn>
+          <lambdaRoleArn>Put your arn here</lambdaRoleArn>
         </configuration>
       </plugin>
     </plugins>

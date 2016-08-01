@@ -87,11 +87,11 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
      */
     private CreateFunctionResult createFunction(LambduhFunctionContext context) {
         CreateFunctionRequest createFunctionRequest = new CreateFunctionRequest();
-        createFunctionRequest.setDescription(description);
+        createFunctionRequest.setDescription(context.getDescription());
         createFunctionRequest.setRole(lambdaRoleArn);
         createFunctionRequest.setFunctionName(context.getFunctionName());
         createFunctionRequest.setHandler(context.getHandlerName());
-        createFunctionRequest.setRuntime(runtime);
+        createFunctionRequest.setRuntime(context.getRuntime());
         createFunctionRequest.setTimeout(timeout);
         createFunctionRequest.setMemorySize(memorySize);
         createFunctionRequest.setVpcConfig(getVpcConfig());
