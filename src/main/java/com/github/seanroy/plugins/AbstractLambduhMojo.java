@@ -2,6 +2,9 @@ package com.github.seanroy.plugins;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -24,8 +27,11 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.lambda.AWSLambdaClient;
+<<<<<<< HEAD
 import com.amazonaws.services.lambda.model.CreateEventSourceMappingRequest;
 import com.amazonaws.services.lambda.model.Runtime;
+=======
+>>>>>>> bf413dd4b4a615e471a2348fec5abea405eb67b0
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.github.seanroy.annotations.LambduhEventSource;
 import com.github.seanroy.annotations.LambduhFunction;
@@ -67,7 +73,7 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
     protected String handler;
 
     @Parameter(property = "runtime", defaultValue = "Java8")
-    protected Runtime runtime;
+    protected String runtime;
 
     /**
      * Lambda function execution timeout. Defaults to maximum allowed.
@@ -127,7 +133,7 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
                       "Please review your lambduh-maven-plugin configuration");
                 }
                 lambduhFunctionContexts.add(
-                        new LambduhFunctionContext(functionName, handler));
+                        new LambduhFunctionContext(functionName, description, runtime, handler));
             }
         } catch (Exception e) {
             getLog().error(e.getMessage());
@@ -140,7 +146,7 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
      * this method scans their jar file for LambduhFunction annotations and builds a list
      * of LambduhFunctionContexts from what it finds.
      */
-    private void resolveFunctionsFromAnnotations() {
+    private void resolveFunctionsFromAnnotations() throws Exception {
         try {
             // Scan Jar for LambdaFunction annotations.
             JarFile jarFile = new JarFile(functionCode);
@@ -153,39 +159,60 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
             Iterator<String> iter = s.iterator();
             
             URLClassLoader classLoader = URLClassLoader.newInstance(urls);
+            Class loadedLambduhFunction = classLoader.loadClass(LambduhFunction.class.getName());
             
+            // This invocation handler mess is necessary in order to properly load annotations in jars
+            // shaded by the maven shade plugin.  Review this code in the future to see if there's a
+            // simpler way of doing this.
             while(iter.hasNext()) {
                 String className = iter.next();
                 
+                getLog().info("\tScanning " + className);
+                
                 try {
                     Class c = classLoader.loadClass(className);
-                    Arrays.stream(c.getMethods()).forEach(method -> {
-                        LambduhFunction lambduhFunctionAnnotation = method.getAnnotation(LambduhFunction.class);
+                    
+                    Arrays.stream(c.getMethods()).forEach(method -> {                          
+                        Annotation lambduhFunctionAnnotation = method.getAnnotation(loadedLambduhFunction);
                         
                         if (lambduhFunctionAnnotation != null) {
-                            String functionNameOverride = lambduhFunctionAnnotation.functionName();
-                            String annotatedHandler = className + "::" + method.getName();
+                            InvocationHandler lambduhFunctionInvocationHandler = 
+                                    Proxy.getInvocationHandler(lambduhFunctionAnnotation);
                             
-                            lambduhFunctionContexts.add(
-                                    new LambduhFunctionContext(functionNameOverride, annotatedHandler));
-                            
-                            LambduhEventSource eventSourceAnnotation = method.getAnnotation(LambduhEventSource.class);
-                            
-                            if ( eventSourceAnnotation != null) {
-                                CreateEventSourceMappingRequest request = new CreateEventSourceMappingRequest()
-                                    .withBatchSize(eventSourceAnnotation.batchSize())
-                                    .withEnabled(eventSourceAnnotation.enabled())
-                                    .withEventSourceArn(eventSourceAnnotation.eventSourceArn())
-                                    .withFunctionName(lambduhFunctionAnnotation.functionName())
-                                    .withStartingPosition(eventSourceAnnotation.startingPosition());
+                            try {
+                                String functionNameOverride = (String) 
+                                        lambduhFunctionInvocationHandler.invoke(lambduhFunctionAnnotation, 
+                                                    LambduhFunction.class.getMethod("functionName"), null);
+                                String description = (String) 
+                                        lambduhFunctionInvocationHandler.invoke(lambduhFunctionAnnotation, 
+                                                    LambduhFunction.class.getMethod("description"), null);
+                                String runtime = (String) 
+                                        lambduhFunctionInvocationHandler.invoke(lambduhFunctionAnnotation, 
+                                                    LambduhFunction.class.getMethod("runtime"), null);
+                                
+                                String annotatedHandler = className + "::" + method.getName();
+                                
+                                getLog().info("\tFound annotated method " + method.getName());
+                                
+                                lambduhFunctionContexts.add(
+                                        new LambduhFunctionContext(functionNameOverride, 
+                                                description,
+                                                runtime,
+                                                annotatedHandler));
+                            } catch (Throwable t) {
+                                t.printStackTrace();
                             }
                         }
                     });
+                    
+                    if ( lambduhFunctionContexts.isEmpty() ) {
+                        getLog().error("Could not find any LambduhFunction annotations in your code!");
+                    }
                 } catch(ClassNotFoundException cnfe) {
                     getLog().error("Unable to load class " + className + " for annotation scanning.");
                     getLog().error(cnfe.getMessage());
                     cnfe.printStackTrace();
-                }
+                } 
             }
         } catch( MalformedURLException mfe ) {
             mfe.printStackTrace();

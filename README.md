@@ -133,3 +133,6 @@ deleting and recreating every time.  Thanks Guillermo Menendez
 
 1.1.2
 * Fixed invalid dependency to lambduh-maven-annotations
+
+1.1.3
+* Fixed [Issue 28] (https://github.com/SeanRoy/lambduh-maven-plugin/issues/28) 
