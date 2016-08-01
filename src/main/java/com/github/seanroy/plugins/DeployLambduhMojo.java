@@ -54,6 +54,7 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
         try {
             uploadJarToS3();
             
+            System.err.println("FOUND " + lambduhFunctionContexts.size() + " contexts");
             lambduhFunctionContexts.forEach( 
                     context -> deployLambdaFunction(context));
                                                     
@@ -87,11 +88,11 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
      */
     private CreateFunctionResult createFunction(LambduhFunctionContext context) {
         CreateFunctionRequest createFunctionRequest = new CreateFunctionRequest();
-        createFunctionRequest.setDescription(description);
+        createFunctionRequest.setDescription(context.getDescription());
         createFunctionRequest.setRole(lambdaRoleArn);
         createFunctionRequest.setFunctionName(context.getFunctionName());
         createFunctionRequest.setHandler(context.getHandlerName());
-        createFunctionRequest.setRuntime(runtime);
+        createFunctionRequest.setRuntime(context.getRuntime());
         createFunctionRequest.setTimeout(timeout);
         createFunctionRequest.setMemorySize(memorySize);
         createFunctionRequest.setVpcConfig(getVpcConfig());
