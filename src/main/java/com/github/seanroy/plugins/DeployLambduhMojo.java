@@ -54,7 +54,6 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
         try {
             uploadJarToS3();
             
-            System.err.println("FOUND " + lambduhFunctionContexts.size() + " contexts");
             lambduhFunctionContexts.forEach( 
                     context -> deployLambdaFunction(context));
                                                     
