@@ -1,6 +1,7 @@
 package com.github.seanroy.plugins;
 
-import com.amazonaws.services.lambda.model.CreateEventSourceMappingRequest;
+import com.amazonaws.services.lambda.model.CreateEventSourceMappingRequest; 
+import com.amazonaws.services.lambda.model.Runtime;
 
 import com.amazonaws.services.lambda.model.Runtime;
 

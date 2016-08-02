@@ -27,11 +27,8 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.lambda.AWSLambdaClient;
-<<<<<<< HEAD
 import com.amazonaws.services.lambda.model.CreateEventSourceMappingRequest;
 import com.amazonaws.services.lambda.model.Runtime;
-=======
->>>>>>> bf413dd4b4a615e471a2348fec5abea405eb67b0
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.github.seanroy.annotations.LambduhEventSource;
 import com.github.seanroy.annotations.LambduhFunction;
@@ -160,6 +157,7 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
             
             URLClassLoader classLoader = URLClassLoader.newInstance(urls);
             Class loadedLambduhFunction = classLoader.loadClass(LambduhFunction.class.getName());
+            Class loadedLambduhEventSource = classLoader.loadClass(LambduhEventSource.class.getName());
             
             // This invocation handler mess is necessary in order to properly load annotations in jars
             // shaded by the maven shade plugin.  Review this code in the future to see if there's a
@@ -199,6 +197,28 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
                                                 description,
                                                 runtime,
                                                 annotatedHandler));
+                                
+                                Annotation eventSourceAnnotation = method.getAnnotation(loadedLambduhEventSource);
+                                
+                                if ( eventSourceAnnotation != null) {
+                                    InvocationHandler lambduhEventSourceInvocationHandler =
+                                            Proxy.getInvocationHandler(eventSourceAnnotation);
+                                    int batchSize = (int) lambduhEventSourceInvocationHandler.invoke(eventSourceAnnotation, 
+                                            LambduhEventSource.class.getMethod("batchSize"), null);
+                                    boolean enabled = (boolean) lambduhEventSourceInvocationHandler.invoke(eventSourceAnnotation, 
+                                            LambduhEventSource.class.getMethod("enabled"), null);                   
+                                    String eventSourceArn = (String) lambduhEventSourceInvocationHandler.invoke(eventSourceAnnotation, 
+                                            LambduhEventSource.class.getMethod("eventSourceArn"), null);
+                                    String startingPosition = (String) lambduhEventSourceInvocationHandler.invoke(eventSourceAnnotation, 
+                                            LambduhEventSource.class.getMethod("startingPosition"), null);
+                                    
+                                    CreateEventSourceMappingRequest request = new CreateEventSourceMappingRequest()
+                                        .withBatchSize(batchSize)
+                                        .withEnabled(enabled)
+                                        .withEventSourceArn(eventSourceArn)
+                                        .withFunctionName(functionNameOverride)
+                                        .withStartingPosition(startingPosition);
+                                }
                             } catch (Throwable t) {
                                 t.printStackTrace();
                             }
