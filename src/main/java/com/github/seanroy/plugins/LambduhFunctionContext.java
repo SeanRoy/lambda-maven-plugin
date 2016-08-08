@@ -8,8 +8,9 @@ public class LambduhFunctionContext {
     private Runtime runtime;
     private String handlerName;
     
-    public LambduhFunctionContext(String functionName, String description, String runtime, String handlerName) {
-        this.functionName = functionName;
+    public LambduhFunctionContext(String functionName, String suffix, String description, 
+                                  String runtime, String handlerName) {
+        this.functionName = functionName + suffix;
         this.handlerName = handlerName;
         this.description = description;
         setRuntime(runtime);
