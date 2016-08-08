@@ -21,9 +21,9 @@ on the Maven command line using the -D directive.
 * `handler` REQUIRED if not using Annotations. The entry point method of your function. ex. com.example.mycode.MyClass::codeHandler.
 * `functionName` REQUIRED if not using Annotations. REQUIRED if handler specified. The name of your function.
 * `functionCode` REQUIRED The location of your deliverable. For instance, a jar file for a Java8 lambda function.
+${project.build.directory}/${project.build.finalName}.${project.packaging}
 * `functionNameSuffix` OPTIONAL A suffix to add to the end of all of your function names.  This is useful for when you
 want to deploy multiple instances or versions of your function corresponding to different environments.
-${project.build.directory}/${project.build.finalName}.${project.packaging}
 * `description` A brief description of what your function does.
 * `s3Bucket` Defaults to lambda-function-code. The AWS S3 bucket to which to upload your code from which it will be deployed to Lambda.
 * `lambdaRoleArn` REQUIRED The ARN of the AWS role which the lambda user will assume when it executes.
