@@ -68,6 +68,12 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
 
     @Parameter(property = "runtime", defaultValue = "Java8")
     protected String runtime;
+<<<<<<< HEAD
+=======
+    
+    @Parameter(property = "functionNameSuffix", defaultValue = "SUFFIX")
+    protected String functionNameSuffix;
+>>>>>>> master
 
     /**
      * Lambda function execution timeout. Defaults to maximum allowed.
@@ -104,6 +110,9 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
         {
             credentials = defaultChain.getCredentials();
         }
+        
+        functionNameSuffix = functionNameSuffix == null ? "" : functionNameSuffix;
+        description = description == null ? "" : description;
     
         s3Client = (credentials==null) ? 
                 new AmazonS3Client():new AmazonS3Client(credentials);

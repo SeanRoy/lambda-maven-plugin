@@ -8,7 +8,7 @@ as a part of your usual Maven build process.
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambduh-maven-plugin`<br />
-`version:1.1.4`<br />
+`version:1.1.5`<br />
 
 `mvn lambduh:deploy-lambda`  Deploy lambda code <br />
 `mvn lambduh:delete-lambda`  Delete lambda code from Lambda and S3 <br />
@@ -141,3 +141,7 @@ deleting and recreating every time.  Thanks Guillermo Menendez
 
 1.1.4
 * Added functionNameSuffix optional property.
+
+1.1.5
+* Fixed bug where default value of functionNameSuffix evaluating to null instead of a blank string.
+
