@@ -69,7 +69,7 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
     @Parameter(property = "runtime", defaultValue = "Java8")
     protected String runtime;
     
-    @Parameter(property = "functionNameSuffix", defaultValue = "SUFFIX")
+    @Parameter(property = "functionNameSuffix", defaultValue = "")
     protected String functionNameSuffix;
 
     /**
