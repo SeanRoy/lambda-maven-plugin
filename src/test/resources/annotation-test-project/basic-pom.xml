@@ -33,11 +33,7 @@
           <regionName>us-east-1</regionName>
           <s3Bucket>lambda-function-code</s3Bucket>
           <timeout>60</timeout>
-<<<<<<< Updated upstream
-          <lambdaRoleArn>Put your ARN here</lambdaRoleArn>
-=======
           <lambdaRoleArn>arn:aws:iam::280237693431:role/lambda_basic_execution</lambdaRoleArn>
->>>>>>> Stashed changes
         </configuration>
       </plugin>
     </plugins>

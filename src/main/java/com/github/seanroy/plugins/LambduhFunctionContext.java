@@ -12,48 +12,50 @@ public class LambduhFunctionContext {
     private String handlerName;
     private CreateEventSourceMappingRequest createEventSourceMappingRequest;
     
-    public LambduhFunctionContext(String functionName, String description, String runtime, String handlerName) {
-        this.functionName = functionName;
-        this.handlerName = handlerName;
-        this.description = description;
-        setRuntime(runtime);
+    public LambduhFunctionContext() {
     }
     
     public CreateEventSourceMappingRequest getCreateEventSourceMappingRequest() {
         return createEventSourceMappingRequest;
     }
 
-    public void setCreateEventSourceMappingRequest(
+    public LambduhFunctionContext withCreateEventSourceMappingRequest(
             CreateEventSourceMappingRequest createEventSourceMappingRequest) {
         this.createEventSourceMappingRequest = createEventSourceMappingRequest;
+        
+        return this;
     }
 
     public String getFunctionName() {
         return functionName;
     }
-    public void setFunctionName(String functionName) {
-        this.functionName = functionName;
+    public LambduhFunctionContext withFunctionName(String functionName) {
+        this.functionName = functionName;    
+        return this;
     }
     public String getHandlerName() {
         return handlerName;
     }
-    public void setHandlerName(String handlerName) {
+    public LambduhFunctionContext withHandlerName(String handlerName) {
         this.handlerName = handlerName;
+        return this;
     }
 
     public String getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
+    public LambduhFunctionContext withDescription(String description) {
         this.description = description;
+        return this;
     }
 
     public Runtime getRuntime() {
         return runtime;
     }
 
-    public void setRuntime(String runtime) {
+    public LambduhFunctionContext withRuntime(String runtime) {
         this.runtime = Runtime.fromValue(runtime.toLowerCase());
+        return this;
     }
 }

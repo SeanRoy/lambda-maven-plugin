@@ -7,25 +7,16 @@ package com.github.seanroy.plugins;
  */
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Optional;
-import java.util.Set;
-import java.util.jar.JarFile;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.HttpStatus;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
-import org.scannotation.AnnotationDB;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.services.lambda.model.CreateEventSourceMappingRequest;
+import com.amazonaws.services.lambda.model.CreateEventSourceMappingResult;
 import com.amazonaws.services.lambda.model.CreateFunctionRequest;
 import com.amazonaws.services.lambda.model.CreateFunctionResult;
 import com.amazonaws.services.lambda.model.FunctionCode;
@@ -40,7 +31,6 @@ import com.amazonaws.services.lambda.model.UpdateFunctionConfigurationResult;
 import com.amazonaws.services.lambda.model.VpcConfig;
 import com.amazonaws.services.s3.model.HeadBucketRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.github.seanroy.annotations.LambduhFunction;
 
 
 @Mojo(name = "deploy-lambda")
@@ -100,8 +90,21 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
         functionCode.setS3Bucket(s3Bucket);
         functionCode.setS3Key(fileName);
         createFunctionRequest.setCode(functionCode);
+        
+        CreateFunctionResult result = lambdaClient.createFunction(createFunctionRequest);
+        
+        CreateEventSourceMappingRequest req = context.getCreateEventSourceMappingRequest();
+        if (req != null) {
+            CreateEventSourceMappingResult createEventSourceMappingResult = 
+                    lambdaClient.createEventSourceMapping(req);
+            
+            getLog().info(createEventSourceMappingResult.getState());
+            getLog().info(createEventSourceMappingResult.getUUID());
+        } else {
+            getLog().info("NO EVENT SOURCE MAPPINGS FOUND");
+        }
 
-        return lambdaClient.createFunction(createFunctionRequest);
+        return result;
     }
 
     /**

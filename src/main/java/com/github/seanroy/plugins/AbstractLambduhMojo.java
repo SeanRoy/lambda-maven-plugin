@@ -28,7 +28,7 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.lambda.AWSLambdaClient;
 import com.amazonaws.services.lambda.model.CreateEventSourceMappingRequest;
-import com.amazonaws.services.lambda.model.Runtime;
+import com.amazonaws.services.lambda.model.EventSourcePosition;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.github.seanroy.annotations.LambduhEventSource;
 import com.github.seanroy.annotations.LambduhFunction;
@@ -130,7 +130,11 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
                       "Please review your lambduh-maven-plugin configuration");
                 }
                 lambduhFunctionContexts.add(
-                        new LambduhFunctionContext(functionName, description, runtime, handler));
+                        new LambduhFunctionContext()
+                            .withFunctionName(functionName)
+                            .withDescription(description)
+                            .withRuntime(runtime)
+                            .withHandlerName(handler));
             }
         } catch (Exception e) {
             getLog().error(e.getMessage());
@@ -188,17 +192,21 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
                                         lambduhFunctionInvocationHandler.invoke(lambduhFunctionAnnotation, 
                                                     LambduhFunction.class.getMethod("runtime"), null);
                                 
+                                Annotation eventSourceAnnotation = (Annotation)
+                                        lambduhFunctionInvocationHandler.invoke(lambduhFunctionAnnotation,
+                                                    LambduhFunction.class.getMethod("eventSource"), null);
+                                
                                 String annotatedHandler = className + "::" + method.getName();
                                 
                                 getLog().info("\tFound annotated method " + method.getName());
                                 
-                                lambduhFunctionContexts.add(
-                                        new LambduhFunctionContext(functionNameOverride, 
-                                                description,
-                                                runtime,
-                                                annotatedHandler));
+                                LambduhFunctionContext lambduhFunctionContext = new LambduhFunctionContext()
+                                    .withDescription(description)
+                                    .withRuntime(runtime)
+                                    .withFunctionName(functionNameOverride)
+                                    .withHandlerName(annotatedHandler);
                                 
-                                Annotation eventSourceAnnotation = method.getAnnotation(loadedLambduhEventSource);
+                                //Annotation eventSourceAnnotation = method.getAnnotation(loadedLambduhEventSource);
                                 
                                 if ( eventSourceAnnotation != null) {
                                     InvocationHandler lambduhEventSourceInvocationHandler =
@@ -212,13 +220,19 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
                                     String startingPosition = (String) lambduhEventSourceInvocationHandler.invoke(eventSourceAnnotation, 
                                             LambduhEventSource.class.getMethod("startingPosition"), null);
                                     
-                                    CreateEventSourceMappingRequest request = new CreateEventSourceMappingRequest()
-                                        .withBatchSize(batchSize)
-                                        .withEnabled(enabled)
-                                        .withEventSourceArn(eventSourceArn)
-                                        .withFunctionName(functionNameOverride)
-                                        .withStartingPosition(startingPosition);
+                                    if ( ! eventSourceArn.isEmpty() ) {
+                                        CreateEventSourceMappingRequest request = new CreateEventSourceMappingRequest()
+                                            .withBatchSize(batchSize)
+                                            .withEnabled(enabled)
+                                            .withEventSourceArn(eventSourceArn)
+                                            .withFunctionName(functionNameOverride)
+                                            .withStartingPosition(EventSourcePosition.fromValue(startingPosition));
+                                        
+                                        lambduhFunctionContext.withCreateEventSourceMappingRequest(request);
+                                    }
                                 }
+                                
+                                lambduhFunctionContexts.add(lambduhFunctionContext);
                             } catch (Throwable t) {
                                 t.printStackTrace();
                             }

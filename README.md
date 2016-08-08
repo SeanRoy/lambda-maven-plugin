@@ -82,7 +82,8 @@ IAM permissions required by this plugin:
 * action `lambda:DeleteFunction`
 * action `lambda:GetFunction`
 * action `lambda:UpdateFunctionCode`
-* action `lambda:UpdateFunctionConfiguration``
+* action `lambda:UpdateFunctionConfiguration`
+* action `lambda:CreateEventSourceMapping`
 
 ### Caveats
 As of 7/20/2015, this has yet to be tested with NodeJs code.
