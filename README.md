@@ -6,7 +6,7 @@ as a part of your usual Maven build process.
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambduh-maven-plugin`<br />
-`version:1.1.2`<br />
+`version:1.1.4`<br />
 
 `mvn lambduh:deploy-lambda`  Deploy lambda code <br />
 `mvn lambduh:delete-lambda`  Delete lambda code from Lambda and S3 <br />
