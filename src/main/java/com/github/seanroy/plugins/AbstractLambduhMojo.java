@@ -68,6 +68,9 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
 
     @Parameter(property = "runtime", defaultValue = "Java8")
     protected String runtime;
+    
+    @Parameter(property = "functionNameSuffix", defaultValue = "")
+    protected String functionNameSuffix;
 
     /**
      * Lambda function execution timeout. Defaults to maximum allowed.
@@ -127,7 +130,7 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
                       "Please review your lambduh-maven-plugin configuration");
                 }
                 lambduhFunctionContexts.add(
-                        new LambduhFunctionContext(functionName, description, runtime, handler));
+                        new LambduhFunctionContext(functionName, functionNameSuffix, description, runtime, handler));
             }
         } catch (Exception e) {
             getLog().error(e.getMessage());
@@ -190,6 +193,7 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
                                 
                                 lambduhFunctionContexts.add(
                                         new LambduhFunctionContext(functionNameOverride, 
+                                                functionNameSuffix,
                                                 description,
                                                 runtime,
                                                 annotatedHandler));

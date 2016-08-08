@@ -29,6 +29,7 @@
         <artifactId>lambduh-maven-plugin</artifactId>
         <configuration>
           <functionCode>src/test/resources/annotation-test-project/lambduh-test-0.0.1-SNAPSHOT.jar</functionCode>
+          <functionNameSuffix>_unit_test</functionNameSuffix>
           <memorySize>512</memorySize>
           <regionName>us-east-1</regionName>
           <s3Bucket>lambda-function-code</s3Bucket>

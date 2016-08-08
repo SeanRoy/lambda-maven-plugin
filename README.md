@@ -21,6 +21,8 @@ on the Maven command line using the -D directive.
 * `handler` REQUIRED if not using Annotations. The entry point method of your function. ex. com.example.mycode.MyClass::codeHandler.
 * `functionName` REQUIRED if not using Annotations. REQUIRED if handler specified. The name of your function.
 * `functionCode` REQUIRED The location of your deliverable. For instance, a jar file for a Java8 lambda function.
+* `functionNameSuffix` OPTIONAL A suffix to add to the end of all of your function names.  This is useful for when you
+want to deploy multiple instances or versions of your function corresponding to different environments.
 ${project.build.directory}/${project.build.finalName}.${project.packaging}
 * `description` A brief description of what your function does.
 * `s3Bucket` Defaults to lambda-function-code. The AWS S3 bucket to which to upload your code from which it will be deployed to Lambda.
@@ -134,3 +136,6 @@ deleting and recreating every time.  Thanks Guillermo Menendez
 
 1.1.3
 * Fixed [Issue 28] (https://github.com/SeanRoy/lambduh-maven-plugin/issues/28) 
+
+1.1.4
+* Added functionNameSuffix optional property.
