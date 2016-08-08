@@ -5,7 +5,6 @@
   <artifactId>lambduh-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
   <version>1.2.0</version>
-
   <name>lambduh-maven-plugin Maven Mojo</name>
   <description>A maven plugin that deploys functions to AWS Lambda</description>
   <url>https://github.com/SeanRoy/lambduh-maven-plugin</url>
