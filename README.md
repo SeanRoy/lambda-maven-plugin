@@ -52,13 +52,13 @@ import com.github.seanroy.annotations.*;
  */
 public class App
 {
-    @LambduhFunction(functionName="Hello-World")
+    @LambduhFunction(functionName="Hello-World", runtime="Java8", description="Hello World test")
     public static void hello_world( String[] args )
     {
         System.out.println( "Hello World!" );
     }
-
-    @LambduhFunction(functionName="Goodbye-World")
+    
+    @LambduhFunction(functionName="Goodbye-World", runtime="Java8", description="Goodbye World test")
     public static void goodbye_world( String [] args ) {
         System.out.println( "Goodbye World!" );
     }
