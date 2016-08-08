@@ -137,6 +137,7 @@ deleting and recreating every time.  Thanks Guillermo Menendez
 * Fixed invalid dependency to lambduh-maven-annotations
 
 1.1.3
-* Fixed [Issue 28] (https://github.com/SeanRoy/lambduh-maven-plugin/issues/28) 
+* Fixed [Issue 28] (https://github.com/SeanRoy/lambduh-maven-plugin/issues/28)
+
 1.1.4
 * Added functionNameSuffix optional property.
