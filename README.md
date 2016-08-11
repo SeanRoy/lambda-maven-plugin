@@ -13,7 +13,7 @@ as a part of your usual Maven build process.
 <br/>
 With shade:
 <br/>
-`mvn -DskipTests package shade:shade lambduh:deploy-lambda -DfunctionNameSuffix=_production`
+`mvn -DskipTests package shade:shade lambduh:deploy-lambda`
 
 ### Configuration
 All of the AWS Lambda configuration parameters may be set within the lambduh plugin configuration or
