@@ -8,10 +8,14 @@ as a part of your usual Maven build process.
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambduh-maven-plugin`<br />
-`version:1.1.5`<br />
+`version:1.1.6`<br />
 
 `mvn lambduh:deploy-lambda`  Deploy lambda code <br />
 `mvn lambduh:delete-lambda`  Delete lambda code from Lambda and S3 <br />
+<br/>
+With shade:
+<br/>
+`mvn -DskipTests package shade:shade lambduh:deploy-lambda`
 
 ### Configuration
 All of the AWS Lambda configuration parameters may be set within the lambduh plugin configuration or
@@ -145,3 +149,5 @@ deleting and recreating every time.  Thanks Guillermo Menendez
 1.1.5
 * Fixed bug where default value of functionNameSuffix evaluating to null instead of a blank string.
 
+1.1.6
+* Removed debugging related code.

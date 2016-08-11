@@ -71,7 +71,7 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
 <<<<<<< HEAD
 =======
     
-    @Parameter(property = "functionNameSuffix", defaultValue = "SUFFIX")
+    @Parameter(property = "functionNameSuffix", defaultValue = "")
     protected String functionNameSuffix;
 >>>>>>> master
 
