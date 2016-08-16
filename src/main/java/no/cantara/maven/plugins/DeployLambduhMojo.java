@@ -205,10 +205,9 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
                 .map(isTheSame -> {
                     if (isTheSame) {
                         getLog().info(fileName + " is up to date in AWS S3 bucket " + s3Bucket + ". Not uploading...");
-                    } else {
-                        upload(file);
+                        return true;
                     }
-                    return true;
+                    return null; // file should be imported
                 })
                 .orElseGet(() -> {
                     upload(file);
