@@ -154,9 +154,6 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
             initVersion();
             initLambdaFunctionsConfiguration();
 
-            getLog().debug("FunctionCode: " + functionCode);
-            getLog().debug("Version: " + version);
-            getLog().debug("Got config for functions:");
             lambdaFunctions.stream().forEach(lambdaFunction -> getLog().debug(lambdaFunction.toString()));
         } catch (Exception e) {
             getLog().error("Initialization of configuration failed", e);
