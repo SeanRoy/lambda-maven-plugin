@@ -17,7 +17,7 @@ on the Maven command line using the -D directive.
 * `accessKey` Your user's AWS access key.
 * `secretKey` Your user's AWS secret access key.
 * `functionCode` REQUIRED The location of your deliverable. For instance, a jar file for a Java8 lambda function.
-* `version` REQUIRED version of the deliverable. When using alias TEST and PROD it will be used as an Alias.
+* `version` REQUIRED version of the deliverable.
 * `s3Bucket` REQUIRED Defaults to lambda-function-code. The AWS S3 bucket to which to upload your code from which it will be deployed to Lambda.
 * `region` Defaults to eu-west-1 The AWS region to use for your function.
 * `runtime` Defaults to Java8 Specifies whether this is Java8, NodeJs and Python.
@@ -26,8 +26,8 @@ on the Maven command line using the -D directive.
 * `lambdaFunctionsJSON` JSON configuration for Lambda Functions. This is preferable configuration.
 * `timeout` Defaults to 30 seconds. The amount of time in which the function is allowed to run.
 * `memorySize` Defaults to 1024MB NOTE: Please review the AWS Lambda documentation on this setting as it could have an impact on your billing.
-* `vpcSubnetIds` The VPC Subnets that Lambda should use to set up your VPC configuration. Format: "subnet-id (cidr-block) | az name-tag". Should be configured with alias as a key.
-* `vpcSecurityGroupIds` The VPC Security Groups that Lambda should use to set up your VPC configuration. Format: "sg-id (sg-name) | name-tag". Should be configured with alias as a key.
+* `vpcSubnetIds` The VPC Subnets that Lambda should use to set up your VPC configuration. Format: "subnet-id (cidr-block) | az name-tag".
+* `vpcSecurityGroupIds` The VPC Security Groups that Lambda should use to set up your VPC configuration. Format: "sg-id (sg-name) | name-tag". Should be configured.
 * `publish` This boolean parameter can be used to request AWS Lambda to update the Lambda function and publish a version as an atomic operation. This is global for all functions and won't overwrite publish paramter in provided Lambda configuration
 * `functionNameSuffix` The suffix for the lambda function.
 * `forceUpdate` This boolean parameter can be used to force update of existing configuration. Use it when you don't publish a function and want to deploy code in your Lambda function.
