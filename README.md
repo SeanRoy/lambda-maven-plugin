@@ -17,7 +17,6 @@ on the Maven command line using the -D directive.
 * `accessKey` Your user's AWS access key.
 * `secretKey` Your user's AWS secret access key.
 * `functionCode` REQUIRED The location of your deliverable. For instance, a jar file for a Java8 lambda function.
-* `alias` REQUIRED [DEV, TEST or PROD]. DEV deploys latest version from the jar witout creating new Lambda version with . [More infomation can be found here] (https://wiki.cantara.no/display/dev/Deploy+AWS+Lambda) 
 * `version` REQUIRED version of the deliverable. When using alias TEST and PROD it will be used as an Alias.
 * `s3Bucket` REQUIRED Defaults to lambda-function-code. The AWS S3 bucket to which to upload your code from which it will be deployed to Lambda.
 * `region` Defaults to eu-west-1 The AWS region to use for your function.
@@ -71,7 +70,6 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                     <configuration>
                         <functionCode>${lambda.functionCode}</functionCode>
                         <version>${lambda.version}</version>
-                        <alias>${lambda.alias}</alias>
                         <environmentVpcSecurityGroupsIds>sg-123456</environmentVpcSecurityGroupsIds>
                         <environmentVpcSubnetIds>subnet-123456,subnet-123456,subnet-123456</environmentVpcSubnetIds>
                         <lambdaRoleArn>arn:aws:iam::1234567:role/YourLambdaS3Role</lambdaRoleArn>
@@ -133,7 +131,7 @@ please remember to add them to .gitignore.
 ### Releases
 BETA
 * Add support for configuration many lambda functions in one deliverable, supports config in JSON
-* Add support for version aliases
+* Add support for version aliases when publish is activated
 * Change defaults
 * Fixed some mainor code smells
 * Remove support mojo for deleting lambda function
