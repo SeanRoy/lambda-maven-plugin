@@ -13,13 +13,14 @@ import org.apache.maven.plugins.annotations.Parameter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.amazonaws.util.CollectionUtils.isNullOrEmpty;
-import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -46,11 +47,6 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
      */
     @Parameter(property = "functionCode", defaultValue = "${functionCode}", required = true)
     public String functionCode;
-    /**
-     * <p>The alias name. Possible values @see {@link Alias}. Plugin internals are described under @see <a href="http://wiki.cantara.no/display/dev/Deploy+AWS+Lambda">https://wiki.cantara.no/display/dev/Deploy+AWS+Lambda</a></p>
-     */
-    @Parameter(property = "alias", defaultValue = "${alias}", required = true)
-    public Alias alias;
     /**
      * <p>The version of deliverable. Example value can be 1.0-SNAPSHOT.</p>
      */
@@ -120,41 +116,42 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
     /**
      * <p>A list of one or more security groups IDs in your VPC.</p>
      */
-    @Parameter(property = "environmentVpcSecurityGroupsIds", defaultValue = "${environmentVpcSecurityGroupsIds}")
-    public Map<String, String> environmentVpcSecurityGroupsIds;
+    @Parameter(property = "vpcSecurityGroupIds", defaultValue = "${vpcSecurityGroupIds}")
+    public List<String> vpcSecurityGroupIds;
     /**
      * <p>A list of one or more subnet IDs in your VPC.</p>
      */
-    @Parameter(property = "environmentVpcSubnetIds", defaultValue = "${environmentVpcSubnetIds}")
-    public Map<String, String> environmentVpcSubnetIds;
-    /**
-     * <p>This boolean parameter can be used to set suffix for functionName. Suffix comes automatically from alias.</p>
-     */
-    @Parameter(property = "suffixFunctionName", defaultValue = "true")
-    public boolean suffixFunctionName;
+    @Parameter(property = "vpcSubnetIds", defaultValue = "${vpcSubnetIds}")
+    public List<String> vpcSubnetIds;
     /**
      * <p>This boolean parameter can be used to request AWS Lambda to update the
      * Lambda function and publish a version as an atomic operation.</p>
      */
     @Parameter(property = "publish", defaultValue = "true")
     public boolean publish;
+    /**
+     * <p>The suffix for the lambda function.</p>
+     */
+    @Parameter(property = "functionNameSuffix")
+    public String functionNameSuffix;
+    /**
+     * <p>This boolean parameter can be used to force update of existing configuration. Use it when you don't publish a function and want to replece code in your Lambda function.</p>
+     */
+    @Parameter(property = "forceUpdate", defaultValue = "false")
+    public boolean forceUpdate;
 
     public String fileName;
     public AWSCredentials credentials;
     public AmazonS3Client s3Client;
     public AWSLambdaClient lambdaClient;
-    public final Map<Alias, List<String>> vpcSecurityGroup = new HashMap<>();
-    public final Map<Alias, List<String>> vpcSubnetIds = new HashMap<>();
 
     @Override
     public void execute() throws MojoExecutionException {
-        getLog().info("Alias: " + alias.toString());
         initAWSCredentials();
         initAWSClients();
         try {
             initFileName();
             initVersion();
-            initVpc();
             initLambdaFunctionsConfiguration();
 
             getLog().debug("FunctionCode: " + functionCode);
@@ -207,57 +204,31 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
         lambdaFunctions = lambdaFunctions.stream().map(lambdaFunction -> {
             String functionName = ofNullable(lambdaFunction.getFunctionName()).orElseThrow(() -> new IllegalArgumentException("Configuration error. LambdaFunction -> 'functionName' is required"));
 
-            lambdaFunction.withFunctionName(suffixFunctionName ? alias.addSuffix(functionName) : functionName)
+            lambdaFunction.withFunctionName(addSuffix(functionName))
                           .withHandler(ofNullable(lambdaFunction.getHandler()).orElseThrow(() -> new IllegalArgumentException("Configuration error. LambdaFunction -> 'handler' is required")))
                           .withDescription(ofNullable(lambdaFunction.getDescription()).orElse(""))
                           .withTimeout(ofNullable(lambdaFunction.getTimeout()).orElse(timeout))
                           .withMemorySize(ofNullable(lambdaFunction.getMemorySize()).orElse(memorySize))
-                          .withSubnetIds(ofNullable(initSubnetIds(lambdaFunction)).orElse(new ArrayList<>()))
-                          .withSecurityGroupsIds(ofNullable(initSecurityGroupsIds(lambdaFunction)).orElse(new ArrayList<>()))
+                          .withSubnetIds(ofNullable(vpcSubnetIds).orElse(new ArrayList<>()))
+                          .withSecurityGroupsIds(ofNullable(vpcSecurityGroupIds).orElse(new ArrayList<>()))
                           .withVersion(version)
-                          .withAliases(aliases())
-                          .withPublish(ofNullable(lambdaFunction.isPublish()).orElse(publish));
+                          .withPublish(ofNullable(lambdaFunction.isPublish()).orElse(publish))
+                          .withAliases(aliases(lambdaFunction.isPublish()));
 
             return lambdaFunction;
         }).collect(toList());
     }
 
-    private List<String> aliases() {
-        switch (alias) {
-            case DEV:
-                return asList(alias.toString(), "LATEST");
-            case TEST:
-            case PROD:
-                return asList(alias.toString(), version);
-            default:
-                throw new IllegalArgumentException("Unable to generate aliases");
+    private String addSuffix(String functionName) {
+        return ofNullable(functionNameSuffix).map(suffix -> Stream.of(functionName, "-", suffix).collect(Collectors.joining()))
+                                             .orElse(functionName);
+    }
+
+    private List<String> aliases(boolean publish) {
+        if (publish) {
+            return Collections.singletonList(version);
         }
-    }
-
-    private List<String> initSecurityGroupsIds(LambdaFunction f) {
-        if (!isNullOrEmpty(f.getSecurityGroupsIds())) {
-            return f.getSecurityGroupsIds();
-        }
-        return vpcSecurityGroup.getOrDefault(alias, new ArrayList<>());
-    }
-
-    private List<String> initSubnetIds(LambdaFunction f) {
-        if (!isNullOrEmpty(f.getSubnetIds())) {
-            return f.getSubnetIds();
-        }
-        return vpcSubnetIds.getOrDefault(alias, new ArrayList<>());
-    }
-
-    private void initVpc() {
-        ofNullable(environmentVpcSecurityGroupsIds).ifPresent(m -> m.entrySet().stream()
-                                                                    .forEach(entry -> vpcSecurityGroup.put(Alias.valueOf(entry.getKey()), splitToList(entry.getValue()))));
-
-        ofNullable(environmentVpcSubnetIds).ifPresent(m -> m.entrySet().stream()
-                                                            .forEach(entry -> vpcSubnetIds.put(Alias.valueOf(entry.getKey()), splitToList(entry.getValue()))));
-    }
-
-    private List<String> splitToList(String value) {
-        return ofNullable(value).map(s -> asList(s.split(","))).orElse(new ArrayList<>());
+        return emptyList();
     }
 
     private void validate(List<LambdaFunction> lambdaFunctions) throws MojoExecutionException {

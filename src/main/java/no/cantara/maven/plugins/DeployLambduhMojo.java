@@ -45,7 +45,7 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
         super.execute();
         try {
             uploadJarToS3();
-            lambdaFunctions.stream().map(f-> {
+            lambdaFunctions.stream().map(f -> {
                 getLog().info("---- Create or update " + f.getFunctionName() + " -----");
                 return f;
             }).forEach(this::createOrUpdate);
@@ -71,16 +71,15 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
     }
 
     private boolean shouldUpdate(LambdaFunction lambdaFunction, GetFunctionResult getFunctionResult) {
-        boolean isDev = Alias.DEV.equals(alias);
         boolean isConfigurationChanged = isConfigurationChanged(lambdaFunction, getFunctionResult);
         if (!isConfigurationChanged) {
             getLog().info("Config hasn't changed for " + lambdaFunction.getFunctionName());
         }
-        if (isDev) {
-            getLog().info("Forcing update for alias " + alias.toString() + " for " + lambdaFunction.getFunctionName());
+        if (forceUpdate) {
+            getLog().info("Forcing update for alias for " + lambdaFunction.getFunctionName());
         }
 
-        return isDev || isConfigurationChanged;
+        return forceUpdate || isConfigurationChanged;
     }
 
     private Function<LambdaFunction, LambdaFunction> updateFunctionCode = (LambdaFunction lambdaFunction) -> {
@@ -109,24 +108,25 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
     };
 
     private Function<LambdaFunction, List<String>> createOrUpdateAliases = (LambdaFunction lambdaFunction) ->
-            lambdaFunction.getAliases().stream().map(alias -> {
-                UpdateAliasRequest updateAliasRequest = new UpdateAliasRequest()
-                        .withFunctionName(lambdaFunction.getFunctionName())
-                        .withFunctionVersion(lambdaFunction.getVersion())
-                        .withName(alias);
-                try {
-                    lambdaClient.updateAlias(updateAliasRequest);
-                    getLog().info("Alias " + alias + " updated for " + lambdaFunction.getFunctionName() + " with version " + lambdaFunction.getVersion());
-                } catch (ResourceNotFoundException ignored) {
-                    CreateAliasRequest createAliasRequest = new CreateAliasRequest()
-                            .withFunctionName(lambdaFunction.getFunctionName())
-                            .withFunctionVersion(lambdaFunction.getVersion())
-                            .withName(alias);
-                    lambdaClient.createAlias(createAliasRequest);
-                    getLog().info("Alias " + alias + " created for " + lambdaFunction.getFunctionName() + " with version " + lambdaFunction.getVersion());
-                }
-                return alias;
-            }).collect(toList());
+            lambdaFunction.getAliases().stream()
+                          .map(alias -> {
+                              UpdateAliasRequest updateAliasRequest = new UpdateAliasRequest()
+                                      .withFunctionName(lambdaFunction.getFunctionName())
+                                      .withFunctionVersion(lambdaFunction.getVersion())
+                                      .withName(alias);
+                              try {
+                                  lambdaClient.updateAlias(updateAliasRequest);
+                                  getLog().info("Alias " + alias + " updated for " + lambdaFunction.getFunctionName() + " with version " + lambdaFunction.getVersion());
+                              } catch (ResourceNotFoundException ignored) {
+                                  CreateAliasRequest createAliasRequest = new CreateAliasRequest()
+                                          .withFunctionName(lambdaFunction.getFunctionName())
+                                          .withFunctionVersion(lambdaFunction.getVersion())
+                                          .withName(alias);
+                                  lambdaClient.createAlias(createAliasRequest);
+                                  getLog().info("Alias " + alias + " created for " + lambdaFunction.getFunctionName() + " with version " + lambdaFunction.getVersion());
+                              }
+                              return alias;
+                          }).collect(toList());
 
     private GetFunctionResult getFunction(LambdaFunction lambdaFunction) {
         return lambdaClient.getFunction(new GetFunctionRequest().withFunctionName(lambdaFunction.getFunctionName()));
@@ -143,7 +143,7 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
                     boolean isRoleChanged = isChangeStr.test(config.getRole(), lambdaRoleArn);
                     boolean isTimeoutChanged = isChangeInt.test(config.getTimeout(), lambdaFunction.getTimeout());
                     boolean isMemoryChanged = isChangeInt.test(config.getMemorySize(), lambdaFunction.getMemorySize());
-                    boolean isSecurityGroupIdsChanged = isChangeList.test(config.getVpcConfig().getSecurityGroupIds(), lambdaFunction.getSecurityGroupsIds());
+                    boolean isSecurityGroupIdsChanged = isChangeList.test(config.getVpcConfig().getSecurityGroupIds(), lambdaFunction.getSecurityGroupIds());
                     boolean isVpcSubnetIdsChanged = isChangeList.test(config.getVpcConfig().getSubnetIds(), lambdaFunction.getSubnetIds());
                     return isDescriptionChanged || isHandlerChanged || isRoleChanged || isTimeoutChanged || isMemoryChanged || isSecurityGroupIdsChanged || isVpcSubnetIdsChanged || isAliasesChanged(lambdaFunction);
                 })
@@ -185,7 +185,7 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
 
     private VpcConfig getVpcConfig(LambdaFunction lambdaFunction) {
         return new VpcConfig()
-                .withSecurityGroupIds(lambdaFunction.getSecurityGroupsIds())
+                .withSecurityGroupIds(lambdaFunction.getSecurityGroupIds())
                 .withSubnetIds(lambdaFunction.getSubnetIds());
     }
 

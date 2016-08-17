@@ -45,13 +45,13 @@ public class LambdaFunction {
     /**
      * <p>@see {@link AbstractLambduhMojo}</p>
      */
-    private List<String> securityGroupsIds;
+    private List<String> securityGroupIds;
     /**
      * <p>@see {@link AbstractLambduhMojo}</p>
      */
     private List<String> subnetIds;
     /**
-     * <p>Lambda function aliases genereted based on current Alias.</p>
+     * <p>Lambda function aliases genereted based on publish flag.</p>
      */
     private List<String> aliases;
     /**
@@ -113,15 +113,15 @@ public class LambdaFunction {
         this.version = version;
     }
 
-    public List<String> getSecurityGroupsIds() {
-        if (securityGroupsIds == null) {
+    public List<String> getSecurityGroupIds() {
+        if (securityGroupIds == null) {
             return new ArrayList<>();
         }
-        return securityGroupsIds;
+        return securityGroupIds;
     }
 
-    public void setSecurityGroupsIds(List<String> securityGroupsIds) {
-        this.securityGroupsIds = securityGroupsIds;
+    public void setSecurityGroupIds(List<String> securityGroupIds) {
+        this.securityGroupIds = securityGroupIds;
     }
 
     public List<String> getSubnetIds() {
@@ -173,7 +173,7 @@ public class LambdaFunction {
     }
 
     public LambdaFunction withSecurityGroupsIds(List<String> securityGroupsIds) {
-        this.securityGroupsIds = securityGroupsIds;
+        this.securityGroupIds = securityGroupsIds;
         return this;
     }
 
@@ -211,7 +211,7 @@ public class LambdaFunction {
                 .append(", memorySize=").append(memorySize)
                 .append(", timeout=").append(timeout)
                 .append(", version='").append(version).append('\'')
-                .append(", securityGroupsIds=").append(securityGroupsIds)
+                .append(", securityGroupIds=").append(securityGroupIds)
                 .append(", subnetIds=").append(subnetIds)
                 .append(", aliases=").append(aliases)
                 .append(", publish=").append(publish)

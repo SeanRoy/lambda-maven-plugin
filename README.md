@@ -27,10 +27,11 @@ on the Maven command line using the -D directive.
 * `lambdaFunctionsJSON` JSON configuration for Lambda Functions. This is preferable configuration.
 * `timeout` Defaults to 30 seconds. The amount of time in which the function is allowed to run.
 * `memorySize` Defaults to 1024MB NOTE: Please review the AWS Lambda documentation on this setting as it could have an impact on your billing.
-* `environmentVpcSubnetIds` The VPC Subnets that Lambda should use to set up your VPC configuration. Format: "subnet-id (cidr-block) | az name-tag". Should be configured with alias as a key.
-* `environmentVpcSecurityGroupsIds` The VPC Security Groups that Lambda should use to set up your VPC configuration. Format: "sg-id (sg-name) | name-tag". Should be configured with alias as a key.
-* `suffixFunctionName` This boolean parameter can be used to set suffix for functionName. Suffix comes automatically from alias. On by default.
-* `publish` This boolean parameter can be used to request AWS Lambda to update the Lambda function and publish a version as an atomic operation. This is global for all functions and won't overwrite publish paramter in provided Lambda configuration/
+* `vpcSubnetIds` The VPC Subnets that Lambda should use to set up your VPC configuration. Format: "subnet-id (cidr-block) | az name-tag". Should be configured with alias as a key.
+* `vpcSecurityGroupIds` The VPC Security Groups that Lambda should use to set up your VPC configuration. Format: "sg-id (sg-name) | name-tag". Should be configured with alias as a key.
+* `publish` This boolean parameter can be used to request AWS Lambda to update the Lambda function and publish a version as an atomic operation. This is global for all functions and won't overwrite publish paramter in provided Lambda configuration
+* `functionNameSuffix` The suffix for the lambda function.
+* `forceUpdate` This boolean parameter can be used to force update of existing configuration. Use it when you don't publish a function and want to deploy code in your Lambda function.
 
 Current configuration of LambdaFunction can be found in LambdaFunction.java.
 
@@ -56,8 +57,9 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
             <properties>
                 <lambda.functionCode>${project.build.directory}/${project.build.finalName}.jar</lambda.functionCode>
                 <lambda.version>${project.version}</lambda.version>
-                <lambda.alias>DEV</lambda.alias>
                 <lambda.publish>true</lambda.publish>
+                <lambda.forceUpdate>true</lambda.forceUpdate>
+                <lambda.functionNameSuffix>dev</lambda.functionNameSuffix>
             </properties>
             
            ...
@@ -70,19 +72,13 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                         <functionCode>${lambda.functionCode}</functionCode>
                         <version>${lambda.version}</version>
                         <alias>${lambda.alias}</alias>
-                        <environmentVpcSecurityGroupsIds>
-                            <DEV>sg-123456</DEV>
-                            <TEST>sg-123456</TEST>
-                            <PROD>sg-123456</PROD>
-                        </environmentVpcSecurityGroupsIds>
-                        <environmentVpcSubnetIds>
-                            <DEV>subnet-123456,subnet-123456,subnet-123456</DEV>
-                            <TEST>subnet-123456,subnet-123456,subnet-123456</TEST>
-                            <PROD>subnet-123456,subnet-123456,subnet-123456</PROD>
-                        </environmentVpcSubnetIds>
+                        <environmentVpcSecurityGroupsIds>sg-123456</environmentVpcSecurityGroupsIds>
+                        <environmentVpcSubnetIds>subnet-123456,subnet-123456,subnet-123456</environmentVpcSubnetIds>
                         <lambdaRoleArn>arn:aws:iam::1234567:role/YourLambdaS3Role</lambdaRoleArn>
                         <s3Bucket>mys3bucket</s3Bucket>
                         <publish>${lambda.publish}</publish>
+                        <forceUpdate>${lambda.forceUpdate}</forceUpdate>
+                        <functionNameSuffix>${lambda.functionNameSuffix}</functionNameSuffix>
                         <lambdaFunctionsJSON>
                             [
                               {
@@ -107,7 +103,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
 
 ### Deploy from command line
 ```
-$ mvn package lambda:deploy-lambda -Dlambda.alias=[DEV | TEST | PROD] -Dlambda.publish=true
+$ mvn package lambda:deploy-lambda -Dlambda.functionNameSuffix=dev -Dlambda.publish=false -Dlambda.forceUpdate=true
 ```
 
 ### Credentials
@@ -137,15 +133,12 @@ please remember to add them to .gitignore.
 ### Releases
 BETA
 * Add support for configuration many lambda functions in one deliverable, supports config in JSON
-* Add support for aliases like DEV, TEST, PROD
-* Add support for VPC security groups per alias
-* Add support for VPC subnets per aias
+* Add support for version aliases
 * Change defaults
 * Fixed some mainor code smells
 * Remove support mojo for deleting lambda function
 * Remove support for annotations
 * Refactor code to java8
-* Toggle suffixing a function name
 * Add publish flag, which controls Lambda versioning in AWS
 
 1.0.2 
