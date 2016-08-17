@@ -29,7 +29,8 @@ on the Maven command line using the -D directive.
 * `memorySize` Defaults to 1024MB NOTE: Please review the AWS Lambda documentation on this setting as it could have an impact on your billing.
 * `environmentVpcSubnetIds` The VPC Subnets that Lambda should use to set up your VPC configuration. Format: "subnet-id (cidr-block) | az name-tag". Should be configured with alias as a key.
 * `environmentVpcSecurityGroupsIds` The VPC Security Groups that Lambda should use to set up your VPC configuration. Format: "sg-id (sg-name) | name-tag". Should be configured with alias as a key.
-* `suffixFunctionName` This boolean parameter can be used to set suffix for functionName. Suffix comes automatically from alias. On by default. 
+* `suffixFunctionName` This boolean parameter can be used to set suffix for functionName. Suffix comes automatically from alias. On by default.
+* `publish` This boolean parameter can be used to request AWS Lambda to update the Lambda function and publish a version as an atomic operation. This is global for all functions and won't overwrite publish paramter in provided Lambda configuration/
 
 Current configuration of LambdaFunction can be found in LambdaFunction.java.
 
@@ -142,6 +143,8 @@ BETA
 * Remove support mojo for deleting lambda function
 * Remove support for annotations
 * Refactor code to java8
+* Toggle suffixing a function name
+* Add publish flag, which controls Lambda versioning in AWS
 
 1.0.2 
 * Fixed PatternSyntaxException on windows https://github.com/SeanRoy/lambduh-maven-plugin/issues/1

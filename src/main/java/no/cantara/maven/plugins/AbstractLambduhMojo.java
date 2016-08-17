@@ -132,6 +132,12 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
      */
     @Parameter(property = "suffixFunctionName", defaultValue = "true")
     public boolean suffixFunctionName;
+    /**
+     * <p>This boolean parameter can be used to request AWS Lambda to update the
+     * Lambda function and publish a version as an atomic operation.</p>
+     */
+    @Parameter(property = "publish", defaultValue = "true")
+    public boolean publish;
 
     public String fileName;
     public AWSCredentials credentials;
@@ -209,7 +215,9 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
                           .withSubnetIds(ofNullable(initSubnetIds(lambdaFunction)).orElse(new ArrayList<>()))
                           .withSecurityGroupsIds(ofNullable(initSecurityGroupsIds(lambdaFunction)).orElse(new ArrayList<>()))
                           .withVersion(version)
-                          .withAliases(aliases());
+                          .withAliases(aliases())
+                          .withPublish(ofNullable(lambdaFunction.isPublish()).orElse(publish));
+
             return lambdaFunction;
         }).collect(toList());
     }

@@ -85,12 +85,11 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
 
     private Function<LambdaFunction, LambdaFunction> updateFunctionCode = (LambdaFunction lambdaFunction) -> {
         getLog().info("About to update functionCode for " + lambdaFunction.getFunctionName());
-        Function<String, Boolean> shouldPublish = (String version) -> ofNullable(lambdaFunction.getVersion()).map(v -> !v.contains("SNAPSHOT")).orElse(true);
         UpdateFunctionCodeRequest updateFunctionRequest = new UpdateFunctionCodeRequest()
                 .withFunctionName(lambdaFunction.getFunctionName())
                 .withS3Bucket(s3Bucket)
                 .withS3Key(fileName)
-                .withPublish(shouldPublish.apply(lambdaFunction.getVersion()));
+                .withPublish(lambdaFunction.isPublish());
         return lambdaFunction.withVersion(lambdaClient.updateFunctionCode(updateFunctionRequest).getVersion());
     };
 

@@ -54,6 +54,13 @@ public class LambdaFunction {
      * <p>Lambda function aliases genereted based on current Alias.</p>
      */
     private List<String> aliases;
+    /**
+     * <p>
+     * This boolean parameter can be used to request AWS Lambda to update the
+     * Lambda function and publish a version as an atomic operation.
+     * </p>
+     */
+    private Boolean publish;
 
     public LambdaFunction() {
     }
@@ -137,6 +144,14 @@ public class LambdaFunction {
         this.aliases = aliases;
     }
 
+    public Boolean isPublish() {
+        return publish;
+    }
+
+    public void setPublish(boolean publish) {
+        this.publish = publish;
+    }
+
     public LambdaFunction withDescription(String description) {
         this.description = description;
         return this;
@@ -182,6 +197,11 @@ public class LambdaFunction {
         return this;
     }
 
+    public LambdaFunction withPublish(Boolean publish) {
+        this.publish = publish;
+        return this;
+    }
+
     @Override
     public String toString() {
         return new StringBuilder("LambdaFunction{")
@@ -194,6 +214,7 @@ public class LambdaFunction {
                 .append(", securityGroupsIds=").append(securityGroupsIds)
                 .append(", subnetIds=").append(subnetIds)
                 .append(", aliases=").append(aliases)
+                .append(", publish=").append(publish)
                 .append('}').toString();
     }
 }
