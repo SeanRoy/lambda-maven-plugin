@@ -76,7 +76,7 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
             getLog().info("Config hasn't changed for " + lambdaFunction.getFunctionName());
         }
         if (forceUpdate) {
-            getLog().info("Forcing update for alias for " + lambdaFunction.getFunctionName());
+            getLog().info("Forcing update for " + lambdaFunction.getFunctionName());
         }
 
         return forceUpdate || isConfigurationChanged;
