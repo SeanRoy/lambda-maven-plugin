@@ -26,40 +26,105 @@ import static java.util.stream.Collectors.toList;
 
 
 /**
- * Abstracts all common parameter handling and initiation of AWS service
- * clients.
+ * Abstracts all common parameter handling and initiation of AWS service clients.
  *
- * @author sean
+ * @author sean, <a href="mailto:kgrodzicki@gmail.com">Krzysztof Grodzicki</a> 11/08/16.
  */
 public abstract class AbstractLambduhMojo extends AbstractMojo {
+    /**
+     * <p>The AWS access key.</p>
+     */
     @Parameter(property = "accessKey", defaultValue = "${accessKey}")
     public String accessKey;
+    /**
+     * <p>The AWS secret access key.</p>
+     */
     @Parameter(property = "secretKey", defaultValue = "${secretKey}")
     public String secretKey;
+    /**
+     * <p>The path to deliverable.</p>
+     */
     @Parameter(property = "functionCode", defaultValue = "${functionCode}", required = true)
     public String functionCode;
+    /**
+     * <p>The alias name. Possible values @see {@link Alias}. Plugin internals are described under @see <a href="http://wiki.cantara.no/display/dev/Deploy+AWS+Lambda">https://wiki.cantara.no/display/dev/Deploy+AWS+Lambda</a></p>
+     */
     @Parameter(property = "alias", defaultValue = "${alias}", required = true)
     public Alias alias;
+    /**
+     * <p>The version of deliverable. Example value can be 1.0-SNAPSHOT.</p>
+     */
     @Parameter(property = "version", defaultValue = "${version}", required = true)
     public String version;
-    @Parameter(property = "region", alias="region", defaultValue = "eu-west-1")
+    /**
+     * <p>Amazon region. Default value is eu-west-1.</p>
+     */
+    @Parameter(property = "region", alias = "region", defaultValue = "eu-west-1")
     public String regionName;
+    /**
+     * <p>
+     * Amazon S3 bucket name where the .zip file containing your deployment
+     * package is stored. This bucket must reside in the same AWS region where
+     * you are creating the Lambda function.
+     * </p>
+     */
     @Parameter(property = "s3Bucket", defaultValue = "lambda-function-code")
     public String s3Bucket;
+    /**
+     * <p>
+     * The runtime environment for the Lambda function.
+     * </p>
+     * <p>
+     * To use the Node.js runtime v4.3, set the value to "nodejs4.3". To use
+     * earlier runtime (v0.10.42), set the value to "nodejs".
+     * </p>
+     */
     @Parameter(property = "runtime", defaultValue = "java8")
     public String runtime;
+    /**
+     * <p>The Amazon Resource Name (ARN) of the IAM role that Lambda will assume when it executes your function.</p>
+     */
     @Parameter(property = "lambdaRoleArn", defaultValue = "${lambdaRoleArn}", required = true)
     public String lambdaRoleArn;
+    /**
+     * <p>The JSON confuguration for Lambda functions. @see {@link LambdaFunction}.</p>
+     */
     @Parameter(property = "lambdaFunctionsJSON", defaultValue = "", required = false)
     public String lambdaFunctionsJSON;
+    /**
+     * <p>The confuguration for Lambda functions. @see {@link LambdaFunction}. Can be configured in pom.xml. Automaticall parsed from JSON configuration.</p>
+     */
     @Parameter(property = "lambdaFunctions", defaultValue = "${lambdaFunctions}", required = false)
     public List<LambdaFunction> lambdaFunctions;
+    /**
+     * <p>
+     * The function execution time at which AWS Lambda should terminate the
+     * function. Because the execution time has cost implications, we recommend
+     * you set this value based on your expected execution time. The default is 30 seconds.
+     * </p>
+     */
     @Parameter(property = "timeout", defaultValue = "30")
     public int timeout;
+    /**
+     * <p>
+     * The amount of memory, in MB, your Lambda function is given. AWS Lambda
+     * uses this memory size to infer the amount of CPU allocated to your
+     * function. Your function use-case determines your CPU and memory
+     * requirements. For example, a database operation might need less memory
+     * compared to an image processing function. The default value is 1024 MB.
+     * The value must be a multiple of 64 MB.
+     * </p>
+     */
     @Parameter(property = "memorySize", defaultValue = "1024")
     public int memorySize;
+    /**
+     * <p>A list of one or more security groups IDs in your VPC.</p>
+     */
     @Parameter(property = "environmentVpcSecurityGroupsIds", defaultValue = "${environmentVpcSecurityGroupsIds}")
     public Map<String, String> environmentVpcSecurityGroupsIds;
+    /**
+     * <p>A list of one or more subnet IDs in your VPC.</p>
+     */
     @Parameter(property = "environmentVpcSubnetIds", defaultValue = "${environmentVpcSubnetIds}")
     public Map<String, String> environmentVpcSubnetIds;
 

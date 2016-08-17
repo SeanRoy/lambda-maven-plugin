@@ -33,10 +33,9 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
 /**
- * A Maven plugin allowing a jar built as a part of a Maven project to be
- * deployed to AWS lambda.
+ * A Maven plugin allowing a jar built as a part of a Maven project to be deployed to AWS lambda.
  *
- * @author Sean N. Roy
+ * @author Sean N. Roy, <a href="mailto:kgrodzicki@gmail.com">Krzysztof Grodzicki</a> 11/08/16.
  */
 @Mojo(name = "deploy-lambda")
 public class DeployLambduhMojo extends AbstractLambduhMojo {
@@ -46,7 +45,10 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
         super.execute();
         try {
             uploadJarToS3();
-            lambdaFunctions.forEach(this::createOrUpdate);
+            lambdaFunctions.stream().map(f-> {
+                getLog().info("---- Create or update " + f.getFunctionName() + " -----");
+                return f;
+            }).forEach(this::createOrUpdate);
         } catch (Exception e) {
             getLog().error("Error during processing", e);
             throw new MojoExecutionException(e.getMessage());

@@ -4,17 +4,55 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author <a href="mailto:kgrodzicki@gmail.com">Krzysztof Grodzicki</a> 11/08/16.
+ * I am a domain class for Lambda Function.
+ *
+ * @author sean, <a href="mailto:kgrodzicki@gmail.com">Krzysztof Grodzicki</a> 11/08/16.
  */
 public class LambdaFunction {
+    /**
+     * <p>
+     * The existing Lambda function name whose code you want to replace.
+     * </p>
+     */
     private String functionName;
+    /**
+     * <p>
+     * A short user-defined function description. AWS Lambda does not use this
+     * value. Assign a meaningful description as you see fit.
+     * </p>
+     */
     private String description;
+    /**
+     * <p>
+     * The function that Lambda calls to begin executing your function. For
+     * Node.js, it is the <code>module-name.export</code> value in your
+     * function.
+     * </p>
+     */
     private String handler;
+    /**
+     * <p>@see {@link AbstractLambduhMojo}</p>
+     */
     private Integer memorySize;
+    /**
+     * <p>@see {@link AbstractLambduhMojo}</p>
+     */
     private Integer timeout;
+    /**
+     * <p>@see {@link AbstractLambduhMojo}</p>
+     */
     private String version;
+    /**
+     * <p>@see {@link AbstractLambduhMojo}</p>
+     */
     private List<String> securityGroupsIds;
+    /**
+     * <p>@see {@link AbstractLambduhMojo}</p>
+     */
     private List<String> subnetIds;
+    /**
+     * <p>Lambda function aliases genereted based on current Alias.</p>
+     */
     private List<String> aliases;
 
     public LambdaFunction() {
@@ -146,17 +184,16 @@ public class LambdaFunction {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("LambdaFunction{");
-        sb.append("functionName='").append(functionName).append('\'');
-        sb.append(", description='").append(description).append('\'');
-        sb.append(", handler='").append(handler).append('\'');
-        sb.append(", memorySize=").append(memorySize);
-        sb.append(", timeout=").append(timeout);
-        sb.append(", version='").append(version).append('\'');
-        sb.append(", securityGroupsIds=").append(securityGroupsIds);
-        sb.append(", subnetIds=").append(subnetIds);
-        sb.append(", aliases=").append(aliases);
-        sb.append('}');
-        return sb.toString();
+        return new StringBuilder("LambdaFunction{")
+                .append("functionName='").append(functionName).append('\'')
+                .append(", description='").append(description).append('\'')
+                .append(", handler='").append(handler).append('\'')
+                .append(", memorySize=").append(memorySize)
+                .append(", timeout=").append(timeout)
+                .append(", version='").append(version).append('\'')
+                .append(", securityGroupsIds=").append(securityGroupsIds)
+                .append(", subnetIds=").append(subnetIds)
+                .append(", aliases=").append(aliases)
+                .append('}').toString();
     }
 }

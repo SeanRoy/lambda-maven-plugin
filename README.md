@@ -1,15 +1,14 @@
 # lambduh-maven-plugin
 
 The lambduh Maven plugin allows you to deploy your [AWS Lambda](http://aws.amazon.com/lambda/) functions
-as a part of your usual Maven build process.
+as a part of your usual Maven build process. Example usage can be found on [wiki] (https://wiki.cantara.no/display/dev/Deploy+AWS+Lambda).
 
 ### Usage
-`group id: com.github.seanroy`<br />
-`artifact id: lambduh-maven-plugin`<br />
-`version:1.1.6`<br />
+`group id: no.cantara.maven.plugins`<br />
+`artifact id: lambda-maven-plugin`<br />
+`version: ?`<br />
 
 `mvn lambduh:deploy-lambda`  Deploy lambda code <br />
-`mvn lambduh:delete-lambda`  Delete lambda code from Lambda and S3 <br />
 
 ### Configuration
 All of the AWS Lambda configuration parameters may be set within the lambduh plugin configuration or
@@ -17,56 +16,95 @@ on the Maven command line using the -D directive.
 
 * `accessKey` Your user's AWS access key.
 * `secretKey` Your user's AWS secret access key.
-* `region` Defaults to us-east-1 The AWS region to use for your function.
-* `handler` REQUIRED if not using Annotations. The entry point method of your function. ex. com.example.mycode.MyClass::codeHandler.
-* `functionName` REQUIRED if not using Annotations. REQUIRED if handler specified. The name of your function.
 * `functionCode` REQUIRED The location of your deliverable. For instance, a jar file for a Java8 lambda function.
-${project.build.directory}/${project.build.finalName}.${project.packaging}
-* `functionNameSuffix` OPTIONAL A suffix to add to the end of all of your function names.  This is useful for when you
-want to deploy multiple instances or versions of your function corresponding to different environments.
-* `description` A brief description of what your function does.
-* `s3Bucket` Defaults to lambda-function-code. The AWS S3 bucket to which to upload your code from which it will be deployed to Lambda.
-* `lambdaRoleArn` REQUIRED The ARN of the AWS role which the lambda user will assume when it executes.
-* `runtime` Defaults to Java8 Specifies whether this is Java8 or NodeJs code.
-* `timeout` Defaults to 60 seconds The amount of time in which the function is allowed to run.
-* `memorySize` Defaults to 128M NOTE: Please review the AWS Lambda documentation on this setting as it could have an impact on your billing.
-* `vpcSecurityGroupIds` OPTIONAL A list of one or more ids corresponding to the security groups protecting access to your AWS VPC.
-* `vpcSubnetIds` OPTIONAL A list of subnet ids within your AWS VPC.
+* `alias` REQUIRED [DEV, TEST or PROD]. DEV deploys latest version from the jar witout creating new Lambda version with . [More infomation can be found here] (https://wiki.cantara.no/display/dev/Deploy+AWS+Lambda) 
+* `version` REQUIRED version of the deliverable. When using alias TEST and PROD it will be used as an Alias.
+* `s3Bucket` REQUIRED Defaults to lambda-function-code. The AWS S3 bucket to which to upload your code from which it will be deployed to Lambda.
+* `region` Defaults to eu-west-1 The AWS region to use for your function.
+* `runtime` Defaults to Java8 Specifies whether this is Java8, NodeJs and Python.
+* `lambdaRoleArn` REQUIRED The ARN of the AWS role which the lambda user will assume when it executes. Note that the role must be assumable by Lambda and must have Cloudwatch Logs permissions.
+* `lambdaFunctions` Lamda functions that can be configured using tags in pom.xml.
+* `lambdaFunctionsJSON` JSON configuration for Lambda Functions. This is preferable configuration.
+* `timeout` Defaults to 30 seconds. The amount of time in which the function is allowed to run.
+* `memorySize` Defaults to 1024MB NOTE: Please review the AWS Lambda documentation on this setting as it could have an impact on your billing.
+* `environmentVpcSubnetIds` The VPC Subnets that Lambda should use to set up your VPC configuration. Format: "subnet-id (cidr-block) | az name-tag". Should be configured with alias as a key.
+* `environmentVpcSecurityGroupsIds` The VPC Security Groups that Lambda should use to set up your VPC configuration. Format: "sg-id (sg-name) | name-tag". Should be configured with alias as a key.
 
-Annotations may also be used to specify which of your functions are to be deployed to AWS Lambda.  This is useful
-if you have multiple functions in the same project jar file to deploy.  In the future I hope to add more configuration parameters to
-the annotation to allow each method's configuration to be completely independent of the others.
+Current configuration of LambdaFunction can be found in LambdaFunction.java.
 
-To use Annotations, add the following dependency to your project pom.xml:
-`group id: com.github.seanroy`<br />
-`artifact id: lambduh-maven-annotations`<br />
-`version:1.0.0`<br />
+### Example configuration in pom.xml
+```
+        <project
+        
+            ...
 
-Here is an example of annotated code:
-
-```java
-import com.github.seanroy.annotations.*;
-/**
- * Hello world!
- *
- */
-public class App
-{
-    @LambduhFunction(functionName="Hello-World", runtime="Java8", description="Hello World test")
-    public static void hello_world( String[] args )
-    {
-        System.out.println( "Hello World!" );
-    }
-    
-    @LambduhFunction(functionName="Goodbye-World", runtime="Java8", description="Goodbye World test")
-    public static void goodbye_world( String [] args ) {
-        System.out.println( "Goodbye World!" );
-    }
-}
+            <pluginRepositories>
+                    <pluginRepository>
+                    <id>cantara-snapshots</id>
+                    <name>Cantara Snapshot Repository</name>
+                    <url>http://mvnrepo.cantara.no/content/repositories/snapshots/</url>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </pluginRepository>
+            </pluginRepositories>
+            
+            ...
+            
+            <properties>
+                <lambda.functionCode>${project.build.directory}/${project.build.finalName}.jar</lambda.functionCode>
+                <lambda.version>${project.version}</lambda.version>
+                <lambda.alias>DEV</lambda.alias>
+            </properties>
+            
+           ...
+           
+            <plugin>
+                    <groupId>no.cantara.maven.plugins</groupId>
+                    <artifactId>lambda-maven-plugin</artifactId>
+                    <version>2.0-SNAPSHOT</version>
+                    <configuration>
+                        <functionCode>${lambda.functionCode}</functionCode>
+                        <version>${lambda.version}</version>
+                        <alias>${lambda.alias}</alias>
+                        <environmentVpcSecurityGroupsIds>
+                            <DEV>sg-123456</DEV>
+                            <TEST>sg-123456</TEST>
+                            <PROD>sg-123456</PROD>
+                        </environmentVpcSecurityGroupsIds>
+                        <environmentVpcSubnetIds>
+                            <DEV>subnet-123456,subnet-123456,subnet-123456</DEV>
+                            <TEST>subnet-123456,subnet-123456,subnet-123456</TEST>
+                            <PROD>subnet-123456,subnet-123456,subnet-123456</PROD>
+                        </environmentVpcSubnetIds>
+                        <lambdaRoleArn>arn:aws:iam::1234567:role/YourLambdaS3Role</lambdaRoleArn>
+                        <s3Bucket>mys3bucket</s3Bucket>
+                        <lambdaFunctionsJSON>
+                            [
+                              {
+                                "functionName": "my-function-name-0",
+                                "description": "I am awesome function",
+                                "handler": "no.flowlab.lambda0::test"
+                              },
+                              {
+                                "functionName": "my-function-name-1",
+                                "description": "I am awesome function too",
+                                "handler": "no.flowlab.lambda1"
+                              }
+                            ]
+                        </lambdaFunctionsJSON>
+                    </configuration>
+            </plugin>
+            
+            ...
+            
+        </project>
 ```
 
-Additionally, you must not have the `<functionName>` and `<handler>` configuration parameters in your
-lambduh-maven-plugin configuration.
+### Deploy from command line
+```
+$ mvn package lambda:deploy-lambda -Dlambda.alias=[DEV | TEST | PROD]
+```
 
 ### Credentials
 Your AWS credentials may be set on the command line or in the plugin configuration. If `accessKey` and
@@ -76,19 +114,11 @@ Your AWS credentials may be set on the command line or in the plugin configurati
 IAM permissions required by this plugin:
 * actions `s3:GetObject` and `s3:PutObject` on resource `arn:aws:s3:::<s3Bucket>/*`
 * action `s3:ListBucket` on resource `arn:aws:s3:::<s3Bucket>`
-* action `s3:CreateBucket` if you want the plugin to create the S3 bucket you specify.
 * action `lambda:CreateFunction`
 * action `lambda:InvokeFunction`
-* action `lambda:DeleteFunction`
 * action `lambda:GetFunction`
 * action `lambda:UpdateFunctionCode`
 * action `lambda:UpdateFunctionConfiguration``
-
-### Caveats
-As of 7/20/2015, this has yet to be tested with NodeJs code.
-
-### TODO
-* Allow upload of function code directly to AWS Lambda instead of using S3.
 
 ### Developers
 If you are interested in contributing to this project, please note that current development can be found in the SNAPSHOT branch of the coming release.  When making pull requests, please create them against this branch.
@@ -101,6 +131,17 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+BETA
+* Add support for configuration many lambda functions in one deliverable, supports config in JSON
+* Add support for aliases like DEV, TEST, PROD
+* Add support for VPC security groups per alias
+* Add support for VPC subnets per aias
+* Change defaults
+* Fixed some mainor code smells
+* Remove support mojo for deleting lambda function
+* Remove support for annotations
+* Refactor code to java8
+
 1.0.2 
 * Fixed PatternSyntaxException on windows https://github.com/SeanRoy/lambduh-maven-plugin/issues/1
 
@@ -145,3 +186,7 @@ deleting and recreating every time.  Thanks Guillermo Menendez
 
 1.1.6
 * Removed debugging related code.
+
+### TODO
+* Support for annotations on handler and method. 
+* Allow upload of function code directly to AWS Lambda instead of using S3.

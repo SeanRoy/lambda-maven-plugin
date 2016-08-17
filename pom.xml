@@ -25,7 +25,7 @@
     </licenses>
 
     <repositories>
-    <!-- Needed for parent  -->
+        <!-- Needed for parent  -->
         <repository>
             <id>cantara-releases</id>
             <name>Cantara Release Repository</name>
@@ -57,6 +57,10 @@
         <contributor>
             <name>Jem Rayfield</name>
             <email>jem.rayfield@ft.com</email>
+        </contributor>
+        <contributor>
+            <name>Krzysztof Grodzicki</name>
+            <email>kgrodzicki@gmail.com</email>
         </contributor>
     </contributors>
 
@@ -118,13 +122,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>maven</groupId>
-            <artifactId>maven-model</artifactId>
-            <version>3.0.2.javadoc</version>
-            <type>javadoc.jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>
@@ -143,35 +140,6 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
-            <!--<plugin>-->
-                <!--<groupId>org.apache.maven.plugins</groupId>-->
-                <!--<artifactId>maven-gpg-plugin</artifactId>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<id>sign-artifacts</id>-->
-                        <!--<phase>verify</phase>-->
-                        <!--<goals>-->
-                            <!--<goal>sign</goal>-->
-                        <!--</goals>-->
-                    <!--</execution>-->
-                <!--</executions>-->
-            <!--</plugin>-->
-            <!--<plugin>-->
-                <!--<groupId>org.sonatype.plugins</groupId>-->
-                <!--<artifactId>nexus-staging-maven-plugin</artifactId>-->
-                <!--<extensions>true</extensions>-->
-                <!--<configuration>-->
-                    <!--<serverId>ossrh</serverId>-->
-                    <!--<nexusUrl>https://oss.sonatype.org/</nexusUrl>-->
-                    <!--<autoReleaseAfterClose>true</autoReleaseAfterClose>-->
-                    <!--<keepStagingRepositoryOnFailure>false</keepStagingRepositoryOnFailure>-->
-                <!--</configuration>-->
-            <!--</plugin>-->
-            <!--<plugin>-->
-                <!--<groupId>org.sonatype.plugins</groupId>-->
-                <!--<artifactId>maven-versions-plugin</artifactId>-->
-                <!--<version>1.0</version>-->
-            <!--</plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-plugin-plugin</artifactId>
