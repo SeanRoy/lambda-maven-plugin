@@ -57,6 +57,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                 <lambda.functionCode>${project.build.directory}/${project.build.finalName}.jar</lambda.functionCode>
                 <lambda.version>${project.version}</lambda.version>
                 <lambda.alias>DEV</lambda.alias>
+                <lambda.publish>true</lambda.publish>
             </properties>
             
            ...
@@ -105,7 +106,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
 
 ### Deploy from command line
 ```
-$ mvn package lambda:deploy-lambda -Dlambda.alias=[DEV | TEST | PROD]
+$ mvn package lambda:deploy-lambda -Dlambda.alias=[DEV | TEST | PROD] -Dlambda.publish=true
 ```
 
 ### Credentials
