@@ -127,6 +127,11 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
      */
     @Parameter(property = "environmentVpcSubnetIds", defaultValue = "${environmentVpcSubnetIds}")
     public Map<String, String> environmentVpcSubnetIds;
+    /**
+     * <p>This boolean parameter can be used to set suffix for functionName. Suffix comes automatically from alias.</p>
+     */
+    @Parameter(property = "suffixFunctionName", defaultValue = "true")
+    public boolean suffixFunctionName;
 
     public String fileName;
     public AWSCredentials credentials;
@@ -194,7 +199,9 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
         validate(lambdaFunctions);
 
         lambdaFunctions = lambdaFunctions.stream().map(lambdaFunction -> {
-            lambdaFunction.withFunctionName(ofNullable(lambdaFunction.getFunctionName()).orElseThrow(() -> new IllegalArgumentException("Configuration error. LambdaFunction -> 'functionName' is required")))
+            String functionName = ofNullable(lambdaFunction.getFunctionName()).orElseThrow(() -> new IllegalArgumentException("Configuration error. LambdaFunction -> 'functionName' is required"));
+
+            lambdaFunction.withFunctionName(suffixFunctionName ? alias.addSuffix(functionName) : functionName)
                           .withHandler(ofNullable(lambdaFunction.getHandler()).orElseThrow(() -> new IllegalArgumentException("Configuration error. LambdaFunction -> 'handler' is required")))
                           .withDescription(ofNullable(lambdaFunction.getDescription()).orElse(""))
                           .withTimeout(ofNullable(lambdaFunction.getTimeout()).orElse(timeout))

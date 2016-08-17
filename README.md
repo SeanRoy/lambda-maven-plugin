@@ -29,6 +29,7 @@ on the Maven command line using the -D directive.
 * `memorySize` Defaults to 1024MB NOTE: Please review the AWS Lambda documentation on this setting as it could have an impact on your billing.
 * `environmentVpcSubnetIds` The VPC Subnets that Lambda should use to set up your VPC configuration. Format: "subnet-id (cidr-block) | az name-tag". Should be configured with alias as a key.
 * `environmentVpcSecurityGroupsIds` The VPC Security Groups that Lambda should use to set up your VPC configuration. Format: "sg-id (sg-name) | name-tag". Should be configured with alias as a key.
+* `suffixFunctionName` This boolean parameter can be used to set suffix for functionName. Suffix comes automatically from alias. On by default. 
 
 Current configuration of LambdaFunction can be found in LambdaFunction.java.
 
