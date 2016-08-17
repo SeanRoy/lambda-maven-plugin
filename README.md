@@ -82,6 +82,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                         </environmentVpcSubnetIds>
                         <lambdaRoleArn>arn:aws:iam::1234567:role/YourLambdaS3Role</lambdaRoleArn>
                         <s3Bucket>mys3bucket</s3Bucket>
+                        <publish>${lambda.publish}</publish>
                         <lambdaFunctionsJSON>
                             [
                               {
