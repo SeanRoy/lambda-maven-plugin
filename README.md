@@ -185,5 +185,6 @@ deleting and recreating every time.  Thanks Guillermo Menendez
 * Removed debugging related code.
 
 ### TODO
-* Support for annotations on handler and method. 
-* Allow upload of function code directly to AWS Lambda instead of using S3.
+* Support for annotations on handler and method
+* Allow upload of function code directly to AWS Lambda instead of using S3
+* Subsribe function to SNS http://docs.aws.amazon.com/lambda/latest/dg/with-sns-create-x-account-permissions.html
