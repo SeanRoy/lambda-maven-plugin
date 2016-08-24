@@ -6,7 +6,7 @@ as a part of your usual Maven build process. Example usage can be found on [wiki
 ### Usage
 `group id: no.cantara.maven.plugins`<br />
 `artifact id: lambda-maven-plugin`<br />
-`version: ?`<br />
+`version: 2.0-beta-1`<br />
 
 `mvn lambduh:deploy-lambda`  Deploy lambda code <br />
 
@@ -29,7 +29,7 @@ on the Maven command line using the -D directive.
 * `vpcSubnetIds` The VPC Subnets that Lambda should use to set up your VPC configuration. Format: "subnet-id (cidr-block) | az name-tag".
 * `vpcSecurityGroupIds` The VPC Security Groups that Lambda should use to set up your VPC configuration. Format: "sg-id (sg-name) | name-tag". Should be configured.
 * `publish` This boolean parameter can be used to request AWS Lambda to update the Lambda function and publish a version as an atomic operation. This is global for all functions and won't overwrite publish paramter in provided Lambda configuration
-* `functionNameSuffix` The suffix for the lambda function.
+* `functionNameSuffix` The suffix for the lambda function. Function name is automatically suffixed with it. When left blank no suffix will be applied.
 * `forceUpdate` This boolean parameter can be used to force update of existing configuration. Use it when you don't publish a function and want to deploy code in your Lambda function.
 
 Current configuration of LambdaFunction can be found in LambdaFunction.java.
@@ -66,7 +66,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
             <plugin>
                     <groupId>no.cantara.maven.plugins</groupId>
                     <artifactId>lambda-maven-plugin</artifactId>
-                    <version>2.0-SNAPSHOT</version>
+                    <version>2.0-beta-1</version>
                     <configuration>
                         <functionCode>${lambda.functionCode}</functionCode>
                         <version>${lambda.version}</version>
@@ -82,7 +82,9 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                               {
                                 "functionName": "my-function-name-0",
                                 "description": "I am awesome function",
-                                "handler": "no.flowlab.lambda0::test"
+                                "handler": "no.flowlab.lambda0::test",
+                                "timeout": 30,
+                                "memorySize": 512
                               },
                               {
                                 "functionName": "my-function-name-1",
@@ -116,7 +118,7 @@ IAM permissions required by this plugin:
 * action `lambda:InvokeFunction`
 * action `lambda:GetFunction`
 * action `lambda:UpdateFunctionCode`
-* action `lambda:UpdateFunctionConfiguration``
+* action `lambda:UpdateFunctionConfiguration`
 
 ### Developers
 If you are interested in contributing to this project, please note that current development can be found in the SNAPSHOT branch of the coming release.  When making pull requests, please create them against this branch.
@@ -130,7 +132,7 @@ please remember to add them to .gitignore.
 
 ### Releases
 BETA
-* Add support for configuration many lambda functions in one deliverable, supports config in JSON
+* Add support for configuration many lambda functions in one deliverable, supports config in JSON, each lumbda function configuration can be fully customized
 * Add support for version aliases when publish is activated
 * Change defaults
 * Fixed some mainor code smells
@@ -138,6 +140,7 @@ BETA
 * Remove support for annotations
 * Refactor code to java8
 * Add publish flag, which controls Lambda versioning in AWS
+* Force update support
 
 1.0.2 
 * Fixed PatternSyntaxException on windows https://github.com/SeanRoy/lambduh-maven-plugin/issues/1
