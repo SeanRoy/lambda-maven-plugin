@@ -6,6 +6,7 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.lambda.AWSLambdaClient;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.sns.AmazonSNSClient;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -144,6 +145,7 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
     public AWSCredentials credentials;
     public AmazonS3Client s3Client;
     public AWSLambdaClient lambdaClient;
+    public AmazonSNSClient snsClient;
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -186,10 +188,16 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
     }
 
     private void initAWSClients() {
-        s3Client = of(credentials).map(AmazonS3Client::new)
-                                  .orElse(new AmazonS3Client());
-        lambdaClient = of(credentials).map(credentials -> new AWSLambdaClient().<AWSLambdaClient>withRegion(Regions.fromName(regionName)))
-                                      .orElse(new AWSLambdaClient().withRegion(Regions.fromName(regionName)));
+        Regions region = Regions.fromName(regionName);
+        s3Client = of(credentials)
+                .map(AmazonS3Client::new)
+                .orElse(new AmazonS3Client());
+        lambdaClient = of(credentials)
+                .map(credentials -> new AWSLambdaClient(credentials).<AWSLambdaClient>withRegion(region))
+                .orElse(new AWSLambdaClient().withRegion(region));
+        snsClient = of(credentials)
+                .map(credentials -> new AmazonSNSClient(credentials).<AmazonSNSClient>withRegion(region))
+                .orElse(new AmazonSNSClient().withRegion(region));
     }
 
     private void initLambdaFunctionsConfiguration() throws MojoExecutionException, IOException {
@@ -210,7 +218,8 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
                           .withSecurityGroupsIds(ofNullable(vpcSecurityGroupIds).orElse(new ArrayList<>()))
                           .withVersion(version)
                           .withPublish(ofNullable(lambdaFunction.isPublish()).orElse(publish))
-                          .withAliases(aliases(lambdaFunction.isPublish()));
+                          .withAliases(aliases(lambdaFunction.isPublish()))
+                          .withTopics(ofNullable(lambdaFunction.getTopics()).orElse(new ArrayList<>()));
 
             return lambdaFunction;
         }).collect(toList());

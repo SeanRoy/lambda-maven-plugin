@@ -61,6 +61,12 @@ public class LambdaFunction {
      * </p>
      */
     private Boolean publish;
+    /**
+     * <p>A list og one or more SNS topics that Lambda function will be subscribed to.</p>
+     */
+    private List<String> topics;
+
+    private String functionArn;
 
     public LambdaFunction() {
     }
@@ -135,6 +141,13 @@ public class LambdaFunction {
         this.subnetIds = subnetIds;
     }
 
+    public List<String> getTopics() {
+        return topics;
+    }
+
+    public void setTopics(List<String> topics) {
+        this.topics = topics;
+    }
 
     public List<String> getAliases() {
         return aliases;
@@ -150,6 +163,14 @@ public class LambdaFunction {
 
     public void setPublish(boolean publish) {
         this.publish = publish;
+    }
+
+    public String getFunctionArn() {
+        return functionArn;
+    }
+
+    public void setFunctionArn(String functionArn) {
+        this.functionArn = functionArn;
     }
 
     public LambdaFunction withDescription(String description) {
@@ -202,6 +223,16 @@ public class LambdaFunction {
         return this;
     }
 
+    public LambdaFunction withTopics(List<String> topics) {
+        this.topics = topics;
+        return this;
+    }
+
+    public LambdaFunction withFunctionArn(String functionArn) {
+        this.functionArn = functionArn;
+        return this;
+    }
+
     @Override
     public String toString() {
         return new StringBuilder("LambdaFunction{")
@@ -215,6 +246,7 @@ public class LambdaFunction {
                 .append(", subnetIds=").append(subnetIds)
                 .append(", aliases=").append(aliases)
                 .append(", publish=").append(publish)
+                .append(", topics=").append(topics)
                 .append('}').toString();
     }
 }

@@ -31,6 +31,7 @@ on the Maven command line using the -D directive.
 * `publish` This boolean parameter can be used to request AWS Lambda to update the Lambda function and publish a version as an atomic operation. This is global for all functions and won't overwrite publish paramter in provided Lambda configuration
 * `functionNameSuffix` The suffix for the lambda function. Function name is automatically suffixed with it. When left blank no suffix will be applied.
 * `forceUpdate` This boolean parameter can be used to force update of existing configuration. Use it when you don't publish a function and want to deploy code in your Lambda function.
+* `topics` A list of one or more topics names that lambda function will be subcribed. Not existing topics will be created automatically.
 
 Current configuration of LambdaFunction can be found in LambdaFunction.java.
 
@@ -84,7 +85,8 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                                 "description": "I am awesome function",
                                 "handler": "no.flowlab.lambda0::test",
                                 "timeout": 30,
-                                "memorySize": 512
+                                "memorySize": 512,
+                                "topics": ["SNSTopic-1", "SNSTopic-2"]
                               },
                               {
                                 "functionName": "my-function-name-1",
@@ -141,6 +143,7 @@ BETA
 * Refactor code to java8
 * Add publish flag, which controls Lambda versioning in AWS
 * Force update support
+* Add support for SNS
 
 1.0.2 
 * Fixed PatternSyntaxException on windows https://github.com/SeanRoy/lambduh-maven-plugin/issues/1

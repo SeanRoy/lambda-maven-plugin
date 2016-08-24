@@ -102,6 +102,11 @@
             <artifactId>aws-java-sdk-s3</artifactId>
             <version>${aws.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-sns</artifactId>
+            <version>${aws.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.maven.plugin-testing</groupId>
