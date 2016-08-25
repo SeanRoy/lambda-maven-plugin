@@ -32,6 +32,7 @@ import static java.util.stream.Collectors.toList;
  *
  * @author sean, <a href="mailto:kgrodzicki@gmail.com">Krzysztof Grodzicki</a> 11/08/16.
  */
+@SuppressWarnings("ClassWithTooManyFields")
 public abstract class AbstractLambduhMojo extends AbstractMojo {
     /**
      * <p>The AWS access key.</p>
@@ -86,12 +87,12 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
     /**
      * <p>The JSON confuguration for Lambda functions. @see {@link LambdaFunction}.</p>
      */
-    @Parameter(property = "lambdaFunctionsJSON", defaultValue = "", required = false)
+    @Parameter(property = "lambdaFunctionsJSON")
     public String lambdaFunctionsJSON;
     /**
      * <p>The confuguration for Lambda functions. @see {@link LambdaFunction}. Can be configured in pom.xml. Automaticall parsed from JSON configuration.</p>
      */
-    @Parameter(property = "lambdaFunctions", defaultValue = "${lambdaFunctions}", required = false)
+    @Parameter(property = "lambdaFunctions", defaultValue = "${lambdaFunctions}")
     public List<LambdaFunction> lambdaFunctions;
     /**
      * <p>
@@ -156,7 +157,7 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
             initVersion();
             initLambdaFunctionsConfiguration();
 
-            lambdaFunctions.stream().forEach(lambdaFunction -> getLog().debug(lambdaFunction.toString()));
+            lambdaFunctions.forEach(lambdaFunction -> getLog().debug(lambdaFunction.toString()));
         } catch (Exception e) {
             getLog().error("Initialization of configuration failed", e);
             throw new MojoExecutionException(e.getMessage());

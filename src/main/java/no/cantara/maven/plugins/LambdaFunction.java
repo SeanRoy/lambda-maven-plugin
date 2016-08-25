@@ -8,6 +8,7 @@ import java.util.List;
  *
  * @author sean, <a href="mailto:kgrodzicki@gmail.com">Krzysztof Grodzicki</a> 11/08/16.
  */
+@SuppressWarnings({"unused", "ClassWithTooManyFields", "ClassWithTooManyMethods"})
 public class LambdaFunction {
     /**
      * <p>
@@ -235,6 +236,7 @@ public class LambdaFunction {
         return this;
     }
 
+    @SuppressWarnings("StringBufferReplaceableByString")
     @Override
     public String toString() {
         return new StringBuilder("LambdaFunction{")
