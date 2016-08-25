@@ -31,7 +31,7 @@ on the Maven command line using the -D directive.
 * `publish` This boolean parameter can be used to request AWS Lambda to update the Lambda function and publish a version as an atomic operation. This is global for all functions and won't overwrite publish paramter in provided Lambda configuration
 * `functionNameSuffix` The suffix for the lambda function. Function name is automatically suffixed with it. When left blank no suffix will be applied.
 * `forceUpdate` This boolean parameter can be used to force update of existing configuration. Use it when you don't publish a function and want to deploy code in your Lambda function.
-* `topics` A list of one or more topics names that lambda function will be subcribed. Not existing topics will be created automatically.
+* `topics` A list of one or more topics names that lambda function will be subcribed. Not existing topics will be created automatically in SNS. When `functionNameSuffix` is present then suffix will be added automatically to topic name.
 
 Current configuration of LambdaFunction can be found in LambdaFunction.java.
 

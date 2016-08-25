@@ -219,7 +219,7 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
                           .withVersion(version)
                           .withPublish(ofNullable(lambdaFunction.isPublish()).orElse(publish))
                           .withAliases(aliases(lambdaFunction.isPublish()))
-                          .withTopics(ofNullable(lambdaFunction.getTopics()).orElse(new ArrayList<>()));
+                          .withTopics(ofNullable(lambdaFunction.getTopics()).map(strings -> strings.stream().map(this::addSuffix).collect(toList())).orElse(new ArrayList<>()));
 
             return lambdaFunction;
         }).collect(toList());
