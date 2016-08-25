@@ -65,7 +65,9 @@ public class LambdaFunction {
      * <p>A list og one or more SNS topics that Lambda function will be subscribed to.</p>
      */
     private List<String> topics;
-
+    /**
+     * <p>The Amazon Resource Name (ARN) assigned to the function</p>
+     */
     private String functionArn;
 
     public LambdaFunction() {
