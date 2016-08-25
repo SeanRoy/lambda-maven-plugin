@@ -3,7 +3,7 @@
     <groupId>no.cantara.maven.plugins</groupId>
     <artifactId>lambda-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
-    <version>2.1-SNAPSHOT</version>
+    <version>2.0-beta-2</version>
 
     <parent>
         <groupId>no.cantara.emi</groupId>
@@ -67,7 +67,7 @@
         <connection>scm:git:git@github.com:Cantara/lambduh-maven-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:Cantara/lambduh-maven-plugin.git</developerConnection>
         <url>git@github.com:Cantara/lambduh-maven-plugin.git</url>
-      <tag>HEAD</tag>
+      <tag>lambda-maven-plugin-2.0-beta-2</tag>
   </scm>
 
     <dependencies>
