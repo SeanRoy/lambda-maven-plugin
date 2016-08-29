@@ -86,7 +86,8 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                                 "handler": "no.flowlab.lambda0::test",
                                 "timeout": 30,
                                 "memorySize": 512,
-                                "topics": ["SNSTopic-1", "SNSTopic-2"]
+                                "topics": ["SNSTopic-1", "SNSTopic-2"],
+                                "scheduledRules": [{"name": "every-minute", "description": "foo bar", "scheduleExpression": "rate(1 minute)" }]
                               },
                               {
                                 "functionName": "my-function-name-1",
@@ -144,6 +145,7 @@ BETA
 * Add publish flag, which controls Lambda versioning in AWS
 * Force update support
 * Add support for SNS
+* Add support for scheduled rules like cron jobs which trigger lambda function
 
 1.0.2 
 * Fixed PatternSyntaxException on windows https://github.com/SeanRoy/lambduh-maven-plugin/issues/1

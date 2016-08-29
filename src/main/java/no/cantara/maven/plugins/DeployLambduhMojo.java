@@ -1,5 +1,10 @@
 package no.cantara.maven.plugins;
 
+import com.amazonaws.services.cloudwatchevents.model.ListRuleNamesByTargetRequest;
+import com.amazonaws.services.cloudwatchevents.model.PutRuleRequest;
+import com.amazonaws.services.cloudwatchevents.model.PutRuleResult;
+import com.amazonaws.services.cloudwatchevents.model.PutTargetsRequest;
+import com.amazonaws.services.cloudwatchevents.model.Target;
 import com.amazonaws.services.lambda.model.AddPermissionRequest;
 import com.amazonaws.services.lambda.model.AddPermissionResult;
 import com.amazonaws.services.lambda.model.AliasConfiguration;
@@ -68,9 +73,17 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
             try {
                 of(getFunction(lambdaFunction))
                         .filter(getFunctionResult -> shouldUpdate(lambdaFunction, getFunctionResult))
-                        .map(getFunctionResult -> updateFunctionCode.andThen(updateFunctionConfig).andThen(createOrUpdateAliases).andThen(createOrUpdateSNSTopicSubscriptions).apply(lambdaFunction));
+                        .map(getFunctionResult ->
+                                updateFunctionCode.andThen(updateFunctionConfig)
+                                                  .andThen(createOrUpdateAliases)
+                                                  .andThen(createOrUpdateSNSTopicSubscriptions)
+                                                  .andThen(createOrUpdateScheduledRules)
+                                                  .apply(lambdaFunction));
             } catch (ResourceNotFoundException ignored) {
-                createFunction.andThen(createOrUpdateAliases).andThen(createOrUpdateSNSTopicSubscriptions).apply(lambdaFunction);
+                createFunction.andThen(createOrUpdateAliases)
+                              .andThen(createOrUpdateSNSTopicSubscriptions)
+                              .andThen(createOrUpdateScheduledRules)
+                              .apply(lambdaFunction);
             }
         } catch (Exception ex) {
             getLog().error("Error getting / creating / updating function", ex);
@@ -162,6 +175,35 @@ public class DeployLambduhMojo extends AbstractLambduhMojo {
                     .withStatementId(UUID.randomUUID().toString());
             AddPermissionResult addPermissionResult = lambdaClient.addPermission(addPermissionRequest);
             getLog().debug("Added permission to lambda function " + addPermissionResult.toString());
+        });
+        return lambdaFunction;
+    };
+
+    private Function<LambdaFunction, LambdaFunction> createOrUpdateScheduledRules = (LambdaFunction lambdaFunction) -> {
+        lambdaFunction.getScheduledRules().forEach(rule -> {
+            List<String> ruleNames = eventsClient.listRuleNamesByTarget(new ListRuleNamesByTargetRequest().withTargetArn(lambdaFunction.getFunctionArn())).getRuleNames();
+            if (!ruleNames.contains(rule.getName())) {
+                PutRuleRequest putRuleRequest = new PutRuleRequest()
+                        .withName(rule.getName())
+                        .withDescription(rule.getDescription())
+                        .withScheduleExpression(rule.getScheduleExpression());
+                PutRuleResult putRuleResult = eventsClient.putRule(putRuleRequest);
+                getLog().info("Created rule " + putRuleResult.getRuleArn());
+
+                AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
+                        .withAction("lambda:InvokeFunction")
+                        .withPrincipal("events.amazonaws.com")
+                        .withSourceArn(putRuleResult.getRuleArn())
+                        .withFunctionName(lambdaFunction.getFunctionName())
+                        .withStatementId(UUID.randomUUID().toString());
+                AddPermissionResult addPermissionResult = lambdaClient.addPermission(addPermissionRequest);
+                getLog().debug("Added permission to lambda function " + addPermissionResult.toString());
+
+                PutTargetsRequest putTargetsRequest = new PutTargetsRequest()
+                        .withRule(rule.getName())
+                        .withTargets(new Target().withId("1").withArn(lambdaFunction.getFunctionArn()));
+                eventsClient.putTargets(putTargetsRequest);
+            }
         });
         return lambdaFunction;
     };

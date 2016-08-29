@@ -4,6 +4,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClient;
 import com.amazonaws.services.lambda.AWSLambdaClient;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.sns.AmazonSNSClient;
@@ -147,6 +148,7 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
     public AmazonS3Client s3Client;
     public AWSLambdaClient lambdaClient;
     public AmazonSNSClient snsClient;
+    public AmazonCloudWatchEventsClient eventsClient;
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -199,6 +201,9 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
         snsClient = of(credentials)
                 .map(credentials -> new AmazonSNSClient(credentials).<AmazonSNSClient>withRegion(region))
                 .orElse(new AmazonSNSClient().withRegion(region));
+        eventsClient = of(credentials)
+                .map(credentials -> new AmazonCloudWatchEventsClient(credentials).<AmazonCloudWatchEventsClient>withRegion(region))
+                .orElse(new AmazonCloudWatchEventsClient().withRegion(region));
     }
 
     private void initLambdaFunctionsConfiguration() throws MojoExecutionException, IOException {
@@ -220,7 +225,11 @@ public abstract class AbstractLambduhMojo extends AbstractMojo {
                           .withVersion(version)
                           .withPublish(ofNullable(lambdaFunction.isPublish()).orElse(publish))
                           .withAliases(aliases(lambdaFunction.isPublish()))
-                          .withTopics(ofNullable(lambdaFunction.getTopics()).map(strings -> strings.stream().map(this::addSuffix).collect(toList())).orElse(new ArrayList<>()));
+                          .withTopics(ofNullable(lambdaFunction.getTopics()).map(strings -> strings.stream().map(this::addSuffix).collect(toList())).orElse(new ArrayList<>()))
+                          .withSchedulers(ofNullable(lambdaFunction.getScheduledRules()).map(rules -> rules.stream()
+                                                                                                           .map(rule -> rule.withName(addSuffix(rule.getName())))
+                                                                                                           .collect(toList()))
+                                                                                        .orElse(new ArrayList<>()));
 
             return lambdaFunction;
         }).collect(toList());

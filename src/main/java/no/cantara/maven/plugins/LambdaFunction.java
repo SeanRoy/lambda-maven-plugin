@@ -70,6 +70,10 @@ public class LambdaFunction {
      * <p>The Amazon Resource Name (ARN) assigned to the function</p>
      */
     private String functionArn;
+    /**
+     * <p>The Scheduled rules that invokes lambda function</p>
+     */
+    private List<Rule> scheduledRules;
 
     public LambdaFunction() {
     }
@@ -176,6 +180,14 @@ public class LambdaFunction {
         this.functionArn = functionArn;
     }
 
+    public List<Rule> getScheduledRules() {
+        return scheduledRules;
+    }
+
+    public void setScheduledRules(List<Rule> scheduledRules) {
+        this.scheduledRules = scheduledRules;
+    }
+
     public LambdaFunction withDescription(String description) {
         this.description = description;
         return this;
@@ -236,6 +248,11 @@ public class LambdaFunction {
         return this;
     }
 
+    public LambdaFunction withSchedulers(List<Rule> schedulers) {
+        this.scheduledRules = schedulers;
+        return this;
+    }
+
     @SuppressWarnings("StringBufferReplaceableByString")
     @Override
     public String toString() {
@@ -251,6 +268,7 @@ public class LambdaFunction {
                 .append(", aliases=").append(aliases)
                 .append(", publish=").append(publish)
                 .append(", topics=").append(topics)
+                .append(", scheduledRules=").append(scheduledRules)
                 .append('}').toString();
     }
 }
