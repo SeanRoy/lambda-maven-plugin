@@ -122,6 +122,7 @@ IAM permissions required by this plugin:
 * action `lambda:GetFunction`
 * action `lambda:UpdateFunctionCode`
 * action `lambda:UpdateFunctionConfiguration`
+* action `events:PutRule` on  resource `arn:aws:events:<region>:<acount-number>:rule/*`
 
 ### Developers
 If you are interested in contributing to this project, please note that current development can be found in the SNAPSHOT branch of the coming release.  When making pull requests, please create them against this branch.
@@ -145,7 +146,7 @@ BETA
 * Add publish flag, which controls Lambda versioning in AWS
 * Force update support
 * Add support for SNS
-* Add support for scheduled rules like cron jobs which trigger lambda function
+* Add support for scheduled rules, cron jobs which trigger lambda function
 
 1.0.2 
 * Fixed PatternSyntaxException on windows https://github.com/SeanRoy/lambduh-maven-plugin/issues/1
