@@ -32,23 +32,23 @@ public class LambdaFunction {
      */
     private String handler;
     /**
-     * <p>@see {@link AbstractLambduhMojo}</p>
+     * <p>@see {@link AbstractLambdaMojo}</p>
      */
     private Integer memorySize;
     /**
-     * <p>@see {@link AbstractLambduhMojo}</p>
+     * <p>@see {@link AbstractLambdaMojo}</p>
      */
     private Integer timeout;
     /**
-     * <p>@see {@link AbstractLambduhMojo}</p>
+     * <p>@see {@link AbstractLambdaMojo}</p>
      */
     private String version;
     /**
-     * <p>@see {@link AbstractLambduhMojo}</p>
+     * <p>@see {@link AbstractLambdaMojo}</p>
      */
     private List<String> securityGroupIds;
     /**
-     * <p>@see {@link AbstractLambduhMojo}</p>
+     * <p>@see {@link AbstractLambdaMojo}</p>
      */
     private List<String> subnetIds;
     /**

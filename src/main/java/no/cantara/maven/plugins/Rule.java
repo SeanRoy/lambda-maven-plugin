@@ -1,6 +1,8 @@
 package no.cantara.maven.plugins;
 
 /**
+ * I am a Rule.
+ *
  * @author <a href="mailto:kgrodzicki@gmail.com">Krzysztof Grodzicki</a> 29/08/16.
  */
 public class Rule {

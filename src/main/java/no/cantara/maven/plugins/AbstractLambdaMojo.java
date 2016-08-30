@@ -34,7 +34,7 @@ import static java.util.stream.Collectors.toList;
  * @author sean, <a href="mailto:kgrodzicki@gmail.com">Krzysztof Grodzicki</a> 11/08/16.
  */
 @SuppressWarnings("ClassWithTooManyFields")
-public abstract class AbstractLambduhMojo extends AbstractMojo {
+public abstract class AbstractLambdaMojo extends AbstractMojo {
     /**
      * <p>The AWS access key.</p>
      */

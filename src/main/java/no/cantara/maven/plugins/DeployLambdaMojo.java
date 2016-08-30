@@ -46,12 +46,12 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
 /**
- * A Maven plugin allowing a jar built as a part of a Maven project to be deployed to AWS lambda.
+ * I am a deploy mojo responsible to upload and create or update lambda function in AWS.
  *
  * @author Sean N. Roy, <a href="mailto:kgrodzicki@gmail.com">Krzysztof Grodzicki</a> 11/08/16.
  */
 @Mojo(name = "deploy-lambda")
-public class DeployLambduhMojo extends AbstractLambduhMojo {
+public class DeployLambdaMojo extends AbstractLambdaMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
