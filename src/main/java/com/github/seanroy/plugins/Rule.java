@@ -1,4 +1,4 @@
-package no.cantara.maven.plugins;
+package com.github.seanroy.plugins;
 
 /**
  * I am a Rule.

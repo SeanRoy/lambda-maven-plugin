@@ -1,4 +1,4 @@
-package no.cantara.maven.plugins;
+package com.github.seanroy.plugins;
 
 
 import com.amazonaws.services.lambda.model.DeleteFunctionRequest;

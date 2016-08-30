@@ -1,4 +1,4 @@
-package no.cantara.maven.plugins;
+package com.github.seanroy.plugins;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;

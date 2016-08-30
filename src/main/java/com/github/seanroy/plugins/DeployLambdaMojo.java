@@ -1,4 +1,4 @@
-package no.cantara.maven.plugins;
+package com.github.seanroy.plugins;
 
 import com.amazonaws.services.cloudwatchevents.model.ListRuleNamesByTargetRequest;
 import com.amazonaws.services.cloudwatchevents.model.PutRuleRequest;
