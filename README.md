@@ -4,11 +4,12 @@ The lambduh Maven plugin allows you to deploy your [AWS Lambda](http://aws.amazo
 as a part of your usual Maven build process. Example usage can be found on [wiki] (https://wiki.cantara.no/display/dev/Deploy+AWS+Lambda).
 
 ### Usage
-`group id: no.cantara.maven.plugins`<br />
+`group id: com.github.seanroy`<br />
 `artifact id: lambda-maven-plugin`<br />
-`version: 2.0-beta-1`<br />
+`version: 2.0-SNAPSHOT`<br />
 
-`mvn lambduh:deploy-lambda`  Deploy lambda code <br />
+`mvn lambda:deploy-lambda`  Deploy lambda code <br />
+`mvn lambda:delete-lambda`  Delete lambda code <br />
 
 ### Configuration
 All of the AWS Lambda configuration parameters may be set within the lambduh plugin configuration or
@@ -135,7 +136,7 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
-BETA
+2.0-SNAPSHOT
 * Add support for configuration many lambda functions in one deliverable, supports config in JSON, each lumbda function configuration can be fully customized
 * Add support for version aliases when publish is activated
 * Change defaults
@@ -194,5 +195,4 @@ deleting and recreating every time.  Thanks Guillermo Menendez
 * Removed debugging related code.
 
 ### TODO
-* Support for annotations on handler and method
 * Allow upload of function code directly to AWS Lambda instead of using S3
