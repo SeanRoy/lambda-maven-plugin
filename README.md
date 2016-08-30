@@ -1,4 +1,4 @@
-# lambduh-maven-plugin
+# lambda-maven-plugin
 
 The lambduh Maven plugin allows you to deploy your [AWS Lambda](http://aws.amazon.com/lambda/) functions
 as a part of your usual Maven build process. Example usage can be found on [wiki] (https://wiki.cantara.no/display/dev/Deploy+AWS+Lambda).
