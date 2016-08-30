@@ -48,7 +48,7 @@ import static java.util.stream.Collectors.toList;
 /**
  * I am a deploy mojo responsible to upload and create or update lambda function in AWS.
  *
- * @author Sean N. Roy, <a href="mailto:kgrodzicki@gmail.com">Krzysztof Grodzicki</a> 11/08/16.
+ * @author Sean N. Roy, <a href="mailto:krzysztof@flowlab.no">Krzysztof Grodzicki</a> 11/08/16.
  */
 @Mojo(name = "deploy-lambda")
 public class DeployLambdaMojo extends AbstractLambdaMojo {

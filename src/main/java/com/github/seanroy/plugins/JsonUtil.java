@@ -22,7 +22,7 @@ import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATE_KEY
 /**
  * I am serializing and deserializing classes to/from json.
  *
- * @author <a href="mailto:kgrodzicki@gmail.com">Krzysztof Grodzicki</a> 06/08/16.
+ * @author <a href="mailto:krzysztof@flowlab.no">Krzysztof Grodzicki</a> 06/08/16.
  */
 public class JsonUtil {
     public static final ObjectMapper mapper = new ObjectMapper()

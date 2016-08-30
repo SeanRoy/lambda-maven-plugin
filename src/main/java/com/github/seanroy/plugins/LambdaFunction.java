@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * I am a domain class for Lambda Function.
  *
- * @author sean, <a href="mailto:kgrodzicki@gmail.com">Krzysztof Grodzicki</a> 11/08/16.
+ * @author sean, <a href="mailto:krzysztof@flowlab.no">Krzysztof Grodzicki</a> 11/08/16.
  */
 @SuppressWarnings({"unused", "ClassWithTooManyFields", "ClassWithTooManyMethods"})
 public class LambdaFunction {

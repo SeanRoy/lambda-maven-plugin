@@ -9,7 +9,7 @@ import java.util.List;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:kgrodzicki@gmail.com">Krzysztof Grodzicki</a> 11/08/16.
+ * @author <a href="mailto:krzysztof@flowlab.no">Krzysztof Grodzicki</a> 11/08/16.
  */
 public class JsonUtilTest {
 

@@ -31,7 +31,7 @@ import static java.util.stream.Collectors.toList;
 /**
  * Abstracts all common parameter handling and initiation of AWS service clients.
  *
- * @author sean, <a href="mailto:kgrodzicki@gmail.com">Krzysztof Grodzicki</a> 11/08/16.
+ * @author sean, <a href="mailto:krzysztof@flowlab.no">Krzysztof Grodzicki</a> 11/08/16.
  */
 @SuppressWarnings("ClassWithTooManyFields")
 public abstract class AbstractLambdaMojo extends AbstractMojo {
