@@ -70,23 +70,19 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
 
     private Void createOrUpdate(LambdaFunction lambdaFunction) {
         try {
-            try {
-                of(getFunction(lambdaFunction))
-                        .filter(getFunctionResult -> shouldUpdate(lambdaFunction, getFunctionResult))
-                        .map(getFunctionResult ->
-                                updateFunctionCode.andThen(updateFunctionConfig)
-                                                  .andThen(createOrUpdateAliases)
-                                                  .andThen(createOrUpdateSNSTopicSubscriptions)
-                                                  .andThen(createOrUpdateScheduledRules)
-                                                  .apply(lambdaFunction));
-            } catch (ResourceNotFoundException ignored) {
-                createFunction.andThen(createOrUpdateAliases)
-                              .andThen(createOrUpdateSNSTopicSubscriptions)
-                              .andThen(createOrUpdateScheduledRules)
-                              .apply(lambdaFunction);
-            }
-        } catch (Exception ex) {
-            getLog().error("Error getting / creating / updating function", ex);
+            of(getFunction(lambdaFunction))
+                    .filter(getFunctionResult -> shouldUpdate(lambdaFunction, getFunctionResult))
+                    .map(getFunctionResult ->
+                            updateFunctionCode.andThen(updateFunctionConfig)
+                                              .andThen(createOrUpdateAliases)
+                                              .andThen(createOrUpdateSNSTopicSubscriptions)
+                                              .andThen(createOrUpdateScheduledRules)
+                                              .apply(lambdaFunction));
+        } catch (ResourceNotFoundException ignored) {
+            createFunction.andThen(createOrUpdateAliases)
+                          .andThen(createOrUpdateSNSTopicSubscriptions)
+                          .andThen(createOrUpdateScheduledRules)
+                          .apply(lambdaFunction);
         }
         return null;
     }
