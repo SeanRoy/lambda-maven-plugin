@@ -11,7 +11,7 @@ import org.apache.maven.plugins.annotations.Mojo;
  * @author Sean N. Roy
  */
 @Mojo(name = "delete-lambda")
-public class DeleteMojo extends AbstractLambdaMojo {
+public class DeleteLambdaMojo extends AbstractLambdaMojo {
 
     /**
      * The entry point into the AWS lambda function.
