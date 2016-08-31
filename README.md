@@ -124,6 +124,7 @@ IAM permissions required by this plugin:
 * action `lambda:UpdateFunctionCode`
 * action `lambda:UpdateFunctionConfiguration`
 * action `events:PutRule` on  resource `arn:aws:events:<region>:<acount-number>:rule/*`
+* action `events:PutTargets` on  resource `arn:aws:events:<region>:<acount-number>:rule/*`
 
 ### Developers
 If you are interested in contributing to this project, please note that current development can be found in the SNAPSHOT branch of the coming release.  When making pull requests, please create them against this branch.
