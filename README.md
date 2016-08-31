@@ -9,7 +9,7 @@ as a part of your usual Maven build process. Example usage can be found on [wiki
 `version: 2.0-SNAPSHOT`<br />
 
 `mvn lambda:deploy-lambda`  Deploy lambda code <br />
-`mvn lambda:delete-lambda`  Delete lambda code <br />
+`mvn lambda:delete-lambda`  Delete lambda code from Lambda and S3 <br />
 
 ### Configuration
 All of the AWS Lambda configuration parameters may be set within the lambduh plugin configuration or
