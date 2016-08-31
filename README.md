@@ -142,12 +142,11 @@ please remember to add them to .gitignore.
 * Add support for version aliases when publish is activated
 * Change defaults
 * Fixed some mainor code smells
-* Remove support mojo for deleting lambda function
 * Remove support for annotations
 * Refactor code to java8
 * Add publish flag, which controls Lambda versioning in AWS
 * Force update support
-* Add support for SNS
+* Add support for SNS topics
 * Add support for scheduled rules, cron jobs which trigger lambda function
 
 1.0.2 
