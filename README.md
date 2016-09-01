@@ -117,7 +117,7 @@ Your AWS credentials may be set on the command line or in the plugin configurati
 ~/.aws/credentials file
 
 IAM permissions required by this plugin:
-* actions `s3:GetObject` and `s3:PutObject` on resource `arn:aws:s3:::<s3Bucket>/*`
+* action `s3:GetObject` and `s3:PutObject` on resource `arn:aws:s3:::<s3Bucket>/*`
 * action `s3:ListBucket` on resource `arn:aws:s3:::<s3Bucket>`
 * action `s3:CreateBucket` if you want the plugin to create the S3 bucket you specify.
 * action `lambda:CreateFunction`
