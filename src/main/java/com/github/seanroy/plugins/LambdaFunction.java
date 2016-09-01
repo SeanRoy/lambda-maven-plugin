@@ -3,6 +3,8 @@ package com.github.seanroy.plugins;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Optional.ofNullable;
+
 /**
  * I am a domain class for Lambda Function.
  *
@@ -174,6 +176,12 @@ public class LambdaFunction {
 
     public String getFunctionArn() {
         return functionArn;
+    }
+
+    public String getUnqualifiedFunctionArn() {
+        return ofNullable(functionArn)
+                .map(arn -> arn.replaceAll(functionName + ".*", functionName))
+                .orElse(null);
     }
 
     public void setFunctionArn(String functionArn) {

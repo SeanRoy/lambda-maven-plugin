@@ -158,10 +158,10 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
 
             SubscribeRequest subscribeRequest = new SubscribeRequest()
                     .withTopicArn(createTopicResult.getTopicArn())
-                    .withEndpoint(lambdaFunction.getFunctionArn())
+                    .withEndpoint(lambdaFunction.getUnqualifiedFunctionArn())
                     .withProtocol("lambda");
             SubscribeResult subscribeResult = snsClient.subscribe(subscribeRequest);
-            getLog().info(lambdaFunction.getFunctionArn() + " subscribed to " + createTopicResult.getTopicArn());
+            getLog().info(lambdaFunction.getUnqualifiedFunctionArn() + " subscribed to " + createTopicResult.getTopicArn());
             getLog().debug("Created subscription " + subscribeResult.getSubscriptionArn());
 
             AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
