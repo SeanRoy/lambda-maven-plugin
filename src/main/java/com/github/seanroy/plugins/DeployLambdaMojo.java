@@ -23,7 +23,6 @@ import com.amazonaws.services.lambda.model.UpdateFunctionCodeResult;
 import com.amazonaws.services.lambda.model.UpdateFunctionConfigurationRequest;
 import com.amazonaws.services.lambda.model.VpcConfig;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.sns.model.CreateTopicRequest;
@@ -178,8 +177,10 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
 
     private Function<LambdaFunction, LambdaFunction> createOrUpdateScheduledRules = (LambdaFunction lambdaFunction) -> {
         lambdaFunction.getScheduledRules().forEach(rule -> {
-            List<String> ruleNames = eventsClient.listRuleNamesByTarget(new ListRuleNamesByTargetRequest().withTargetArn(lambdaFunction.getFunctionArn())).getRuleNames();
-            if (!ruleNames.contains(rule.getName())) {
+            ListRuleNamesByTargetRequest listRuleNamesByTargetRequest = new ListRuleNamesByTargetRequest()
+                    .withTargetArn(lambdaFunction.getUnqualifiedFunctionArn());
+            boolean shouldCreateConfigurationForRule = eventsClient.listRuleNamesByTarget(listRuleNamesByTargetRequest).getRuleNames().stream().noneMatch(ruleName -> ruleName.equals(rule.getName()));
+            if (shouldCreateConfigurationForRule) {
                 PutRuleRequest putRuleRequest = new PutRuleRequest()
                         .withName(rule.getName())
                         .withDescription(rule.getDescription())
@@ -198,7 +199,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
 
                 PutTargetsRequest putTargetsRequest = new PutTargetsRequest()
                         .withRule(rule.getName())
-                        .withTargets(new Target().withId("1").withArn(lambdaFunction.getFunctionArn()));
+                        .withTargets(new Target().withId("1").withArn(lambdaFunction.getUnqualifiedFunctionArn()));
                 eventsClient.putTargets(putTargetsRequest);
             }
         });
