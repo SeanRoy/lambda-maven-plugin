@@ -33,7 +33,7 @@ on the Maven command line using the -D directive.
 * `functionNameSuffix` The suffix for the lambda function. Function name is automatically suffixed with it. When left blank no suffix will be applied.
 * `forceUpdate` This boolean parameter can be used to force update of existing configuration. Use it when you don't publish a function and want to deploy code in your Lambda function.
 * `topics` A list of one or more topics names that lambda function will be subcribed. Not existing topics will be created automatically in SNS. When `functionNameSuffix` is present then suffix will be added automatically to topic name.
-* `scheduledRules`  A list of one or more schduled rules that generates events to invoke Lambda function. You can specify a fixed rate (for example, execute a Lambda function every hour or 15 minutes), or you can specify a Cron expression.
+* `scheduledRules` A list of one or more schduled rules that generates events to invoke Lambda function. You can specify a fixed rate (for example, execute a Lambda function every hour or 15 minutes), or you can specify a Cron expression. When `functionNameSuffix` is present then suffix will be added automatically to Rule name.
 
 Current configuration of LambdaFunction can be found in LambdaFunction.java.
 
