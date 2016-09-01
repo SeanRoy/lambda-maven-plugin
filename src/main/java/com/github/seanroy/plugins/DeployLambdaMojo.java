@@ -23,6 +23,7 @@ import com.amazonaws.services.lambda.model.UpdateFunctionCodeResult;
 import com.amazonaws.services.lambda.model.UpdateFunctionConfigurationRequest;
 import com.amazonaws.services.lambda.model.VpcConfig;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.sns.model.CreateTopicRequest;
@@ -309,10 +310,9 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     }
 
     private String getBucket() {
-        if (s3Client.doesBucketExist(s3Bucket)) {
-            return s3Bucket;
-        } else {
-            throw new IllegalArgumentException(s3Bucket + " does not exist. Create me first...");
+        if (s3Client.listBuckets().stream().noneMatch(p -> p.getName().equals(s3Bucket))) {
+            getLog().info("Created bucket s3://" + s3Client.createBucket(s3Bucket).getName());
         }
+        return s3Bucket;
     }
 }
