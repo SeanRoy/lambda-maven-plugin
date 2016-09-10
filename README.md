@@ -140,7 +140,7 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
-2.0-SNAPSHOT
+2.0.0-SNAPSHOT
 * Add support for configuration many lambda functions in one deliverable, supports config in JSON, each lumbda function configuration can be fully customized
 * Add support for version aliases when publish is activated
 * Change defaults
