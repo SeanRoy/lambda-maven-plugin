@@ -32,10 +32,10 @@
           <version>0.1-Test</version>
           <memorySize>512</memorySize>
           <regionName>us-east-1</regionName>
-          <runtime>Java8</runtime>
+          <runtime>java8</runtime>
           <s3Bucket>lambda-function-code</s3Bucket>
           <timeout>60</timeout>
-          <lambdaRoleArn>Put your arn here</lambdaRoleArn>
+          <lambdaRoleArn>YOUR LAMBDA ROLE ARN HERE</lambdaRoleArn>
           <lambdaFunctionsJSON>
          [
                               {
