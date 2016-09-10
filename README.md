@@ -6,66 +6,24 @@ as a part of your usual Maven build process. Example usage can be found on [wiki
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambda-maven-plugin`<br />
-`version: 2.0-SNAPSHOT`<br />
+`version: 2.0.0`<br />
 
-`mvn lambda:deploy-lambda`  Deploy lambda code <br />
-`mvn lambda:delete-lambda`  Delete lambda code from Lambda and S3 <br />
-<br/>
-With shade:
-<br/>
-`mvn -DskipTests package shade:shade lambda:deploy-lambda`
+### Deploy from command line
+```
+mvn package shade:shade lambda:deploy-lambda 
+```
+
+### Delete from command line
+```
+mvn lambda:delete-lambda
+```
 
 ### Configuration
-All of the AWS Lambda configuration parameters may be set within the lambda plugin configuration or
-on the Maven command line using the -D directive.
+All of the AWS Lambda configuration parameters may be set within the lambda plugin configuration or on the Maven command line using the -D directive.
 
 * `accessKey` Your user's AWS access key.
 * `secretKey` Your user's AWS secret access key.
 * `functionCode` REQUIRED The location of your deliverable. For instance, a jar file for a Java8 lambda function.
-<<<<<<< HEAD
-${project.build.directory}/${project.build.finalName}.${project.packaging}
-* `functionNameSuffix` OPTIONAL A suffix to add to the end of all of your function names.  This is useful for when you
-want to deploy multiple instances or versions of your function corresponding to different environments.
-* `description` A brief description of what your function does.
-* `s3Bucket` Defaults to lambda-function-code. The AWS S3 bucket to which to upload your code from which it will be deployed to Lambda.
-* `lambdaRoleArn` REQUIRED The ARN of the AWS role which the lambda user will assume when it executes.
-* `runtime` Defaults to Java8 Specifies whether this is Java8 or NodeJs code.
-* `timeout` Defaults to 60 seconds The amount of time in which the function is allowed to run.
-* `memorySize` Defaults to 128M NOTE: Please review the AWS Lambda documentation on this setting as it could have an impact on your billing.
-* `vpcSecurityGroupIds` OPTIONAL A list of one or more ids corresponding to the security groups protecting access to your AWS VPC.
-* `vpcSubnetIds` OPTIONAL A list of subnet ids within your AWS VPC.
-
-Annotations may also be used to specify which of your functions are to be deployed to AWS Lambda.  This is useful
-if you have multiple functions in the same project jar file to deploy.  In the future I hope to add more configuration parameters to
-the annotation to allow each method's configuration to be completely independent of the others.
-
-To use Annotations, add the following dependency to your project pom.xml:<br />
-`group id: com.github.seanroy`<br />
-`artifact id: lambda-maven-annotations`<br />
-`version:1.0.0`<br />
-
-Here is an example of annotated code:
-
-```java
-import com.github.seanroy.annotations.*;
-/**
- * Hello world!
- *
- */
-public class App
-{
-    @LambduhFunction(functionName="Hello-World", runtime="Java8", description="Hello World test")
-    public static void hello_world( String[] args )
-    {
-        System.out.println( "Hello World!" );
-    }
-    
-    @LambduhFunction(functionName="Goodbye-World", runtime="Java8", description="Goodbye World test")
-    public static void goodbye_world( String [] args ) {
-        System.out.println( "Goodbye World!" );
-    }
-}
-=======
 * `version` REQUIRED version of the deliverable.
 * `s3Bucket` REQUIRED Defaults to lambda-function-code. The AWS S3 bucket to which to upload your code from which it will be deployed to Lambda.
 * `region` Defaults to eu-west-1 The AWS region to use for your function.
@@ -152,12 +110,6 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
             ...
             
         </project>
->>>>>>> f30d0cf50359941605317a50f6aea7470a3348e7
-```
-
-### Deploy from command line
-```
-$ mvn package lambda:deploy-lambda -Dlambda.functionNameSuffix=dev -Dlambda.publish=false -Dlambda.forceUpdate=true
 ```
 
 ### Credentials
