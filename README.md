@@ -7,6 +7,9 @@ as a part of your usual Maven build process. Example usage can be found on [wiki
 `group id: com.github.seanroy`<br />
 `artifact id: lambda-maven-plugin`<br />
 `version: 2.0.0`<br />
+<br/><br/>
+Please note that the artifact has been renamed from lambduh-maven-plugin to
+lambda-maven-plugin.
 
 ### Deploy from command line
 ```
