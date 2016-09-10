@@ -26,15 +26,29 @@
   <build>
     <plugins>
       <plugin>
-        <artifactId>lambduh-maven-plugin</artifactId>
+        <artifactId>lambda-maven-plugin</artifactId>
         <configuration>
-          <functionCode>src/test/resources/annotation-test-project/lambduh-test-0.0.1-SNAPSHOT.jar</functionCode>
-          <functionNameSuffix>_unit_test</functionNameSuffix>
+          <functionCode>src/test/resources/test-projects/basic-test/lambda-test-0.0.1-SNAPSHOT.jar</functionCode>
+          <version>0.1-Test</version>
           <memorySize>512</memorySize>
           <regionName>us-east-1</regionName>
+          <runtime>Java8</runtime>
           <s3Bucket>lambda-function-code</s3Bucket>
           <timeout>60</timeout>
-          <lambdaRoleArn>Put your ARN here</lambdaRoleArn>
+          <lambdaRoleArn>Put your arn here</lambdaRoleArn>
+          <lambdaFunctionsJSON>
+         [
+                              {
+                                "functionName": "Test",
+                                "description": "I am an awesome function",
+                                "handler": "com.github.seanroy.lambduh_test::hello_world",
+                                "timeout": 30,
+                                "memorySize": 512,
+                                "topics": [],
+                                "scheduledRules": []
+                              }
+         ]
+         </lambdaFunctionsJSON>
         </configuration>
       </plugin>
     </plugins>
