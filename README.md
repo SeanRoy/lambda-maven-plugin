@@ -1,8 +1,7 @@
 # lambda-maven-plugin
 
-The lambda Maven plugin allows you to deploy your [AWS Lambda](http://aws.amazon.com/lambda/) functions
-as a part of your usual Maven build process. Example usage can be found on [wiki] (https://wiki.cantara.no/display/dev/Deploy+AWS+Lambda).
-
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.seanroy/lambda-maven-plugin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.seanroy/lambda-maven-plugin)
+<br/>
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambda-maven-plugin`<br />
@@ -52,19 +51,6 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
         
             ...
 
-            <pluginRepositories>
-                    <pluginRepository>
-                    <id>cantara-snapshots</id>
-                    <name>Cantara Snapshot Repository</name>
-                    <url>http://mvnrepo.cantara.no/content/repositories/snapshots/</url>
-                    <snapshots>
-                        <enabled>true</enabled>
-                    </snapshots>
-                </pluginRepository>
-            </pluginRepositories>
-            
-            ...
-            
             <properties>
                 <lambda.functionCode>${project.build.directory}/${project.build.finalName}.jar</lambda.functionCode>
                 <lambda.version>${project.version}</lambda.version>
@@ -76,9 +62,9 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
            ...
            
             <plugin>
-                    <groupId>no.cantara.maven.plugins</groupId>
+                    <groupId>com.github.seanroy</groupId>
                     <artifactId>lambda-maven-plugin</artifactId>
-                    <version>2.0-beta-1</version>
+                    <version>2.0.1</version>
                     <configuration>
                         <functionCode>${lambda.functionCode}</functionCode>
                         <version>${lambda.version}</version>
@@ -143,7 +129,7 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
-2.0.0-SNAPSHOT
+2.0.0
 * Add support for configuration many lambda functions in one deliverable, supports config in JSON, each lumbda function configuration can be fully customized
 * Add support for version aliases when publish is activated
 * Change defaults
