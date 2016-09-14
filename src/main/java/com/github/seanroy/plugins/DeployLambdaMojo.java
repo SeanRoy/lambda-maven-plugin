@@ -119,8 +119,8 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 .withDescription(lambdaFunction.getDescription())
                 .withHandler(lambdaFunction.getHandler())
                 .withRole(lambdaRoleArn)
-                .withTimeout(timeout)
-                .withMemorySize(memorySize)
+                .withTimeout(ofNullable(lambdaFunction.getTimeout()).orElse(timeout))
+                .withMemorySize(ofNullable(lambdaFunction.getMemorySize()).orElse(memorySize))
                 .withRuntime(runtime)
                 .withVpcConfig(getVpcConfig(lambdaFunction));
         lambdaClient.updateFunctionConfiguration(updateFunctionRequest);
