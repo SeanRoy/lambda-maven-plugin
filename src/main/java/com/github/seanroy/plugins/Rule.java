@@ -2,9 +2,10 @@ package com.github.seanroy.plugins;
 
 /**
  * I am a Rule.
- *
+ * @deprecated This class will be removed in next main version. Replaced by Trigger.
  * @author <a href="mailto:krzysztof@flowlab.no">Krzysztof Grodzicki</a> 29/08/16.
  */
+@Deprecated
 public class Rule {
     private String name;
     private String description;
