@@ -5,6 +5,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClient;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBStreamsClient;
 import com.amazonaws.services.lambda.AWSLambdaClient;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.sns.AmazonSNSClient;
@@ -149,6 +150,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     public AWSLambdaClient lambdaClient;
     public AmazonSNSClient snsClient;
     public AmazonCloudWatchEventsClient eventsClient;
+    public AmazonDynamoDBStreamsClient dynamoDBStreamsClient;
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -204,6 +206,9 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
         eventsClient = of(credentials)
                 .map(credentials -> new AmazonCloudWatchEventsClient(credentials).<AmazonCloudWatchEventsClient>withRegion(region))
                 .orElse(new AmazonCloudWatchEventsClient().withRegion(region));
+        dynamoDBStreamsClient = of(credentials)
+                .map(credentials -> new AmazonDynamoDBStreamsClient(credentials).<AmazonDynamoDBStreamsClient>withRegion(region))
+                .orElse(new AmazonDynamoDBStreamsClient().withRegion(region));
     }
 
     private void initLambdaFunctionsConfiguration() throws MojoExecutionException, IOException {
@@ -229,7 +234,15 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
                           .withSchedulers(ofNullable(lambdaFunction.getScheduledRules()).map(rules -> rules.stream()
                                                                                                            .map(rule -> rule.withName(addSuffix(rule.getName())))
                                                                                                            .collect(toList()))
-                                                                                        .orElse(new ArrayList<>()));
+                                                                                        .orElse(new ArrayList<>()))
+                          .withTriggers(ofNullable(lambdaFunction.getTriggers()).map(triggers -> triggers.stream()
+                                                                                                         .map(trigger -> {
+                                                                                                             trigger.withRuleName(addSuffix(trigger.getRuleName()));
+                                                                                                             trigger.withDynamoDBTable(addSuffix(trigger.getDynamoDBTable()));
+                                                                                                             return trigger;
+                                                                                                         })
+                                                                                                         .collect(toList()))
+                                                                                .orElse(new ArrayList<>()));
 
             return lambdaFunction;
         }).collect(toList());

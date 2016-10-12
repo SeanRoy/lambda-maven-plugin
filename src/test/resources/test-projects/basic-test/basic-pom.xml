@@ -45,7 +45,8 @@
                                 "timeout": 30,
                                 "memorySize": 512,
                                 "topics": [],
-                                "scheduledRules": []
+                                "scheduledRules": [],
+                                "triggers": []
                               }
          ]
          </lambdaFunctionsJSON>

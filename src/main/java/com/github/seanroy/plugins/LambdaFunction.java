@@ -67,6 +67,7 @@ public class LambdaFunction {
     /**
      * <p>A list og one or more SNS topics that Lambda function will be subscribed to.</p>
      */
+    @Deprecated
     private List<String> topics;
     /**
      * <p>The Amazon Resource Name (ARN) assigned to the function</p>
@@ -75,7 +76,12 @@ public class LambdaFunction {
     /**
      * <p>The Scheduled rules that invokes lambda function</p>
      */
+    @Deprecated
     private List<Rule> scheduledRules;
+    /**
+     * <p>The triggers that generates events that Lambda responds to</p>
+     */
+    private List<Trigger> triggers;
 
     public LambdaFunction() {
     }
@@ -184,6 +190,10 @@ public class LambdaFunction {
                 .orElse(null);
     }
 
+    public List<Trigger> getTriggers() {
+        return triggers;
+    }
+
     public void setFunctionArn(String functionArn) {
         this.functionArn = functionArn;
     }
@@ -261,6 +271,11 @@ public class LambdaFunction {
         return this;
     }
 
+    public LambdaFunction withTriggers(List<Trigger> triggers) {
+        this.triggers = triggers;
+        return this;
+    }
+
     @SuppressWarnings("StringBufferReplaceableByString")
     @Override
     public String toString() {
@@ -277,6 +292,7 @@ public class LambdaFunction {
                 .append(", publish=").append(publish)
                 .append(", topics=").append(topics)
                 .append(", scheduledRules=").append(scheduledRules)
+                .append(", triggers=").append(triggers)
                 .append('}').toString();
     }
 }

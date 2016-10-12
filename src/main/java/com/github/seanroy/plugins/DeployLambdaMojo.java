@@ -5,23 +5,10 @@ import com.amazonaws.services.cloudwatchevents.model.PutRuleRequest;
 import com.amazonaws.services.cloudwatchevents.model.PutRuleResult;
 import com.amazonaws.services.cloudwatchevents.model.PutTargetsRequest;
 import com.amazonaws.services.cloudwatchevents.model.Target;
-import com.amazonaws.services.lambda.model.AddPermissionRequest;
-import com.amazonaws.services.lambda.model.AddPermissionResult;
-import com.amazonaws.services.lambda.model.AliasConfiguration;
-import com.amazonaws.services.lambda.model.CreateAliasRequest;
-import com.amazonaws.services.lambda.model.CreateFunctionRequest;
-import com.amazonaws.services.lambda.model.CreateFunctionResult;
-import com.amazonaws.services.lambda.model.FunctionCode;
-import com.amazonaws.services.lambda.model.GetFunctionRequest;
-import com.amazonaws.services.lambda.model.GetFunctionResult;
-import com.amazonaws.services.lambda.model.ListAliasesRequest;
-import com.amazonaws.services.lambda.model.ListAliasesResult;
-import com.amazonaws.services.lambda.model.ResourceNotFoundException;
-import com.amazonaws.services.lambda.model.UpdateAliasRequest;
-import com.amazonaws.services.lambda.model.UpdateFunctionCodeRequest;
-import com.amazonaws.services.lambda.model.UpdateFunctionCodeResult;
-import com.amazonaws.services.lambda.model.UpdateFunctionConfigurationRequest;
-import com.amazonaws.services.lambda.model.VpcConfig;
+import com.amazonaws.services.dynamodbv2.model.ListStreamsRequest;
+import com.amazonaws.services.dynamodbv2.model.ListStreamsResult;
+import com.amazonaws.services.dynamodbv2.model.Stream;
+import com.amazonaws.services.lambda.model.*;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectResult;
@@ -37,10 +24,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 
+import static com.amazonaws.services.lambda.model.EventSourcePosition.LATEST;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -75,13 +65,15 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                     .map(getFunctionResult ->
                             updateFunctionCode.andThen(updateFunctionConfig)
                                               .andThen(createOrUpdateAliases)
-                                              .andThen(createOrUpdateSNSTopicSubscriptions)
-                                              .andThen(createOrUpdateScheduledRules)
+                                              .andThen(createOrUpdateSNSTopicSubscriptions) // TODO [grokrz]: this step can be removed in next main version. Replaced by triggers
+                                              .andThen(createOrUpdateScheduledRules) // TODO [grokrz]: this step can be removed in next main version. Replaced by triggers
+                                              .andThen(createOrUpdateTriggers)
                                               .apply(lambdaFunction));
         } catch (ResourceNotFoundException ignored) {
             createFunction.andThen(createOrUpdateAliases)
-                          .andThen(createOrUpdateSNSTopicSubscriptions)
-                          .andThen(createOrUpdateScheduledRules)
+                          .andThen(createOrUpdateSNSTopicSubscriptions) // TODO [grokrz]: this step can be removed in next main version. Replaced by triggers
+                          .andThen(createOrUpdateScheduledRules) // TODO [grokrz]: this step can be removed in next main version. Replaced by triggers
+                          .andThen(createOrUpdateTriggers)
                           .apply(lambdaFunction);
         }
         return null;
@@ -148,6 +140,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         return lambdaFunction;
     };
 
+    @Deprecated
     private Function<LambdaFunction, LambdaFunction> createOrUpdateSNSTopicSubscriptions = (LambdaFunction lambdaFunction) -> {
         lambdaFunction.getTopics().forEach(topic -> {
             CreateTopicRequest createTopicRequest = new CreateTopicRequest()
@@ -175,11 +168,39 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         return lambdaFunction;
     };
 
+    private BiFunction<Trigger, LambdaFunction, Trigger> createOrUpdateSNSTopicSubscription = (Trigger trigger, LambdaFunction lambdaFunction) -> {
+        getLog().info("About to create or update " + trigger.getIntegration() + " trigger for " + trigger.getSNSTopic());
+        CreateTopicRequest createTopicRequest = new CreateTopicRequest()
+                .withName(trigger.getSNSTopic());
+        CreateTopicResult createTopicResult = snsClient.createTopic(createTopicRequest);
+        getLog().info("Topic " + createTopicResult.getTopicArn() + " created");
+
+        SubscribeRequest subscribeRequest = new SubscribeRequest()
+                .withTopicArn(createTopicResult.getTopicArn())
+                .withEndpoint(lambdaFunction.getUnqualifiedFunctionArn())
+                .withProtocol("lambda");
+        SubscribeResult subscribeResult = snsClient.subscribe(subscribeRequest);
+        getLog().info(lambdaFunction.getUnqualifiedFunctionArn() + " subscribed to " + createTopicResult.getTopicArn());
+        getLog().info("Created " + trigger.getIntegration() + " trigger " + subscribeResult.getSubscriptionArn());
+
+        AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
+                .withAction("lambda:InvokeFunction")
+                .withPrincipal("sns.amazonaws.com")
+                .withSourceArn(createTopicResult.getTopicArn())
+                .withFunctionName(lambdaFunction.getFunctionName())
+                .withStatementId(UUID.randomUUID().toString());
+        AddPermissionResult addPermissionResult = lambdaClient.addPermission(addPermissionRequest);
+        getLog().debug("Added permission to lambda function " + addPermissionResult.toString());
+        return trigger;
+    };
+
+    @Deprecated
     private Function<LambdaFunction, LambdaFunction> createOrUpdateScheduledRules = (LambdaFunction lambdaFunction) -> {
         lambdaFunction.getScheduledRules().forEach(rule -> {
             ListRuleNamesByTargetRequest listRuleNamesByTargetRequest = new ListRuleNamesByTargetRequest()
                     .withTargetArn(lambdaFunction.getUnqualifiedFunctionArn());
             boolean shouldCreateConfigurationForRule = eventsClient.listRuleNamesByTarget(listRuleNamesByTargetRequest).getRuleNames().stream().noneMatch(ruleName -> ruleName.equals(rule.getName()));
+
             if (shouldCreateConfigurationForRule) {
                 PutRuleRequest putRuleRequest = new PutRuleRequest()
                         .withName(rule.getName())
@@ -201,6 +222,98 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                         .withRule(rule.getName())
                         .withTargets(new Target().withId("1").withArn(lambdaFunction.getUnqualifiedFunctionArn()));
                 eventsClient.putTargets(putTargetsRequest);
+            }
+        });
+        return lambdaFunction;
+    };
+
+    private BiFunction<Trigger, LambdaFunction, Trigger> createOrUpdateScheduledRule = (Trigger trigger, LambdaFunction lambdaFunction) -> {
+        getLog().info("About to create or update " + trigger.getIntegration() + " trigger for " + trigger.getRuleName());
+        ListRuleNamesByTargetRequest listRuleNamesByTargetRequest = new ListRuleNamesByTargetRequest()
+                .withTargetArn(lambdaFunction.getUnqualifiedFunctionArn());
+        boolean shouldCreateConfigurationForRule = eventsClient.listRuleNamesByTarget(listRuleNamesByTargetRequest).getRuleNames().stream().noneMatch(ruleName -> ruleName.equals(trigger.getRuleName()));
+
+        if (shouldCreateConfigurationForRule) {
+            PutRuleRequest putRuleRequest = new PutRuleRequest()
+                    .withName(trigger.getRuleName())
+                    .withDescription(trigger.getRuleDescription())
+                    .withScheduleExpression(trigger.getScheduleExpression());
+            PutRuleResult putRuleResult = eventsClient.putRule(putRuleRequest);
+            getLog().info("Created " + trigger.getIntegration() + " trigger " + putRuleResult.getRuleArn());
+
+            AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
+                    .withAction("lambda:InvokeFunction")
+                    .withPrincipal("events.amazonaws.com")
+                    .withSourceArn(putRuleResult.getRuleArn())
+                    .withFunctionName(lambdaFunction.getFunctionName())
+                    .withStatementId(UUID.randomUUID().toString());
+            AddPermissionResult addPermissionResult = lambdaClient.addPermission(addPermissionRequest);
+            getLog().debug("Added permission to lambda function " + addPermissionResult.toString());
+
+            PutTargetsRequest putTargetsRequest = new PutTargetsRequest()
+                    .withRule(trigger.getRuleName())
+                    .withTargets(new Target().withId("1").withArn(lambdaFunction.getUnqualifiedFunctionArn()));
+            eventsClient.putTargets(putTargetsRequest);
+        }
+        return trigger;
+    };
+
+    private BiFunction<Trigger, LambdaFunction, Trigger> createOrUpdateDynamoDBTrigger = (Trigger trigger, LambdaFunction lambdaFunction) -> {
+        getLog().info("About to create or update " + trigger.getIntegration() + " trigger for " + trigger.getDynamoDBTable());
+        ListStreamsRequest listStreamsRequest = new ListStreamsRequest().withTableName(trigger.getDynamoDBTable());
+        ListStreamsResult listStreamsResult = dynamoDBStreamsClient.listStreams(listStreamsRequest);
+
+        String streamArn = listStreamsResult.getStreams().stream()
+                                            .filter(s -> trigger.getDynamoDBTable().equals(s.getTableName()))
+                                            .findFirst()
+                                            .map(Stream::getStreamArn)
+                                            .orElseThrow(() -> new IllegalArgumentException("Unable to find stream for table " + trigger.getDynamoDBTable()));
+
+        ListEventSourceMappingsRequest listEventSourceMappingsRequest = new ListEventSourceMappingsRequest()
+                .withFunctionName(lambdaFunction.getUnqualifiedFunctionArn());
+        ListEventSourceMappingsResult listEventSourceMappingsResult = lambdaClient.listEventSourceMappings(listEventSourceMappingsRequest);
+
+        Optional<EventSourceMappingConfiguration> eventSourceMappingConfiguration = listEventSourceMappingsResult.getEventSourceMappings().stream()
+                                                                                                                 .filter(stream -> {
+                                                                                                                     boolean isSameFunctionArn = stream.getFunctionArn().equals(lambdaFunction.getUnqualifiedFunctionArn());
+                                                                                                                     boolean isSameSourceArn = stream.getEventSourceArn().equals(streamArn);
+                                                                                                                     return isSameFunctionArn && isSameSourceArn;
+                                                                                                                 })
+                                                                                                                 .findFirst();
+
+        if (eventSourceMappingConfiguration.isPresent()) {
+            UpdateEventSourceMappingRequest updateEventSourceMappingRequest = new UpdateEventSourceMappingRequest()
+                    .withUUID(eventSourceMappingConfiguration.get().getUUID())
+                    .withFunctionName(lambdaFunction.getUnqualifiedFunctionArn())
+                    .withBatchSize(ofNullable(trigger.getBatchSize()).orElse(10))
+                    .withEnabled(ofNullable(trigger.getEnabled()).orElse(true));
+            UpdateEventSourceMappingResult updateEventSourceMappingResult = lambdaClient.updateEventSourceMapping(updateEventSourceMappingRequest);
+            trigger.withTriggerArn(updateEventSourceMappingResult.getEventSourceArn());
+            getLog().info("Updated " + trigger.getIntegration() + " trigger " + trigger.getTriggerArn());
+        } else {
+            CreateEventSourceMappingRequest createEventSourceMappingRequest = new CreateEventSourceMappingRequest()
+                    .withFunctionName(lambdaFunction.getUnqualifiedFunctionArn())
+                    .withEventSourceArn(streamArn)
+                    .withBatchSize(ofNullable(trigger.getBatchSize()).orElse(10))
+                    .withStartingPosition(EventSourcePosition.fromValue(ofNullable(trigger.getStartingPosition()).orElse(LATEST.toString())))
+                    .withEnabled(ofNullable(trigger.getEnabled()).orElse(true));
+            CreateEventSourceMappingResult createEventSourceMappingResult = lambdaClient.createEventSourceMapping(createEventSourceMappingRequest);
+            trigger.withTriggerArn(createEventSourceMappingResult.getEventSourceArn());
+            getLog().info("Created " + trigger.getIntegration() + " trigger " + trigger.getTriggerArn());
+        }
+        return trigger;
+    };
+
+    private Function<LambdaFunction, LambdaFunction> createOrUpdateTriggers = (LambdaFunction lambdaFunction) -> {
+        lambdaFunction.getTriggers().forEach(trigger -> {
+            if ("CloudWatch Events - Schedule".equals(trigger.getIntegration())) {
+                createOrUpdateScheduledRule.apply(trigger, lambdaFunction);
+            } else if ("DynamoDB".equals(trigger.getIntegration())) {
+                createOrUpdateDynamoDBTrigger.apply(trigger, lambdaFunction);
+            } else if ("SNS".equals(trigger.getIntegration())) {
+                createOrUpdateSNSTopicSubscription.apply(trigger, lambdaFunction);
+            } else {
+                throw new IllegalArgumentException("Unknown integration for trigger " + trigger.getIntegration() + ". Correct your configuration");
             }
         });
         return lambdaFunction;

@@ -5,7 +5,7 @@
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambda-maven-plugin`<br />
-`version: 2.0.1`<br />
+`version: 2.1.0`<br />
 <br/><br/>
 Please note that the artifact has been renamed from lambduh-maven-plugin to
 lambda-maven-plugin.
@@ -30,7 +30,7 @@ All of the AWS Lambda configuration parameters may be set within the lambda plug
 * `s3Bucket` REQUIRED Defaults to lambda-function-code. The AWS S3 bucket to which to upload your code from which it will be deployed to Lambda.
 * `region` Defaults to eu-west-1 The AWS region to use for your function.
 * `runtime` Defaults to Java8 Specifies whether this is Java8, NodeJs and Python.
-* `lambdaRoleArn` REQUIRED The ARN of the AWS role which the lambda user will assume when it executes. Note that the role must be assumable by Lambda and must have Cloudwatch Logs permissions.
+* `lambdaRoleArn` REQUIRED The ARN of the AWS role which the lambda user will assume when it executes. Note that the role must be assumable by Lambda and must have Cloudwatch Logs permissions and AWSLambdaDynamoDBExecutionRole policy.
 * `lambdaFunctions` Lamda functions that can be configured using tags in pom.xml.
 * `lambdaFunctionsJSON` JSON configuration for Lambda Functions. This is preferable configuration.
 * `timeout` Defaults to 30 seconds. The amount of time in which the function is allowed to run.
@@ -40,8 +40,7 @@ All of the AWS Lambda configuration parameters may be set within the lambda plug
 * `publish` This boolean parameter can be used to request AWS Lambda to update the Lambda function and publish a version as an atomic operation. This is global for all functions and won't overwrite publish paramter in provided Lambda configuration
 * `functionNameSuffix` The suffix for the lambda function. Function name is automatically suffixed with it. When left blank no suffix will be applied.
 * `forceUpdate` This boolean parameter can be used to force update of existing configuration. Use it when you don't publish a function and want to deploy code in your Lambda function.
-* `topics` A list of one or more topics names that lambda function will be subcribed. Not existing topics will be created automatically in SNS. When `functionNameSuffix` is present then suffix will be added automatically to topic name.
-* `scheduledRules` A list of one or more schduled rules that generates events to invoke Lambda function. You can specify a fixed rate (for example, execute a Lambda function every hour or 15 minutes), or you can specify a Cron expression. When `functionNameSuffix` is present then suffix will be added automatically to Rule name.
+* `triggers` A list of one or more triggers that execute Lambda function. Currently `CloudWatch Events - Schedule`, `SNS` and `DynamoDB` is supported. When `functionNameSuffix` is present then suffix will be added automatically.
 
 Current configuration of LambdaFunction can be found in LambdaFunction.java.
 
@@ -64,7 +63,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
             <plugin>
                     <groupId>com.github.seanroy</groupId>
                     <artifactId>lambda-maven-plugin</artifactId>
-                    <version>2.0.1</version>
+                    <version>2.1.0</version>
                     <configuration>
                         <functionCode>${lambda.functionCode}</functionCode>
                         <version>${lambda.version}</version>
@@ -83,8 +82,12 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                                 "handler": "no.flowlab.lambda0::test",
                                 "timeout": 30,
                                 "memorySize": 512,
-                                "topics": ["SNSTopic-1", "SNSTopic-2"],
-                                "scheduledRules": [{"name": "every-minute", "description": "foo bar", "scheduleExpression": "rate(1 minute)" }]
+                                "triggers": [
+                                                { "integration": "CloudWatch Events - Schedule", "ruleName": "every-minute", "ruleDescription": "foo bar", "scheduleExpression": "rate(1 minute)" },
+                                                { "integration": "DynamoDB", "dynamoDBTable": "myTable", "batchSize": 100, "startingPosition": "TRIM_HORIZON" },
+                                                { "integration": "SNS", "SNSTopic": "SNSTopic-1" }
+                                                { "integration": "SNS", "SNSTopic": "SNSTopic-2" }
+                                            ]
                               },
                               {
                                 "functionName": "my-function-name-1",
@@ -129,6 +132,11 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.1.0
+* Add support for triggers. Deprecated `scheduledRules` and `topics` as thouse have been moved to triggers
+* Add support for DynamoDB stream. `lambdaRoleArn` requires AWSLambdaDynamoDBExecutionRole policy
+* Update to AWS SDK 1.11.41
+
 2.0.1
 * Fixed [Issue 33] (https://github.com/SeanRoy/lambda-maven-plugin/pull/33) Thank Vũ Mạnh Tú.
 
@@ -188,5 +196,3 @@ deleting and recreating every time.  Thanks Guillermo Menendez
 
 1.0.2 
 * Fixed PatternSyntaxException on windows https://github.com/SeanRoy/lambda-maven-plugin/issues/1
-
-### TODO
