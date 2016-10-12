@@ -35,18 +35,28 @@
           <runtime>java8</runtime>
           <s3Bucket>lambda-function-code</s3Bucket>
           <timeout>60</timeout>
-          <lambdaRoleArn>YOUR LAMBDA ROLE ARN HERE</lambdaRoleArn>
+          <lambdaRoleArn></lambdaRoleArn>
           <lambdaFunctionsJSON>
          [
                               {
-                                "functionName": "Test",
-                                "description": "I am an awesome function",
+                                "functionName": "HelloWorld",
+                                "description": "HelloWorld Test Function",
                                 "handler": "com.github.seanroy.lambduh_test::hello_world",
                                 "timeout": 30,
                                 "memorySize": 512,
                                 "topics": [],
-                                "scheduledRules": [],
-                                "triggers": []
+                                "triggers": [],
+                                "scheduledRules": []
+                              },
+                              {
+                                "functionName": "GoodbyeWorld",
+                                "description": "GoodByeWorld Test function",
+                                "handler": "com.github.seanroy.lambduh_test::goodbye_world",
+                                "timeout": 45,
+                                "memorySize": 256,
+                                "topics": [],
+                                "triggers": [],
+                                "scheduledRules": []
                               }
          ]
          </lambdaFunctionsJSON>

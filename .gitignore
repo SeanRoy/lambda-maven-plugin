@@ -9,3 +9,4 @@
 target
 pom.xml.versionsBackup
 src/test/resources/test-project/basic-pom.xml
+/bin/
