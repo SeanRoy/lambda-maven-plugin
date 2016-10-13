@@ -44,8 +44,6 @@
                                 "handler": "com.github.seanroy.lambduh_test::hello_world",
                                 "timeout": 30,
                                 "memorySize": 512,
-                                "topics": [],
-                                "scheduledRules": [],
                                 "triggers": []
                               }
          ]
