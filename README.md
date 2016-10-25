@@ -5,7 +5,7 @@
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambda-maven-plugin`<br />
-`version: 2.1.0`<br />
+`version: 2.1.1`<br />
 <br/><br/>
 Please note that the artifact has been renamed from lambduh-maven-plugin to
 lambda-maven-plugin.
@@ -132,6 +132,9 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.1.1
+* Remove deprecated `scheduledRules` and `topics` functionality
+
 2.1.0
 * Add support for triggers. Deprecated `scheduledRules` and `topics` as thouse have been moved to triggers
 * Add support for DynamoDB stream. `lambdaRoleArn` requires AWSLambdaDynamoDBExecutionRole policy

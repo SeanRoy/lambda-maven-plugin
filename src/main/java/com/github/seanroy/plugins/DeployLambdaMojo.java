@@ -65,14 +65,10 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                     .map(getFunctionResult ->
                             updateFunctionCode.andThen(updateFunctionConfig)
                                               .andThen(createOrUpdateAliases)
-                                              .andThen(createOrUpdateSNSTopicSubscriptions) // TODO [grokrz]: this step can be removed in next main version. Replaced by triggers
-                                              .andThen(createOrUpdateScheduledRules) // TODO [grokrz]: this step can be removed in next main version. Replaced by triggers
                                               .andThen(createOrUpdateTriggers)
                                               .apply(lambdaFunction));
         } catch (ResourceNotFoundException ignored) {
             createFunction.andThen(createOrUpdateAliases)
-                          .andThen(createOrUpdateSNSTopicSubscriptions) // TODO [grokrz]: this step can be removed in next main version. Replaced by triggers
-                          .andThen(createOrUpdateScheduledRules) // TODO [grokrz]: this step can be removed in next main version. Replaced by triggers
                           .andThen(createOrUpdateTriggers)
                           .apply(lambdaFunction);
         }
@@ -140,34 +136,6 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         return lambdaFunction;
     };
 
-    @Deprecated
-    private Function<LambdaFunction, LambdaFunction> createOrUpdateSNSTopicSubscriptions = (LambdaFunction lambdaFunction) -> {
-        lambdaFunction.getTopics().forEach(topic -> {
-            CreateTopicRequest createTopicRequest = new CreateTopicRequest()
-                    .withName(topic);
-            CreateTopicResult createTopicResult = snsClient.createTopic(createTopicRequest);
-            getLog().info("Topic " + createTopicResult.getTopicArn() + " created");
-
-            SubscribeRequest subscribeRequest = new SubscribeRequest()
-                    .withTopicArn(createTopicResult.getTopicArn())
-                    .withEndpoint(lambdaFunction.getUnqualifiedFunctionArn())
-                    .withProtocol("lambda");
-            SubscribeResult subscribeResult = snsClient.subscribe(subscribeRequest);
-            getLog().info(lambdaFunction.getUnqualifiedFunctionArn() + " subscribed to " + createTopicResult.getTopicArn());
-            getLog().debug("Created subscription " + subscribeResult.getSubscriptionArn());
-
-            AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
-                    .withAction("lambda:InvokeFunction")
-                    .withPrincipal("sns.amazonaws.com")
-                    .withSourceArn(createTopicResult.getTopicArn())
-                    .withFunctionName(lambdaFunction.getFunctionName())
-                    .withStatementId(UUID.randomUUID().toString());
-            AddPermissionResult addPermissionResult = lambdaClient.addPermission(addPermissionRequest);
-            getLog().debug("Added permission to lambda function " + addPermissionResult.toString());
-        });
-        return lambdaFunction;
-    };
-
     private BiFunction<Trigger, LambdaFunction, Trigger> createOrUpdateSNSTopicSubscription = (Trigger trigger, LambdaFunction lambdaFunction) -> {
         getLog().info("About to create or update " + trigger.getIntegration() + " trigger for " + trigger.getSNSTopic());
         CreateTopicRequest createTopicRequest = new CreateTopicRequest()
@@ -192,39 +160,6 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         AddPermissionResult addPermissionResult = lambdaClient.addPermission(addPermissionRequest);
         getLog().debug("Added permission to lambda function " + addPermissionResult.toString());
         return trigger;
-    };
-
-    @Deprecated
-    private Function<LambdaFunction, LambdaFunction> createOrUpdateScheduledRules = (LambdaFunction lambdaFunction) -> {
-        lambdaFunction.getScheduledRules().forEach(rule -> {
-            ListRuleNamesByTargetRequest listRuleNamesByTargetRequest = new ListRuleNamesByTargetRequest()
-                    .withTargetArn(lambdaFunction.getUnqualifiedFunctionArn());
-            boolean shouldCreateConfigurationForRule = eventsClient.listRuleNamesByTarget(listRuleNamesByTargetRequest).getRuleNames().stream().noneMatch(ruleName -> ruleName.equals(rule.getName()));
-
-            if (shouldCreateConfigurationForRule) {
-                PutRuleRequest putRuleRequest = new PutRuleRequest()
-                        .withName(rule.getName())
-                        .withDescription(rule.getDescription())
-                        .withScheduleExpression(rule.getScheduleExpression());
-                PutRuleResult putRuleResult = eventsClient.putRule(putRuleRequest);
-                getLog().info("Created rule " + putRuleResult.getRuleArn());
-
-                AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
-                        .withAction("lambda:InvokeFunction")
-                        .withPrincipal("events.amazonaws.com")
-                        .withSourceArn(putRuleResult.getRuleArn())
-                        .withFunctionName(lambdaFunction.getFunctionName())
-                        .withStatementId(UUID.randomUUID().toString());
-                AddPermissionResult addPermissionResult = lambdaClient.addPermission(addPermissionRequest);
-                getLog().debug("Added permission to lambda function " + addPermissionResult.toString());
-
-                PutTargetsRequest putTargetsRequest = new PutTargetsRequest()
-                        .withRule(rule.getName())
-                        .withTargets(new Target().withId("1").withArn(lambdaFunction.getUnqualifiedFunctionArn()));
-                eventsClient.putTargets(putTargetsRequest);
-            }
-        });
-        return lambdaFunction;
     };
 
     private BiFunction<Trigger, LambdaFunction, Trigger> createOrUpdateScheduledRule = (Trigger trigger, LambdaFunction lambdaFunction) -> {
