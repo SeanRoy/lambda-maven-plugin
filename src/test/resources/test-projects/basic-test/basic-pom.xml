@@ -57,6 +57,7 @@
                                 "topics": [],
                                 "triggers": [],
                                 "scheduledRules": []
+                                "triggers": []
                               }
          ]
          </lambdaFunctionsJSON>
