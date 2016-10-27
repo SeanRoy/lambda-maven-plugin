@@ -233,6 +233,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
                           .withTriggers(ofNullable(lambdaFunction.getTriggers()).map(triggers -> triggers.stream()
                                                                                                          .map(trigger -> {
                                                                                                              trigger.withRuleName(addSuffix(trigger.getRuleName()));
+                                                                                                             trigger.withSNSTopic(addSuffix(trigger.getSNSTopic()));
                                                                                                              trigger.withDynamoDBTable(addSuffix(trigger.getDynamoDBTable()));
                                                                                                              return trigger;
                                                                                                          })
