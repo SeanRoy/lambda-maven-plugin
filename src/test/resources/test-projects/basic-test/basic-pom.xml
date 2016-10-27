@@ -35,7 +35,8 @@
           <runtime>java8</runtime>
           <s3Bucket>lambda-function-code</s3Bucket>
           <timeout>60</timeout>
-          <lambdaRoleArn></lambdaRoleArn>
+          <lambdaRoleArn>arn:aws:iam::280237693431:role/lambda_basic_execution
+</lambdaRoleArn>
           <lambdaFunctionsJSON>
          [
                               {
@@ -44,9 +45,7 @@
                                 "handler": "com.github.seanroy.lambduh_test::hello_world",
                                 "timeout": 30,
                                 "memorySize": 512,
-                                "topics": [],
-                                "triggers": [],
-                                "scheduledRules": []
+                                "triggers": []
                               },
                               {
                                 "functionName": "GoodbyeWorld",
@@ -55,8 +54,6 @@
                                 "timeout": 45,
                                 "memorySize": 256,
                                 "topics": [],
-                                "triggers": [],
-                                "scheduledRules": []
                                 "triggers": []
                               }
          ]

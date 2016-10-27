@@ -118,6 +118,7 @@ IAM permissions required by this plugin:
 * action `lambda:GetFunction`
 * action `lambda:UpdateFunctionCode`
 * action `lambda:UpdateFunctionConfiguration`
+* action `lambda:ListAliases`
 * action `events:PutRule` on  resource `arn:aws:events:<region>:<acount-number>:rule/*`
 * action `events:PutTargets` on  resource `arn:aws:events:<region>:<acount-number>:rule/*`
 
