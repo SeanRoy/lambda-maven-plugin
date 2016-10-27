@@ -230,14 +230,10 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
                           .withVersion(version)
                           .withPublish(ofNullable(lambdaFunction.isPublish()).orElse(publish))
                           .withAliases(aliases(lambdaFunction.isPublish()))
-                          .withTopics(ofNullable(lambdaFunction.getTopics()).map(strings -> strings.stream().map(this::addSuffix).collect(toList())).orElse(new ArrayList<>()))
-                          .withSchedulers(ofNullable(lambdaFunction.getScheduledRules()).map(rules -> rules.stream()
-                                                                                                           .map(rule -> rule.withName(addSuffix(rule.getName())))
-                                                                                                           .collect(toList()))
-                                                                                        .orElse(new ArrayList<>()))
                           .withTriggers(ofNullable(lambdaFunction.getTriggers()).map(triggers -> triggers.stream()
                                                                                                          .map(trigger -> {
                                                                                                              trigger.withRuleName(addSuffix(trigger.getRuleName()));
+                                                                                                             trigger.withSNSTopic(addSuffix(trigger.getSNSTopic()));
                                                                                                              trigger.withDynamoDBTable(addSuffix(trigger.getDynamoDBTable()));
                                                                                                              return trigger;
                                                                                                          })

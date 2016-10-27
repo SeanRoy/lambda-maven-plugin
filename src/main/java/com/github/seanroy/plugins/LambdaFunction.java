@@ -65,19 +65,9 @@ public class LambdaFunction {
      */
     private Boolean publish;
     /**
-     * <p>A list og one or more SNS topics that Lambda function will be subscribed to.</p>
-     */
-    @Deprecated
-    private List<String> topics;
-    /**
      * <p>The Amazon Resource Name (ARN) assigned to the function</p>
      */
     private String functionArn;
-    /**
-     * <p>The Scheduled rules that invokes lambda function</p>
-     */
-    @Deprecated
-    private List<Rule> scheduledRules;
     /**
      * <p>The triggers that generates events that Lambda responds to</p>
      */
@@ -156,14 +146,6 @@ public class LambdaFunction {
         this.subnetIds = subnetIds;
     }
 
-    public List<String> getTopics() {
-        return topics;
-    }
-
-    public void setTopics(List<String> topics) {
-        this.topics = topics;
-    }
-
     public List<String> getAliases() {
         return aliases;
     }
@@ -196,14 +178,6 @@ public class LambdaFunction {
 
     public void setFunctionArn(String functionArn) {
         this.functionArn = functionArn;
-    }
-
-    public List<Rule> getScheduledRules() {
-        return scheduledRules;
-    }
-
-    public void setScheduledRules(List<Rule> scheduledRules) {
-        this.scheduledRules = scheduledRules;
     }
 
     public LambdaFunction withDescription(String description) {
@@ -256,18 +230,8 @@ public class LambdaFunction {
         return this;
     }
 
-    public LambdaFunction withTopics(List<String> topics) {
-        this.topics = topics;
-        return this;
-    }
-
     public LambdaFunction withFunctionArn(String functionArn) {
         this.functionArn = functionArn;
-        return this;
-    }
-
-    public LambdaFunction withSchedulers(List<Rule> schedulers) {
-        this.scheduledRules = schedulers;
         return this;
     }
 
@@ -290,8 +254,6 @@ public class LambdaFunction {
                 .append(", subnetIds=").append(subnetIds)
                 .append(", aliases=").append(aliases)
                 .append(", publish=").append(publish)
-                .append(", topics=").append(topics)
-                .append(", scheduledRules=").append(scheduledRules)
                 .append(", triggers=").append(triggers)
                 .append('}').toString();
     }
