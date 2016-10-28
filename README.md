@@ -85,8 +85,9 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                                 "triggers": [
                                                 { "integration": "CloudWatch Events - Schedule", "ruleName": "every-minute", "ruleDescription": "foo bar", "scheduleExpression": "rate(1 minute)" },
                                                 { "integration": "DynamoDB", "dynamoDBTable": "myTable", "batchSize": 100, "startingPosition": "TRIM_HORIZON" },
-                                                { "integration": "SNS", "SNSTopic": "SNSTopic-1" }
-                                                { "integration": "SNS", "SNSTopic": "SNSTopic-2" }
+                                                { "integration": "SNS", "SNSTopic": "SNSTopic-1" },
+                                                { "integration": "SNS", "SNSTopic": "SNSTopic-2" },
+                                                { "integration": "Alexa Skills Kit" }
                                             ]
                               },
                               {
@@ -133,6 +134,9 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.1.2
+* Added trigger to allow Alexa Skills Kit Integration.
+
 2.1.1
 * Remove deprecated `scheduledRules` and `topics` functionality
 

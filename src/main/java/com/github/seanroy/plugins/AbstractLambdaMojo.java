@@ -57,9 +57,9 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     @Parameter(property = "version", defaultValue = "${version}", required = true)
     public String version;
     /**
-     * <p>Amazon region. Default value is eu-west-1.</p>
+     * <p>Amazon region. Default value is us-east-1.</p>
      */
-    @Parameter(property = "region", alias = "region", defaultValue = "eu-west-1")
+    @Parameter(property = "region", alias = "region", defaultValue = "us-east-1")
     public String regionName;
     /**
      * <p>
@@ -194,9 +194,10 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
 
     private void initAWSClients() {
         Regions region = Regions.fromName(regionName);
+        
         s3Client = of(credentials)
-                .map(AmazonS3Client::new)
-                .orElse(new AmazonS3Client());
+                .map(credentials -> new AmazonS3Client(credentials).<AmazonS3Client>withRegion(region))
+                .orElse(new AmazonS3Client().withRegion(region));
         lambdaClient = of(credentials)
                 .map(credentials -> new AWSLambdaClient(credentials).<AWSLambdaClient>withRegion(region))
                 .orElse(new AWSLambdaClient().withRegion(region));
