@@ -96,7 +96,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 .withS3Bucket(s3Bucket)
                 .withS3Key(fileName)
                 .withPublish(lambdaFunction.isPublish());
-        UpdateFunctionCodeResult updateFunctionCodeResult = lalmbdaClient.updateFunctionCode(updateFunctionRequest);
+        UpdateFunctionCodeResult updateFunctionCodeResult = lambdaClient.updateFunctionCode(updateFunctionRequest);
         return lambdaFunction
                 .withVersion(updateFunctionCodeResult.getVersion())
                 .withFunctionArn(updateFunctionCodeResult.getFunctionArn());
