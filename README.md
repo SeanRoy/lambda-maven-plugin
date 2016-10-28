@@ -5,7 +5,7 @@
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambda-maven-plugin`<br />
-`version: 2.1.2`<br />
+`version: 2.1.3`<br />
 <br/><br/>
 Please note that the artifact has been renamed from lambduh-maven-plugin to
 lambda-maven-plugin.
@@ -63,7 +63,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
             <plugin>
                     <groupId>com.github.seanroy</groupId>
                     <artifactId>lambda-maven-plugin</artifactId>
-                    <version>2.1.2</version>
+                    <version>2.1.3</version>
                     <configuration>
                         <functionCode>${lambda.functionCode}</functionCode>
                         <version>${lambda.version}</version>
@@ -134,6 +134,9 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.1.3
+* Fixed [Issue 42] Thanks Krzysztof Grodzicki
+
 2.1.2
 * Added trigger to allow Alexa Skills Kit Integration.
 
@@ -144,6 +147,7 @@ please remember to add them to .gitignore.
 * Add support for triggers. Deprecated `scheduledRules` and `topics` as thouse have been moved to triggers
 * Add support for DynamoDB stream. `lambdaRoleArn` requires AWSLambdaDynamoDBExecutionRole policy
 * Update to AWS SDK 1.11.41
+* Thanks Krzysztof Grodzicki
 
 2.0.1
 * Fixed [Issue 33] (https://github.com/SeanRoy/lambda-maven-plugin/pull/33) Thank Vũ Mạnh Tú.
@@ -159,6 +163,7 @@ please remember to add them to .gitignore.
 * Force update support
 * Add support for SNS topics
 * Add support for scheduled rules, cron jobs which trigger lambda function
+* Thanks Krzysztof Grodzicki
 
 1.1.6
 * Removed debugging related code.

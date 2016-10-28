@@ -96,7 +96,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 .withS3Bucket(s3Bucket)
                 .withS3Key(fileName)
                 .withPublish(lambdaFunction.isPublish());
-        UpdateFunctionCodeResult updateFunctionCodeResult = lambdaClient.updateFunctionCode(updateFunctionRequest);
+        UpdateFunctionCodeResult updateFunctionCodeResult = lalmbdaClient.updateFunctionCode(updateFunctionRequest);
         return lambdaFunction
                 .withVersion(updateFunctionCodeResult.getVersion())
                 .withFunctionArn(updateFunctionCodeResult.getFunctionArn());
@@ -177,7 +177,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     };
 
     private BiFunction<Trigger, LambdaFunction, Trigger> addAlexaSkillsKitPermission = (Trigger trigger, LambdaFunction lambdaFunction) -> {
-        getLog().info("About to create or update " + trigger.getIntegration() + " trigger for " + trigger.getSNSTopic());
+        getLog().info("About to create or update " + trigger.getIntegration() + " trigger.");
 
         AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
                 .withAction("lambda:InvokeFunction")
