@@ -1,5 +1,7 @@
 package com.github.seanroy.plugins;
 
+import com.amazonaws.auth.policy.Policy;
+import com.amazonaws.auth.policy.Statement;
 import com.amazonaws.services.cloudwatchevents.model.ListRuleNamesByTargetRequest;
 import com.amazonaws.services.cloudwatchevents.model.PutRuleRequest;
 import com.amazonaws.services.cloudwatchevents.model.PutRuleResult;
@@ -151,29 +153,41 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         getLog().info(lambdaFunction.getUnqualifiedFunctionArn() + " subscribed to " + createTopicResult.getTopicArn());
         getLog().info("Created " + trigger.getIntegration() + " trigger " + subscribeResult.getSubscriptionArn());
 
-        AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
-                .withAction("lambda:InvokeFunction")
-                .withPrincipal("sns.amazonaws.com")
-                .withSourceArn(createTopicResult.getTopicArn())
-                .withFunctionName(lambdaFunction.getFunctionName())
-                .withStatementId(UUID.randomUUID().toString());
-        AddPermissionResult addPermissionResult = lambdaClient.addPermission(addPermissionRequest);
-        getLog().debug("Added permission to lambda function " + addPermissionResult.toString());
+        GetPolicyRequest getPolicyRequest = new GetPolicyRequest()
+                .withFunctionName(lambdaFunction.getFunctionName());
+        GetPolicyResult GetPolicyResult = lambdaClient.getPolicy(getPolicyRequest);
+
+        Optional<Statement> statementOpt = Policy.fromJson(GetPolicyResult.getPolicy()).getStatements().stream()
+                                                      .filter(statement -> statement.getActions().stream().anyMatch(e -> "lambda:InvokeFunction".equals(e.getActionName())) &&
+                                                              statement.getPrincipals().stream().anyMatch(principal -> "sns.amazonaws.com".equals(principal.getId())) &&
+                                                              statement.getConditions().stream().anyMatch(condition -> condition.getValues().stream().anyMatch(s -> createTopicResult.getTopicArn().equals(s)))
+                                                      ).findAny();
+
+        if (!statementOpt.isPresent()) {
+            AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
+                    .withAction("lambda:InvokeFunction")
+                    .withPrincipal("sns.amazonaws.com")
+                    .withSourceArn(createTopicResult.getTopicArn())
+                    .withFunctionName(lambdaFunction.getFunctionName())
+                    .withStatementId(UUID.randomUUID().toString());
+            AddPermissionResult addPermissionResult = lambdaClient.addPermission(addPermissionRequest);
+            getLog().debug("Added permission to lambda function " + addPermissionResult.toString());
+        }
         return trigger;
     };
-    
+
     private BiFunction<Trigger, LambdaFunction, Trigger> addAlexaSkillsKitPermission = (Trigger trigger, LambdaFunction lambdaFunction) -> {
         getLog().info("About to create or update " + trigger.getIntegration() + " trigger for " + trigger.getSNSTopic());
 
         AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
-            .withAction("lambda:InvokeFunction")
-            .withPrincipal("alexa-appkit.amazon.com")
-            .withFunctionName(lambdaFunction.getFunctionName())
-            .withStatementId(UUID.randomUUID().toString());
-        
+                .withAction("lambda:InvokeFunction")
+                .withPrincipal("alexa-appkit.amazon.com")
+                .withFunctionName(lambdaFunction.getFunctionName())
+                .withStatementId(UUID.randomUUID().toString());
+
         AddPermissionResult addPermissionResult = lambdaClient.addPermission(addPermissionRequest);
         getLog().debug("Added permission to lambda function " + addPermissionResult.toString());
-        
+
         return trigger;
     };
 
@@ -263,7 +277,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
             } else if ("SNS".equals(trigger.getIntegration())) {
                 createOrUpdateSNSTopicSubscription.apply(trigger, lambdaFunction);
             } else if ("Alexa Skills Kit".equals(trigger.getIntegration())) {
-                addAlexaSkillsKitPermission.apply(trigger,  lambdaFunction);
+                addAlexaSkillsKitPermission.apply(trigger, lambdaFunction);
             } else {
                 throw new IllegalArgumentException("Unknown integration for trigger " + trigger.getIntegration() + ". Correct your configuration");
             }
@@ -320,7 +334,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 .withCode(new FunctionCode()
                         .withS3Bucket(s3Bucket)
                         .withS3Key(fileName));
-        
+
         CreateFunctionResult createFunctionResult = lambdaClient.createFunction(createFunctionRequest);
         lambdaFunction.withVersion(createFunctionResult.getVersion())
                       .withFunctionArn(createFunctionResult.getFunctionArn());
