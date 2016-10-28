@@ -161,6 +161,21 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         getLog().debug("Added permission to lambda function " + addPermissionResult.toString());
         return trigger;
     };
+    
+    private BiFunction<Trigger, LambdaFunction, Trigger> addAlexaSkillsKitPermission = (Trigger trigger, LambdaFunction lambdaFunction) -> {
+        getLog().info("About to create or update " + trigger.getIntegration() + " trigger for " + trigger.getSNSTopic());
+
+        AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
+            .withAction("lambda:InvokeFunction")
+            .withPrincipal("alexa-appkit.amazon.com")
+            .withFunctionName(lambdaFunction.getFunctionName())
+            .withStatementId(UUID.randomUUID().toString());
+        
+        AddPermissionResult addPermissionResult = lambdaClient.addPermission(addPermissionRequest);
+        getLog().debug("Added permission to lambda function " + addPermissionResult.toString());
+        
+        return trigger;
+    };
 
     private BiFunction<Trigger, LambdaFunction, Trigger> createOrUpdateScheduledRule = (Trigger trigger, LambdaFunction lambdaFunction) -> {
         getLog().info("About to create or update " + trigger.getIntegration() + " trigger for " + trigger.getRuleName());
@@ -247,6 +262,8 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 createOrUpdateDynamoDBTrigger.apply(trigger, lambdaFunction);
             } else if ("SNS".equals(trigger.getIntegration())) {
                 createOrUpdateSNSTopicSubscription.apply(trigger, lambdaFunction);
+            } else if ("Alexa Skills Kit".equals(trigger.getIntegration())) {
+                addAlexaSkillsKitPermission.apply(trigger,  lambdaFunction);
             } else {
                 throw new IllegalArgumentException("Unknown integration for trigger " + trigger.getIntegration() + ". Correct your configuration");
             }
@@ -303,6 +320,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 .withCode(new FunctionCode()
                         .withS3Bucket(s3Bucket)
                         .withS3Key(fileName));
+        
         CreateFunctionResult createFunctionResult = lambdaClient.createFunction(createFunctionRequest);
         lambdaFunction.withVersion(createFunctionResult.getVersion())
                       .withFunctionArn(createFunctionResult.getFunctionArn());
