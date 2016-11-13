@@ -33,6 +33,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 
 import static com.amazonaws.services.lambda.model.EventSourcePosition.LATEST;
+import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -153,15 +154,21 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         getLog().info(lambdaFunction.getUnqualifiedFunctionArn() + " subscribed to " + createTopicResult.getTopicArn());
         getLog().info("Created " + trigger.getIntegration() + " trigger " + subscribeResult.getSubscriptionArn());
 
-        GetPolicyRequest getPolicyRequest = new GetPolicyRequest()
-                .withFunctionName(lambdaFunction.getFunctionName());
-        GetPolicyResult GetPolicyResult = lambdaClient.getPolicy(getPolicyRequest);
 
-        Optional<Statement> statementOpt = Policy.fromJson(GetPolicyResult.getPolicy()).getStatements().stream()
-                                                      .filter(statement -> statement.getActions().stream().anyMatch(e -> "lambda:InvokeFunction".equals(e.getActionName())) &&
-                                                              statement.getPrincipals().stream().anyMatch(principal -> "sns.amazonaws.com".equals(principal.getId())) &&
-                                                              statement.getConditions().stream().anyMatch(condition -> condition.getValues().stream().anyMatch(s -> createTopicResult.getTopicArn().equals(s)))
-                                                      ).findAny();
+        Optional<Statement> statementOpt = null;
+        try {
+            GetPolicyRequest getPolicyRequest = new GetPolicyRequest()
+                    .withFunctionName(lambdaFunction.getFunctionName());
+            GetPolicyResult GetPolicyResult = lambdaClient.getPolicy(getPolicyRequest);
+            statementOpt = Policy.fromJson(GetPolicyResult.getPolicy()).getStatements().stream()
+                                                     .filter(statement -> statement.getActions().stream().anyMatch(e -> "lambda:InvokeFunction".equals(e.getActionName())) &&
+                                                             statement.getPrincipals().stream().anyMatch(principal -> "sns.amazonaws.com".equals(principal.getId())) &&
+                                                             statement.getConditions().stream().anyMatch(condition -> condition.getValues().stream().anyMatch(s -> createTopicResult.getTopicArn().equals(s)))
+                                                     ).findAny();
+        } catch (ResourceNotFoundException ignored) {
+            // no policy found
+            statementOpt = empty();
+        }
 
         if (!statementOpt.isPresent()) {
             AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
