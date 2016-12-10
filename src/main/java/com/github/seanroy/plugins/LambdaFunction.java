@@ -2,6 +2,7 @@ package com.github.seanroy.plugins;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Optional.ofNullable;
 
@@ -72,6 +73,8 @@ public class LambdaFunction {
      * <p>The triggers that generates events that Lambda responds to</p>
      */
     private List<Trigger> triggers;
+
+    private Map<String, String> environmentVariables;
 
     public LambdaFunction() {
     }
@@ -180,6 +183,14 @@ public class LambdaFunction {
         this.functionArn = functionArn;
     }
 
+    public Map<String, String> getEnvironmentVariables() {
+        return environmentVariables;
+    }
+
+    public void setEnvironmentVariables(Map<String, String> environmentVariables) {
+        this.environmentVariables = environmentVariables;
+    }
+
     public LambdaFunction withDescription(String description) {
         this.description = description;
         return this;
@@ -240,6 +251,11 @@ public class LambdaFunction {
         return this;
     }
 
+    public LambdaFunction withEnvironmentVariables(Map<String, String> environmentVariables) {
+        this.environmentVariables = environmentVariables;
+        return this;
+    }
+
     @SuppressWarnings("StringBufferReplaceableByString")
     @Override
     public String toString() {
@@ -255,6 +271,7 @@ public class LambdaFunction {
                 .append(", aliases=").append(aliases)
                 .append(", publish=").append(publish)
                 .append(", triggers=").append(triggers)
+                .append(", environmentVariables=").append(environmentVariables)
                 .append('}').toString();
     }
 }

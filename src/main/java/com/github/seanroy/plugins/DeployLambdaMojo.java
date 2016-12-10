@@ -113,7 +113,8 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 .withTimeout(lambdaFunction.getTimeout())
                 .withMemorySize(lambdaFunction.getMemorySize())
                 .withRuntime(runtime)
-                .withVpcConfig(getVpcConfig(lambdaFunction));
+                .withVpcConfig(getVpcConfig(lambdaFunction))
+                .withEnvironment(new Environment().withVariables(lambdaFunction.getEnvironmentVariables()));
         lambdaClient.updateFunctionConfiguration(updateFunctionRequest);
         return lambdaFunction;
     };
@@ -155,7 +156,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         getLog().info("Created " + trigger.getIntegration() + " trigger " + subscribeResult.getSubscriptionArn());
 
 
-        Optional<Statement> statementOpt = null;
+        Optional<Statement> statementOpt;
         try {
             GetPolicyRequest getPolicyRequest = new GetPolicyRequest()
                     .withFunctionName(lambdaFunction.getFunctionName());
@@ -340,7 +341,8 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 .withVpcConfig(getVpcConfig(lambdaFunction))
                 .withCode(new FunctionCode()
                         .withS3Bucket(s3Bucket)
-                        .withS3Key(fileName));
+                        .withS3Key(fileName))
+                .withEnvironment(new Environment().withVariables(lambdaFunction.getEnvironmentVariables()));
 
         CreateFunctionResult createFunctionResult = lambdaClient.createFunction(createFunctionRequest);
         lambdaFunction.withVersion(createFunctionResult.getVersion())

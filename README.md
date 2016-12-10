@@ -41,6 +41,7 @@ All of the AWS Lambda configuration parameters may be set within the lambda plug
 * `functionNameSuffix` The suffix for the lambda function. Function name is automatically suffixed with it. When left blank no suffix will be applied.
 * `forceUpdate` This boolean parameter can be used to force update of existing configuration. Use it when you don't publish a function and want to deploy code in your Lambda function.
 * `triggers` A list of one or more triggers that execute Lambda function. Currently `CloudWatch Events - Schedule`, `SNS` and `DynamoDB` is supported. When `functionNameSuffix` is present then suffix will be added automatically.
+* `environmentVariables` Map to define environment variables for Lambda functions enable you to dynamically pass settings to your function code and libraries, without making changes to your code. Deployment functionality merges those variables with the one provided in json configuration.
 
 Current configuration of LambdaFunction can be found in LambdaFunction.java.
 
@@ -74,6 +75,9 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                         <publish>${lambda.publish}</publish>
                         <forceUpdate>${lambda.forceUpdate}</forceUpdate>
                         <functionNameSuffix>${lambda.functionNameSuffix}</functionNameSuffix>
+                        <environmentVariables>
+                           <key0>value0</key0>
+                        </environmentVariables>
                         <lambdaFunctionsJSON>
                             [
                               {
@@ -83,12 +87,34 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                                 "timeout": 30,
                                 "memorySize": 512,
                                 "triggers": [
-                                                { "integration": "CloudWatch Events - Schedule", "ruleName": "every-minute", "ruleDescription": "foo bar", "scheduleExpression": "rate(1 minute)" },
-                                                { "integration": "DynamoDB", "dynamoDBTable": "myTable", "batchSize": 100, "startingPosition": "TRIM_HORIZON" },
-                                                { "integration": "SNS", "SNSTopic": "SNSTopic-1" },
-                                                { "integration": "SNS", "SNSTopic": "SNSTopic-2" },
-                                                { "integration": "Alexa Skills Kit" }
-                                            ]
+                                  {
+                                    "integration": "CloudWatch Events - Schedule",
+                                    "ruleName": "every-minute",
+                                    "ruleDescription": "foo bar",
+                                    "scheduleExpression": "rate(1 minute)"
+                                  },
+                                  {
+                                    "integration": "DynamoDB",
+                                    "dynamoDBTable": "myTable",
+                                    "batchSize": 100,
+                                    "startingPosition": "TRIM_HORIZON"
+                                  },
+                                  {
+                                    "integration": "SNS",
+                                    "SNSTopic": "SNSTopic-1"
+                                  },
+                                  {
+                                    "integration": "SNS",
+                                    "SNSTopic": "SNSTopic-2"
+                                  },
+                                  {
+                                    "integration": "Alexa Skills Kit"
+                                  }
+                                ],
+                                "environmentVariables": {
+                                  "key1": "value1",
+                                  "key2": "value2"
+                                }
                               },
                               {
                                 "functionName": "my-function-name-1",
@@ -134,22 +160,30 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.1.5
+* Add support for environment variables [Issue 48](https://github.com/SeanRoy/lambda-maven-plugin/issues/48)
+* Thanks [krzysztof@flowlab.no](mailto:krzysztof@flowlab.no)
+
 2.1.4
-* Fixed [Issue 46] (https://github.com/SeanRoy/lambda-maven-plugin/issues/46) Thanks Krzysztof Grodzicki
+* Fixed [Issue 46] (https://github.com/SeanRoy/lambda-maven-plugin/issues/46)
+* Thanks [krzysztof@flowlab.no](mailto:krzysztof@flowlab.no)
+
 2.1.3
-* Fixed [Issue 42] (https://github.com/SeanRoy/lambda-maven-plugin/issues/42) Thanks Krzysztof Grodzicki
+* Fixed [Issue 42] (https://github.com/SeanRoy/lambda-maven-plugin/issues/42)
+* Thanks [krzysztof@flowlab.no](mailto:krzysztof@flowlab.no)
 
 2.1.2
 * Added trigger to allow Alexa Skills Kit Integration.
 
 2.1.1
 * Remove deprecated `scheduledRules` and `topics` functionality
+* Thanks [krzysztof@flowlab.no](mailto:krzysztof@flowlab.no)
 
 2.1.0
 * Add support for triggers. Deprecated `scheduledRules` and `topics` as thouse have been moved to triggers
 * Add support for DynamoDB stream. `lambdaRoleArn` requires AWSLambdaDynamoDBExecutionRole policy
 * Update to AWS SDK 1.11.41
-* Thanks Krzysztof Grodzicki
+* Thanks [krzysztof@flowlab.no](mailto:krzysztof@flowlab.no)
 
 2.0.1
 * Fixed [Issue 33] (https://github.com/SeanRoy/lambda-maven-plugin/pull/33) Thank Vũ Mạnh Tú.
@@ -165,7 +199,7 @@ please remember to add them to .gitignore.
 * Force update support
 * Add support for SNS topics
 * Add support for scheduled rules, cron jobs which trigger lambda function
-* Thanks Krzysztof Grodzicki
+* Thanks [krzysztof@flowlab.no](mailto:krzysztof@flowlab.no)
 
 1.1.6
 * Removed debugging related code.

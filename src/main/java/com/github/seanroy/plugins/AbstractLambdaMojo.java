@@ -16,8 +16,12 @@ import org.apache.maven.plugins.annotations.Parameter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -27,6 +31,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 
 /**
@@ -143,6 +148,11 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
      */
     @Parameter(property = "forceUpdate", defaultValue = "false")
     public boolean forceUpdate;
+    /**
+     * <p>This map parameter can be used to define environment variables for Lambda functions enable you to dynamically pass settings to your function code and libraries, without making changes to your code. Deployment functionality merges those variables with the one provided in json configuration.</p>
+     */
+    @Parameter(property = "environmentVariables", defaultValue = "${environmentVariables}")
+    public Map<String, String> environmentVariables;
 
     public String fileName;
     public AWSCredentials credentials;
@@ -194,7 +204,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
 
     private void initAWSClients() {
         Regions region = Regions.fromName(regionName);
-        
+
         s3Client = of(credentials)
                 .map(credentials -> new AmazonS3Client(credentials).<AmazonS3Client>withRegion(region))
                 .orElse(new AmazonS3Client().withRegion(region));
@@ -239,10 +249,20 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
                                                                                                              return trigger;
                                                                                                          })
                                                                                                          .collect(toList()))
-                                                                                .orElse(new ArrayList<>()));
+                                                                                .orElse(new ArrayList<>()))
+                          .withEnvironmentVariables(environmentVariables(lambdaFunction));
 
             return lambdaFunction;
         }).collect(toList());
+    }
+
+    private Map<String, String> environmentVariables(LambdaFunction lambdaFunction) {
+        Map<String, String> envVar0 = ofNullable(environmentVariables).orElse(new HashMap<>());
+        Map<String, String> envVar1 = ofNullable(lambdaFunction.getEnvironmentVariables()).orElse(new HashMap<>());
+        return Stream.of(envVar0, envVar1)
+                     .map(Map::entrySet)
+                     .flatMap(Collection::stream)
+                     .collect(toMap(Entry::getKey, Entry::getValue));
     }
 
     private String addSuffix(String functionName) {
