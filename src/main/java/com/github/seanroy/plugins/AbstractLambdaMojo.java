@@ -73,13 +73,13 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     @Parameter(property = "s3Bucket", defaultValue = "lambda-function-code")
     public String s3Bucket;
     /**
-	 * <p>
-	 * Amazon S3 key where the .zip file containing your deployment package is
-	 * stored (inside of s3Bucket). The extension of key must be ".jar".
-	 * </p>
-	 */
-	@Parameter(property = "s3Key")
-	public String s3Key;    
+     * <p>
+     * Amazon S3 key where the .zip file containing your deployment package is
+     * stored (inside of s3Bucket). The extension of key must be ".jar".
+     * </p>
+     */
+    @Parameter(property = "s3Key")
+    public String s3Key;    
     /**
      * <p>
      * The runtime environment for the Lambda function.
@@ -193,18 +193,18 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     }
 
     private void initFileName() throws MojoExecutionException {
-		if (s3Key != null) {
-			if (!FilenameUtils.getExtension(s3Key).equalsIgnoreCase("jar")) {
-				getLog().error("The extension of s3 key must be '.jar'");
-				throw new MojoExecutionException("Illegal configuration. The extension of s3 key must be '.jar'");
-			}
-			fileName = s3Key;
-		} else {
-			String pattern = Pattern.quote(File.separator);
-			String[] pieces = functionCode.split(pattern);
-			fileName = pieces[pieces.length - 1];
-		}
-	}
+        if (s3Key != null) {
+            if (!FilenameUtils.getExtension(s3Key).equalsIgnoreCase("jar")) {
+                getLog().error("The extension of s3 key must be '.jar'");
+                throw new MojoExecutionException("Illegal configuration. The extension of s3 key must be '.jar'");
+            }
+            fileName = s3Key;
+        } else {
+            String pattern = Pattern.quote(File.separator);
+            String[] pieces = functionCode.split(pattern);
+            fileName = pieces[pieces.length - 1];
+        }
+    }
 
     private void initVersion() {
         version = version.replace(".", "-");

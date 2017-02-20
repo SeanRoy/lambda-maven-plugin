@@ -406,8 +406,8 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     }
     
     private String getFileName() {
-		String pattern = Pattern.quote(File.separator);
-		String[] pieces = functionCode.split(pattern);
-		return pieces[pieces.length - 1];
-	}
+        String pattern = Pattern.quote(File.separator);
+        String[] pieces = functionCode.split(pattern);
+        return pieces[pieces.length - 1];
+    }
 }
