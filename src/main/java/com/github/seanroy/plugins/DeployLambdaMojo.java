@@ -31,6 +31,7 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import static com.amazonaws.services.lambda.model.EventSourcePosition.LATEST;
 import static java.util.Optional.empty;
@@ -364,14 +365,14 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         ofNullable(getObjectMetadata(bucket))
                 .map(ObjectMetadata::getETag)
                 .map(remoteMD5 -> {
-                    getLog().info(fileName + " exists in S3 with MD5 hash " + remoteMD5);
+                    getLog().info(getFileName() + " exists in S3 with MD5 hash " + remoteMD5);
                     // This comparison will no longer work if we ever go to multipart uploads.  Etags are not
                     // computed as MD5 sums for multipart uploads in s3.
                     return localmd5.equals(remoteMD5);
                 })
                 .map(isTheSame -> {
                     if (isTheSame) {
-                        getLog().info(fileName + " is up to date in AWS S3 bucket " + s3Bucket + ". Not uploading...");
+                        getLog().info(getFileName() + " is up to date in AWS S3 bucket " + s3Bucket + ". Not uploading...");
                         return true;
                     }
                     return null; // file should be imported
@@ -403,4 +404,10 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         }
         return s3Bucket;
     }
+    
+    private String getFileName() {
+		String pattern = Pattern.quote(File.separator);
+		String[] pieces = functionCode.split(pattern);
+		return pieces[pieces.length - 1];
+	}
 }
