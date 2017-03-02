@@ -211,7 +211,7 @@
             </plugin>
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
-                <artifactId>maven-versions-plugin</artifactId>
+                <artifactId>maven-version-plugin</artifactId>
                 <version>1.0</version>
             </plugin>
             <plugin>
