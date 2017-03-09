@@ -35,8 +35,7 @@
           <runtime>java8</runtime>
           <s3Bucket>lambda-function-code</s3Bucket>
           <timeout>60</timeout>
-          <lambdaRoleArn>arn:aws:iam::280237693431:role/lambda_basic_execution
-</lambdaRoleArn>
+          <lambdaRoleArn>arn:aws:iam::280237693431:role/lambda_basic_execution</lambdaRoleArn>
           <lambdaFunctionsJSON>
          [
                               {
