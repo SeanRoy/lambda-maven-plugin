@@ -1,5 +1,5 @@
-   lambduh Maven plugin
-   Copyright 2015 Sean N. Roy
+   Lambda Maven plugin
+   Copyright 2017 Sean N. Roy
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
    This product includes software developed by Sean N. Roy which enables
    the user to automate deployment of AWS Lambda code functions.
 
-   Class Name: com.github.seanroy.plugins.LambduhMojo.class
+   Class Names: com.github.seanroy.plugins.AbstractLambdaMojo.class
+                com.github.seanroy.plugins.DeleteLambdaMojo.class
+                com.github.seanroy.plugins.DeployLambdaMojo.class
 
    Portions of this product make use of SDKs provided by
    Amazon (AWS API) and Apache Software Foundation.
