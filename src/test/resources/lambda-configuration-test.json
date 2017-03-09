@@ -1,0 +1,31 @@
+[
+  {
+    "functionName": "flowlab-example-lambda",
+    "description": "Receives input and logs it",
+    "handler": "no.flowlab.ExampleLambda",
+    "triggers": [
+      {
+        "integration": "SNS",
+        "SNSTopic": "flowlab-example-in"
+      },
+      {
+        "integration": "CloudWatch Events - Schedule",
+        "ruleName": "flowlab-example-every-5-minutes",
+        "ruleDescription": "Drain queue",
+        "scheduleExpression": "rate(5 minutes)"
+      },
+      {
+        "integration": "Alexa Skills Kit"
+      }
+    ],
+    "environmentVariables": {
+      "key0": "value0",
+      "key1": "key1"
+    }
+  },
+  {
+    "functionName": "flowlab-example-lambda1",
+    "description": "Receives input and logs it",
+    "handler": "no.flowlab.ExampleLambda0"
+  }
+]
