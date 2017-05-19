@@ -1,17 +1,11 @@
 package com.github.seanroy.plugins;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClient;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBStreamsClient;
-import com.amazonaws.services.lambda.AWSLambdaClient;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.sns.AmazonSNSClient;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Parameter;
+import static com.amazonaws.util.CollectionUtils.isNullOrEmpty;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.of;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,17 +16,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.amazonaws.util.CollectionUtils.isNullOrEmpty;
-import static java.util.Collections.emptyList;
-import static java.util.Optional.of;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Parameter;
 
+import com.amazonaws.AmazonWebServiceClient;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
+import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClientBuilder;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBStreams;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBStreamsClientBuilder;
+import com.amazonaws.services.lambda.AWSLambda;
+import com.amazonaws.services.lambda.AWSLambdaClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sns.AmazonSNS;
+import com.amazonaws.services.sns.AmazonSNSClientBuilder;
 
 /**
  * Abstracts all common parameter handling and initiation of AWS service clients.
@@ -156,11 +165,11 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
 
     public String fileName;
     public AWSCredentials credentials;
-    public AmazonS3Client s3Client;
-    public AWSLambdaClient lambdaClient;
-    public AmazonSNSClient snsClient;
-    public AmazonCloudWatchEventsClient eventsClient;
-    public AmazonDynamoDBStreamsClient dynamoDBStreamsClient;
+    public AmazonS3 s3Client;
+    public AWSLambda lambdaClient;
+    public AmazonSNS snsClient;
+    public AmazonCloudWatchEvents eventsClient;
+    public AmazonDynamoDBStreams dynamoDBStreamsClient;
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -201,25 +210,22 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     private void initVersion() {
         version = version.replace(".", "-");
     }
+    
+    @SuppressWarnings("rawtypes")
+    Function<AwsClientBuilder, AmazonWebServiceClient> clientFactory = b -> {
+        Regions region = Regions.fromName(regionName);
+        
+        return (AmazonWebServiceClient) of(credentials)
+        .map(credentials -> b.withCredentials(DefaultAWSCredentialsProviderChain.getInstance()).withRegion(region).build())
+        .orElse(b.withRegion(region).build());
+    };
 
     private void initAWSClients() {
-        Regions region = Regions.fromName(regionName);
-
-        s3Client = of(credentials)
-                .map(credentials -> new AmazonS3Client(credentials).<AmazonS3Client>withRegion(region))
-                .orElse(new AmazonS3Client().withRegion(region));
-        lambdaClient = of(credentials)
-                .map(credentials -> new AWSLambdaClient(credentials).<AWSLambdaClient>withRegion(region))
-                .orElse(new AWSLambdaClient().withRegion(region));
-        snsClient = of(credentials)
-                .map(credentials -> new AmazonSNSClient(credentials).<AmazonSNSClient>withRegion(region))
-                .orElse(new AmazonSNSClient().withRegion(region));
-        eventsClient = of(credentials)
-                .map(credentials -> new AmazonCloudWatchEventsClient(credentials).<AmazonCloudWatchEventsClient>withRegion(region))
-                .orElse(new AmazonCloudWatchEventsClient().withRegion(region));
-        dynamoDBStreamsClient = of(credentials)
-                .map(credentials -> new AmazonDynamoDBStreamsClient(credentials).<AmazonDynamoDBStreamsClient>withRegion(region))
-                .orElse(new AmazonDynamoDBStreamsClient().withRegion(region));
+        s3Client = (AmazonS3) clientFactory.apply(AmazonS3ClientBuilder.standard());
+        lambdaClient = (AWSLambda) clientFactory.apply(AWSLambdaClientBuilder.standard());
+        snsClient = (AmazonSNS) clientFactory.apply(AmazonSNSClientBuilder.standard());
+        eventsClient = (AmazonCloudWatchEvents) clientFactory.apply(AmazonCloudWatchEventsClientBuilder.standard());
+        dynamoDBStreamsClient = (AmazonDynamoDBStreams) clientFactory.apply(AmazonDynamoDBStreamsClientBuilder.standard());
     }
 
     private void initLambdaFunctionsConfiguration() throws MojoExecutionException, IOException {
