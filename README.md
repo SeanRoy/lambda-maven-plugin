@@ -160,6 +160,10 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.1.6
+* Removed some deprecated code
+* functionNameSuffix is no longer automatically hyphenated.  If you want a hyphen, specify it in the functionNameSuffix directive.
+
 2.1.5
 * Add support for environment variables [Issue 48](https://github.com/SeanRoy/lambda-maven-plugin/issues/48)
 * Thanks [krzysztof@flowlab.no](mailto:krzysztof@flowlab.no)

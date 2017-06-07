@@ -272,7 +272,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     }
 
     private String addSuffix(String functionName) {
-        return ofNullable(functionNameSuffix).map(suffix -> Stream.of(functionName, "-", suffix).collect(Collectors.joining()))
+        return ofNullable(functionNameSuffix).map(suffix -> Stream.of(functionName, suffix).collect(Collectors.joining()))
                                              .orElse(functionName);
     }
 
