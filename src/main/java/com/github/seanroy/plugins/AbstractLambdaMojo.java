@@ -27,13 +27,13 @@ import org.apache.maven.plugins.annotations.Parameter;
 
 import com.amazonaws.AmazonWebServiceClient;
 import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
 import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClientBuilder;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBStreams;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBStreamsClientBuilder;
 import com.amazonaws.services.lambda.AWSLambda;
@@ -216,8 +216,8 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
         Regions region = Regions.fromName(regionName);
         
         return (AmazonWebServiceClient) of(credentials)
-        .map(credentials -> b.withCredentials(DefaultAWSCredentialsProviderChain.getInstance()).withRegion(region).build())
-        .orElse(b.withRegion(region).build());
+        .map(credentials -> b.withCredentials(new AWSStaticCredentialsProvider(credentials)).withRegion(region).build())
+        .orElse(b.withRegion(region).withCredentials(new DefaultAWSCredentialsProviderChain()).build());
     };
 
     private void initAWSClients() {
