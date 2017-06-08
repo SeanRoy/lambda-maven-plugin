@@ -104,7 +104,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                                     "kinesisStream": "myStream",
                                     "batchSize": 100,
                                     "startingPosition": "TRIM_HORIZON"
-                                  }
+                                  },
                                   {
                                     "integration": "SNS",
                                     "SNSTopic": "SNSTopic-1"
