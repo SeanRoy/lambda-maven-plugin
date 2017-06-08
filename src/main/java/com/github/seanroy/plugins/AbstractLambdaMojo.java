@@ -1,30 +1,5 @@
 package com.github.seanroy.plugins;
 
-import static com.amazonaws.util.CollectionUtils.isNullOrEmpty;
-import static java.util.Collections.emptyList;
-import static java.util.Optional.of;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Parameter;
-
 import com.amazonaws.AmazonWebServiceClient;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -36,12 +11,33 @@ import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
 import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBStreams;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBStreamsClientBuilder;
+import com.amazonaws.services.kinesis.AmazonKinesis;
+import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder;
 import com.amazonaws.services.lambda.AWSLambda;
 import com.amazonaws.services.lambda.AWSLambdaClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sns.AmazonSNSClientBuilder;
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Parameter;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.amazonaws.util.CollectionUtils.isNullOrEmpty;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.of;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Abstracts all common parameter handling and initiation of AWS service clients.
@@ -170,6 +166,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     public AmazonSNS snsClient;
     public AmazonCloudWatchEvents eventsClient;
     public AmazonDynamoDBStreams dynamoDBStreamsClient;
+    public AmazonKinesis kinesisClient;
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -226,6 +223,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
         snsClient = (AmazonSNS) clientFactory.apply(AmazonSNSClientBuilder.standard());
         eventsClient = (AmazonCloudWatchEvents) clientFactory.apply(AmazonCloudWatchEventsClientBuilder.standard());
         dynamoDBStreamsClient = (AmazonDynamoDBStreams) clientFactory.apply(AmazonDynamoDBStreamsClientBuilder.standard());
+        kinesisClient = (AmazonKinesis) clientFactory.apply(AmazonKinesisClientBuilder.standard());
     }
 
     private void initLambdaFunctionsConfiguration() throws MojoExecutionException, IOException {
