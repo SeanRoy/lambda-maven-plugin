@@ -40,7 +40,7 @@ All of the AWS Lambda configuration parameters may be set within the lambda plug
 * `publish` This boolean parameter can be used to request AWS Lambda to update the Lambda function and publish a version as an atomic operation. This is global for all functions and won't overwrite publish paramter in provided Lambda configuration
 * `functionNameSuffix` The suffix for the lambda function. Function name is automatically suffixed with it. When left blank no suffix will be applied.
 * `forceUpdate` This boolean parameter can be used to force update of existing configuration. Use it when you don't publish a function and want to deploy code in your Lambda function.
-* `triggers` A list of one or more triggers that execute Lambda function. Currently `CloudWatch Events - Schedule`, `SNS` and `DynamoDB` is supported. When `functionNameSuffix` is present then suffix will be added automatically.
+* `triggers` A list of one or more triggers that execute Lambda function. Currently `CloudWatch Events - Schedule`, `SNS`, `DynamoDB` and `Kinesis` are supported. When `functionNameSuffix` is present then suffix will be added automatically.
 * `environmentVariables` Map to define environment variables for Lambda functions enable you to dynamically pass settings to your function code and libraries, without making changes to your code. Deployment functionality merges those variables with the one provided in json configuration.
 
 Current configuration of LambdaFunction can be found in LambdaFunction.java.
@@ -99,6 +99,12 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                                     "batchSize": 100,
                                     "startingPosition": "TRIM_HORIZON"
                                   },
+                                  {
+                                    "integration": "Kinesis",
+                                    "kinesisStream": "myStream",
+                                    "batchSize": 100,
+                                    "startingPosition": "TRIM_HORIZON"
+                                  }
                                   {
                                     "integration": "SNS",
                                     "SNSTopic": "SNSTopic-1"
