@@ -12,6 +12,10 @@ public class Trigger {
     // Support for DynamoDB
     private String dynamoDBTable;
     private Integer batchSize;
+
+    // Support for Kinesis Streams
+    private String kinesisStream;
+
     /**
      * <p> Starting position. </p>
      */
@@ -47,6 +51,14 @@ public class Trigger {
 
     public void setDynamoDBTable(String dynamoDBTable) {
         this.dynamoDBTable = dynamoDBTable;
+    }
+
+    public String getKinesisStream() {
+        return kinesisStream;
+    }
+
+    public void setKinesisStream(String kinesisStream) {
+        this.kinesisStream = kinesisStream;
     }
 
     public Integer getBatchSize() {
@@ -124,6 +136,11 @@ public class Trigger {
         return this;
     }
 
+    public Trigger withKinesisStream(String kinesisStream) {
+        this.kinesisStream = kinesisStream;
+        return this;
+    }
+
     public Trigger withBatchSize(Integer batchSize) {
         this.batchSize = batchSize;
         return this;
@@ -159,6 +176,7 @@ public class Trigger {
         return new StringBuilder("Trigger{")
                 .append("integration='").append(integration).append('\'')
                 .append(", dynamoDBTable='").append(dynamoDBTable).append('\'')
+                .append(", kinesisStream='").append(kinesisStream).append('\'')
                 .append(", batchSize=").append(batchSize)
                 .append(", startingPosition='").append(startingPosition).append('\'')
                 .append(", ruleName='").append(ruleName).append('\'')

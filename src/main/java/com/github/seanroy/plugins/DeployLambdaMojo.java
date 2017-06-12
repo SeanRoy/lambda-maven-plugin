@@ -10,6 +10,7 @@ import com.amazonaws.services.cloudwatchevents.model.Target;
 import com.amazonaws.services.dynamodbv2.model.ListStreamsRequest;
 import com.amazonaws.services.dynamodbv2.model.ListStreamsResult;
 import com.amazonaws.services.dynamodbv2.model.Stream;
+import com.amazonaws.services.kinesis.model.DescribeStreamResult;
 import com.amazonaws.services.lambda.model.*;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -241,17 +242,36 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                                             .map(Stream::getStreamArn)
                                             .orElseThrow(() -> new IllegalArgumentException("Unable to find stream for table " + trigger.getDynamoDBTable()));
 
+        return findorUpdateMappingConfiguration(trigger, lambdaFunction, streamArn);
+    };
+
+    private BiFunction<Trigger, LambdaFunction, Trigger> createOrUpdateKinesisStream = (Trigger trigger, LambdaFunction lambdaFunction) -> {
+        getLog().info("About to create or update " + trigger.getIntegration() + " trigger for " + trigger.getKinesisStream());
+
+        DescribeStreamResult describeStreamResult = kinesisClient.describeStream(trigger.getKinesisStream());
+
+        String streamArn;
+        try {
+             streamArn = describeStreamResult.getStreamDescription().getStreamARN();
+        } catch (NullPointerException e) {
+            throw new IllegalArgumentException("Unable to find stream with name " + trigger.getKinesisStream());
+        }
+
+        return findorUpdateMappingConfiguration(trigger, lambdaFunction, streamArn);
+    };
+
+    private Trigger findorUpdateMappingConfiguration(Trigger trigger, LambdaFunction lambdaFunction, String streamArn) {
         ListEventSourceMappingsRequest listEventSourceMappingsRequest = new ListEventSourceMappingsRequest()
                 .withFunctionName(lambdaFunction.getUnqualifiedFunctionArn());
         ListEventSourceMappingsResult listEventSourceMappingsResult = lambdaClient.listEventSourceMappings(listEventSourceMappingsRequest);
 
         Optional<EventSourceMappingConfiguration> eventSourceMappingConfiguration = listEventSourceMappingsResult.getEventSourceMappings().stream()
-                                                                                                                 .filter(stream -> {
-                                                                                                                     boolean isSameFunctionArn = stream.getFunctionArn().equals(lambdaFunction.getUnqualifiedFunctionArn());
-                                                                                                                     boolean isSameSourceArn = stream.getEventSourceArn().equals(streamArn);
-                                                                                                                     return isSameFunctionArn && isSameSourceArn;
-                                                                                                                 })
-                                                                                                                 .findFirst();
+                .filter(stream -> {
+                    boolean isSameFunctionArn = stream.getFunctionArn().equals(lambdaFunction.getUnqualifiedFunctionArn());
+                    boolean isSameSourceArn = stream.getEventSourceArn().equals(streamArn);
+                    return isSameFunctionArn && isSameSourceArn;
+                })
+                .findFirst();
 
         if (eventSourceMappingConfiguration.isPresent()) {
             UpdateEventSourceMappingRequest updateEventSourceMappingRequest = new UpdateEventSourceMappingRequest()
@@ -273,8 +293,9 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
             trigger.withTriggerArn(createEventSourceMappingResult.getEventSourceArn());
             getLog().info("Created " + trigger.getIntegration() + " trigger " + trigger.getTriggerArn());
         }
+
         return trigger;
-    };
+    }
 
     private Function<LambdaFunction, LambdaFunction> createOrUpdateTriggers = (LambdaFunction lambdaFunction) -> {
         lambdaFunction.getTriggers().forEach(trigger -> {
@@ -282,6 +303,8 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 createOrUpdateScheduledRule.apply(trigger, lambdaFunction);
             } else if ("DynamoDB".equals(trigger.getIntegration())) {
                 createOrUpdateDynamoDBTrigger.apply(trigger, lambdaFunction);
+            } else if ("Kinesis".equals(trigger.getIntegration())) {
+                createOrUpdateKinesisStream.apply(trigger, lambdaFunction);
             } else if ("SNS".equals(trigger.getIntegration())) {
                 createOrUpdateSNSTopicSubscription.apply(trigger, lambdaFunction);
             } else if ("Alexa Skills Kit".equals(trigger.getIntegration())) {

@@ -122,6 +122,11 @@
             <version>${aws.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-kinesis</artifactId>
+            <version>${aws.version}</version>
+        </dependency>
+        <dependency>
           <groupId>com.amazonaws</groupId>
           <artifactId>aws-java-sdk-api-gateway</artifactId>
           <version>${aws.version}</version>
