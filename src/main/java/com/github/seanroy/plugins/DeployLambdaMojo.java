@@ -254,7 +254,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         try {
              streamArn = describeStreamResult.getStreamDescription().getStreamARN();
         } catch (NullPointerException e) {
-            throw new IllegalArgumentException("Unable to find stream with anme " + trigger.getKinesisStream());
+            throw new IllegalArgumentException("Unable to find stream with name " + trigger.getKinesisStream());
         }
 
         return findorUpdateMappingConfiguration(trigger, lambdaFunction, streamArn);
