@@ -166,8 +166,11 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.1.8
+* Added Kinesis trigger, thanks [Matt Van](https://github.com/mattvv)
+
 2.1.7
-* Fixed critical credentials bug.
+* Fixed critical credentials bug introduced in 2.1.6.
 
 2.1.6
 * Removed some deprecated code
