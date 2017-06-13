@@ -58,6 +58,11 @@ public class LambdaFunction {
      * <p>Lambda function aliases genereted based on publish flag.</p>
      */
     private List<String> aliases;
+    
+    /**
+     * <p>@see {@link AbstractLambdaMojo}</p>
+     */
+    private Integer keepAlive;
     /**
      * <p>
      * This boolean parameter can be used to request AWS Lambda to update the
@@ -75,6 +80,8 @@ public class LambdaFunction {
     private List<Trigger> triggers;
 
     private Map<String, String> environmentVariables;
+    
+    private String qualifier;
 
     public LambdaFunction() {
     }
@@ -168,6 +175,22 @@ public class LambdaFunction {
     public String getFunctionArn() {
         return functionArn;
     }
+    
+    public void setKeepAlive(Integer keepAlive) {
+        this.keepAlive = keepAlive;
+    }
+    
+    public Integer getKeepAlive() {
+        return keepAlive;
+    }
+    
+    public void setQualifier(String qualifier) {
+        this.qualifier = qualifier;
+    }
+    
+    public String getQualifier() {
+        return qualifier;
+    }
 
     public String getUnqualifiedFunctionArn() {
         return ofNullable(functionArn)
@@ -255,6 +278,24 @@ public class LambdaFunction {
         this.environmentVariables = environmentVariables;
         return this;
     }
+    
+    public LambdaFunction withKeepAlive(Integer keepAlive) {
+        this.keepAlive = keepAlive;
+        return this;
+    }
+    
+    public LambdaFunction withQualifier(String qualifier) {
+        this.qualifier = qualifier;
+        return this;
+    }
+    
+    public String getKeepAliveRuleName() {
+        return String.format("KEEP-ALIVE-%s", getFunctionName());
+    }
+    
+    public String getKeepAliveScheduleExpression() {
+        return String.format("rate(%d %s)", keepAlive, keepAlive > 1 ? "minutes" : "minute");
+    }
 
     @SuppressWarnings("StringBufferReplaceableByString")
     @Override
@@ -271,6 +312,7 @@ public class LambdaFunction {
                 .append(", aliases=").append(aliases)
                 .append(", publish=").append(publish)
                 .append(", triggers=").append(triggers)
+                .append(", keepAlive=").append(keepAlive)
                 .append(", environmentVariables=").append(environmentVariables)
                 .append('}').toString();
     }
