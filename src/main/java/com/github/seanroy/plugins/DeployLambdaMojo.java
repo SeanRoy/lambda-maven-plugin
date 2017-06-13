@@ -1,27 +1,10 @@
 package com.github.seanroy.plugins;
 
-import com.amazonaws.auth.policy.Policy;
-import com.amazonaws.auth.policy.Statement;
-import com.amazonaws.services.cloudwatchevents.model.ListRuleNamesByTargetRequest;
-import com.amazonaws.services.cloudwatchevents.model.PutRuleRequest;
-import com.amazonaws.services.cloudwatchevents.model.PutRuleResult;
-import com.amazonaws.services.cloudwatchevents.model.PutTargetsRequest;
-import com.amazonaws.services.cloudwatchevents.model.Target;
-import com.amazonaws.services.dynamodbv2.model.ListStreamsRequest;
-import com.amazonaws.services.dynamodbv2.model.ListStreamsResult;
-import com.amazonaws.services.dynamodbv2.model.Stream;
-import com.amazonaws.services.kinesis.model.DescribeStreamResult;
-import com.amazonaws.services.lambda.model.*;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectResult;
-import com.amazonaws.services.sns.model.CreateTopicRequest;
-import com.amazonaws.services.sns.model.CreateTopicResult;
-import com.amazonaws.services.sns.model.SubscribeRequest;
-import com.amazonaws.services.sns.model.SubscribeResult;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Mojo;
+import static com.amazonaws.services.lambda.model.EventSourcePosition.LATEST;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,17 +15,66 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import static com.amazonaws.services.lambda.model.EventSourcePosition.LATEST;
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Mojo;
+
+import com.amazonaws.auth.policy.Policy;
+import com.amazonaws.auth.policy.Statement;
+import com.amazonaws.services.cloudwatchevents.model.DescribeRuleRequest;
+import com.amazonaws.services.cloudwatchevents.model.DescribeRuleResult;
+import com.amazonaws.services.cloudwatchevents.model.ListRuleNamesByTargetRequest;
+import com.amazonaws.services.cloudwatchevents.model.ListTargetsByRuleRequest;
+import com.amazonaws.services.cloudwatchevents.model.PutRuleRequest;
+import com.amazonaws.services.cloudwatchevents.model.PutRuleResult;
+import com.amazonaws.services.cloudwatchevents.model.PutTargetsRequest;
+import com.amazonaws.services.cloudwatchevents.model.Target;
+import com.amazonaws.services.dynamodbv2.model.ListStreamsRequest;
+import com.amazonaws.services.dynamodbv2.model.ListStreamsResult;
+import com.amazonaws.services.dynamodbv2.model.Stream;
+import com.amazonaws.services.kinesis.model.DescribeStreamResult;
+import com.amazonaws.services.lambda.model.AddPermissionRequest;
+import com.amazonaws.services.lambda.model.AddPermissionResult;
+import com.amazonaws.services.lambda.model.AliasConfiguration;
+import com.amazonaws.services.lambda.model.CreateAliasRequest;
+import com.amazonaws.services.lambda.model.CreateEventSourceMappingRequest;
+import com.amazonaws.services.lambda.model.CreateEventSourceMappingResult;
+import com.amazonaws.services.lambda.model.CreateFunctionRequest;
+import com.amazonaws.services.lambda.model.CreateFunctionResult;
+import com.amazonaws.services.lambda.model.Environment;
+import com.amazonaws.services.lambda.model.EventSourceMappingConfiguration;
+import com.amazonaws.services.lambda.model.EventSourcePosition;
+import com.amazonaws.services.lambda.model.FunctionCode;
+import com.amazonaws.services.lambda.model.GetFunctionRequest;
+import com.amazonaws.services.lambda.model.GetFunctionResult;
+import com.amazonaws.services.lambda.model.GetPolicyRequest;
+import com.amazonaws.services.lambda.model.GetPolicyResult;
+import com.amazonaws.services.lambda.model.ListAliasesRequest;
+import com.amazonaws.services.lambda.model.ListAliasesResult;
+import com.amazonaws.services.lambda.model.ListEventSourceMappingsRequest;
+import com.amazonaws.services.lambda.model.ListEventSourceMappingsResult;
+import com.amazonaws.services.lambda.model.ResourceNotFoundException;
+import com.amazonaws.services.lambda.model.UpdateAliasRequest;
+import com.amazonaws.services.lambda.model.UpdateEventSourceMappingRequest;
+import com.amazonaws.services.lambda.model.UpdateEventSourceMappingResult;
+import com.amazonaws.services.lambda.model.UpdateFunctionCodeRequest;
+import com.amazonaws.services.lambda.model.UpdateFunctionCodeResult;
+import com.amazonaws.services.lambda.model.UpdateFunctionConfigurationRequest;
+import com.amazonaws.services.lambda.model.VpcConfig;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectResult;
+import com.amazonaws.services.sns.model.CreateTopicRequest;
+import com.amazonaws.services.sns.model.CreateTopicResult;
+import com.amazonaws.services.sns.model.SubscribeRequest;
+import com.amazonaws.services.sns.model.SubscribeResult;
 
 /**
  * I am a deploy mojo responsible to upload and create or update lambda function in AWS.
  *
- * @author Sean N. Roy, <a href="mailto:krzysztof@flowlab.no">Krzysztof Grodzicki</a> 11/08/16.
+ * @author Sean N. Roy, <a href="mailto:sean.roy@gmail.com">Sean Roy</a> 11/08/16.
  */
 @Mojo(name = "deploy-lambda")
 public class DeployLambdaMojo extends AbstractLambdaMojo {
@@ -64,18 +96,22 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
 
     private Void createOrUpdate(LambdaFunction lambdaFunction) {
         try {
+            lambdaFunction.setFunctionArn(lambdaClient.getFunction(
+                    new GetFunctionRequest().withFunctionName(lambdaFunction.getFunctionName())).getConfiguration().getFunctionArn());
             of(getFunction(lambdaFunction))
                     .filter(getFunctionResult -> shouldUpdate(lambdaFunction, getFunctionResult))
                     .map(getFunctionResult ->
                             updateFunctionCode.andThen(updateFunctionConfig)
                                               .andThen(createOrUpdateAliases)
                                               .andThen(createOrUpdateTriggers)
+                                              .andThen(createOrUpdateKeepAlive)
                                               .apply(lambdaFunction));
         } catch (ResourceNotFoundException ignored) {
             createFunction.andThen(createOrUpdateAliases)
                           .andThen(createOrUpdateTriggers)
                           .apply(lambdaFunction);
         }
+                        
         return null;
     }
 
@@ -119,6 +155,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         lambdaClient.updateFunctionConfiguration(updateFunctionRequest);
         return lambdaFunction;
     };
+
 
     private Function<LambdaFunction, LambdaFunction> createOrUpdateAliases = (LambdaFunction lambdaFunction) -> {
         lambdaFunction.getAliases().forEach(alias -> {
@@ -202,11 +239,9 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
 
     private BiFunction<Trigger, LambdaFunction, Trigger> createOrUpdateScheduledRule = (Trigger trigger, LambdaFunction lambdaFunction) -> {
         getLog().info("About to create or update " + trigger.getIntegration() + " trigger for " + trigger.getRuleName());
-        ListRuleNamesByTargetRequest listRuleNamesByTargetRequest = new ListRuleNamesByTargetRequest()
-                .withTargetArn(lambdaFunction.getUnqualifiedFunctionArn());
-        boolean shouldCreateConfigurationForRule = eventsClient.listRuleNamesByTarget(listRuleNamesByTargetRequest).getRuleNames().stream().noneMatch(ruleName -> ruleName.equals(trigger.getRuleName()));
-
-        if (shouldCreateConfigurationForRule) {
+        
+        // TODO: I hate that these checks are done twice, but for the time being it beats updates that just didn't work.
+        if ( isScheduleRuleChanged(lambdaFunction) || isKeepAliveChanged(lambdaFunction)) {
             PutRuleRequest putRuleRequest = new PutRuleRequest()
                     .withName(trigger.getRuleName())
                     .withDescription(trigger.getRuleDescription())
@@ -229,6 +264,26 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
             eventsClient.putTargets(putTargetsRequest);
         }
         return trigger;
+    };
+    
+    
+    private Function<LambdaFunction, LambdaFunction> createOrUpdateKeepAlive = (LambdaFunction lambdaFunction) -> {
+        if (isKeepAliveChanged(lambdaFunction)) {
+            ofNullable(lambdaFunction.getKeepAlive()).flatMap(f -> {
+               getLog().info("Setting keepAlive to " + f + " minutes.");
+               
+               createOrUpdateScheduledRule.apply(new Trigger()
+                   .withIntegration("Function Keep Alive")
+                   .withDescription(String.format("This feature pings function %s every %d minutes.",
+                                                   lambdaFunction.getFunctionName(), f))
+                   .withRuleName(lambdaFunction.getKeepAliveRuleName())        
+                   .withScheduleExpression(lambdaFunction.getKeepAliveScheduleExpression()),
+                   lambdaFunction);
+               
+               return Optional.of(f);
+            });  
+        }
+        return lambdaFunction;
     };
 
     private BiFunction<Trigger, LambdaFunction, Trigger> createOrUpdateDynamoDBTrigger = (Trigger trigger, LambdaFunction lambdaFunction) -> {
@@ -299,15 +354,15 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
 
     private Function<LambdaFunction, LambdaFunction> createOrUpdateTriggers = (LambdaFunction lambdaFunction) -> {
         lambdaFunction.getTriggers().forEach(trigger -> {
-            if ("CloudWatch Events - Schedule".equals(trigger.getIntegration())) {
+            if (TRIG_INT_LABEL_CLOUDWATCH_EVENTS.equals(trigger.getIntegration())) {
                 createOrUpdateScheduledRule.apply(trigger, lambdaFunction);
-            } else if ("DynamoDB".equals(trigger.getIntegration())) {
+            } else if (TRIG_INT_LABEL_DYNAMO_DB.equals(trigger.getIntegration())) {
                 createOrUpdateDynamoDBTrigger.apply(trigger, lambdaFunction);
-            } else if ("Kinesis".equals(trigger.getIntegration())) {
+            } else if (TRIG_INT_LABEL_KINESIS.equals(trigger.getIntegration())) {
                 createOrUpdateKinesisStream.apply(trigger, lambdaFunction);
-            } else if ("SNS".equals(trigger.getIntegration())) {
+            } else if (TRIG_INT_LABEL_SNS.equals(trigger.getIntegration())) {
                 createOrUpdateSNSTopicSubscription.apply(trigger, lambdaFunction);
-            } else if ("Alexa Skills Kit".equals(trigger.getIntegration())) {
+            } else if (TRIG_INT_LABEL_ALEXA_SK.equals(trigger.getIntegration())) {
                 addAlexaSkillsKitPermission.apply(trigger, lambdaFunction);
             } else {
                 throw new IllegalArgumentException("Unknown integration for trigger " + trigger.getIntegration() + ". Correct your configuration");
@@ -333,9 +388,33 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                     boolean isMemoryChanged = isChangeInt.test(config.getMemorySize(), lambdaFunction.getMemorySize());
                     boolean isSecurityGroupIdsChanged = isChangeList.test(config.getVpcConfig().getSecurityGroupIds(), lambdaFunction.getSecurityGroupIds());
                     boolean isVpcSubnetIdsChanged = isChangeList.test(config.getVpcConfig().getSubnetIds(), lambdaFunction.getSubnetIds());
-                    return isDescriptionChanged || isHandlerChanged || isRoleChanged || isTimeoutChanged || isMemoryChanged || isSecurityGroupIdsChanged || isVpcSubnetIdsChanged || isAliasesChanged(lambdaFunction);
+                    return isDescriptionChanged || isHandlerChanged || isRoleChanged || isTimeoutChanged || isMemoryChanged || 
+                           isSecurityGroupIdsChanged || isVpcSubnetIdsChanged || isAliasesChanged(lambdaFunction) || isKeepAliveChanged(lambdaFunction) ||
+                           isScheduleRuleChanged(lambdaFunction);
                 })
                 .orElse(true);
+    }
+    
+    private boolean isKeepAliveChanged(LambdaFunction lambdaFunction) {
+        try {
+            DescribeRuleResult res = eventsClient.describeRule(new DescribeRuleRequest().withName(lambdaFunction.getKeepAliveRuleName()));
+            return !(res.getScheduleExpression().equals(lambdaFunction.getKeepAliveScheduleExpression()));
+        } catch( com.amazonaws.services.cloudwatchevents.model.ResourceNotFoundException ignored ) {
+            return true;
+        }
+    }
+    
+    private boolean isScheduleRuleChanged(LambdaFunction lambdaFunction) {
+        try {
+            return lambdaFunction.getTriggers().stream().filter(t -> t.getIntegration().equals(TRIG_INT_LABEL_CLOUDWATCH_EVENTS)).map(trigger -> {
+                DescribeRuleResult res = eventsClient.describeRule(new DescribeRuleRequest().withName(trigger.getRuleName()));
+                return !(res.getName().equals(trigger.getRuleName()) &&
+                         res.getDescription().equals(trigger.getRuleDescription()) &&
+                         res.getScheduleExpression().equals(trigger.getScheduleExpression()));
+            }).anyMatch(x -> x == true); 
+        } catch( com.amazonaws.services.cloudwatchevents.model.ResourceNotFoundException ignored ) {
+            return true;
+        }
     }
 
     private boolean isAliasesChanged(LambdaFunction lambdaFunction) {
@@ -359,7 +438,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 .withFunctionName(lambdaFunction.getFunctionName())
                 .withHandler(lambdaFunction.getHandler())
                 .withRuntime(runtime)
-                .withTimeout(ofNullable(lambdaFunction.getTimeout()).orElse(timeout))
+                .withTimeout(ofNullable(lambdaFunction.getTimeout()).orElse(timeout))   
                 .withMemorySize(ofNullable(lambdaFunction.getMemorySize()).orElse(memorySize))
                 .withVpcConfig(getVpcConfig(lambdaFunction))
                 .withCode(new FunctionCode()
@@ -371,6 +450,8 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         lambdaFunction.withVersion(createFunctionResult.getVersion())
                       .withFunctionArn(createFunctionResult.getFunctionArn());
         getLog().info("Function " + createFunctionResult.getFunctionName() + " created. Function Arn: " + createFunctionResult.getFunctionArn());
+
+        
         return lambdaFunction;
     };
 

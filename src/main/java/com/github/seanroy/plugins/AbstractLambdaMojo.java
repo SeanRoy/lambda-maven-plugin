@@ -46,6 +46,12 @@ import static java.util.stream.Collectors.toMap;
  */
 @SuppressWarnings("ClassWithTooManyFields")
 public abstract class AbstractLambdaMojo extends AbstractMojo {
+    public static final String TRIG_INT_LABEL_CLOUDWATCH_EVENTS = "CloudWatch Events - Schedule";
+    public static final String TRIG_INT_LABEL_DYNAMO_DB = "DynamoDB";
+    public static final String TRIG_INT_LABEL_KINESIS = "Kinesis";
+    public static final String TRIG_INT_LABEL_SNS = "SNS";
+    public static final String TRIG_INT_LABEL_ALEXA_SK = "Alexa Skills Kit";
+    
     /**
      * <p>The AWS access key.</p>
      */

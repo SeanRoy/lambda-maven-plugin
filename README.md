@@ -42,6 +42,9 @@ All of the AWS Lambda configuration parameters may be set within the lambda plug
 * `forceUpdate` This boolean parameter can be used to force update of existing configuration. Use it when you don't publish a function and want to deploy code in your Lambda function.
 * `triggers` A list of one or more triggers that execute Lambda function. Currently `CloudWatch Events - Schedule`, `SNS`, `DynamoDB` and `Kinesis` are supported. When `functionNameSuffix` is present then suffix will be added automatically.
 * `environmentVariables` Map to define environment variables for Lambda functions enable you to dynamically pass settings to your function code and libraries, without making changes to your code. Deployment functionality merges those variables with the one provided in json configuration.
+* `keepAlive` When specified, a CloudWatch event is scheduled to "ping" your function every X minutes, where X is the
+ value you specify.  This keeps your lambda function resident and ready to receive real requests at all times.  This is
+ useful for when you need your function to be responsive.
 
 Current configuration of LambdaFunction can be found in LambdaFunction.java.
 
@@ -86,6 +89,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                                 "handler": "no.flowlab.lambda0::test",
                                 "timeout": 30,
                                 "memorySize": 512,
+                                "keepAlive": 15,
                                 "triggers": [
                                   {
                                     "integration": "CloudWatch Events - Schedule",
@@ -167,7 +171,11 @@ please remember to add them to .gitignore.
 
 ### Releases
 2.1.8
+* Added Keep Alive functionality
+* Fixed broken update schedule code.
 * Added Kinesis trigger, thanks [Matt Van](https://github.com/mattvv)
+* Deletion of triggers on lambda delete and the update code needs serious re-working.
+* Need to work on cleaning up after orphaned resources.
 
 2.1.7
 * Fixed critical credentials bug introduced in 2.1.6.
