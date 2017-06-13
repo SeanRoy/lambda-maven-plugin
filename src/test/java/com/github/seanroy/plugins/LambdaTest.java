@@ -65,10 +65,11 @@ public class LambdaTest extends AbstractMojoTestCase {
         DeployLambdaMojo lambduhMojo = (DeployLambdaMojo) lookupMojo( "deploy-lambda", pom );
         assertNotNull( lambduhMojo );
         lambduhMojo.execute();
-        
+   
         DeleteLambdaMojo deleteMojo = (DeleteLambdaMojo) lookupMojo( "delete-lambda", pom);
         assertNotNull( deleteMojo );
         deleteMojo.execute();
+       
     }
 
 }
