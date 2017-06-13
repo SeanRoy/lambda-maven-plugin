@@ -274,8 +274,9 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                
                createOrUpdateScheduledRule.apply(new Trigger()
                    .withIntegration("Function Keep Alive")
-                   .withDescription(String.format("This feature pings function %s every %d minutes.",
-                                                   lambdaFunction.getFunctionName(), f))
+                   .withDescription(String.format("This feature pings function %s every %d %s.",
+                                                   lambdaFunction.getFunctionName(), f,
+                                                   f > 1 ? "minutes" : "minute"))
                    .withRuleName(lambdaFunction.getKeepAliveRuleName())        
                    .withScheduleExpression(lambdaFunction.getKeepAliveScheduleExpression()),
                    lambdaFunction);
