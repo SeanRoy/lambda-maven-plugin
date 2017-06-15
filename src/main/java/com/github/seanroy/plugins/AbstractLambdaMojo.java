@@ -1,5 +1,31 @@
 package com.github.seanroy.plugins;
 
+import static com.amazonaws.util.CollectionUtils.isNullOrEmpty;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.of;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Parameter;
+
 import com.amazonaws.AmazonWebServiceClient;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -19,25 +45,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sns.AmazonSNSClientBuilder;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Parameter;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.amazonaws.util.CollectionUtils.isNullOrEmpty;
-import static java.util.Collections.emptyList;
-import static java.util.Optional.of;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 /**
  * Abstracts all common parameter handling and initiation of AWS service clients.
@@ -164,6 +173,9 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
      */
     @Parameter(property = "environmentVariables", defaultValue = "${environmentVariables}")
     public Map<String, String> environmentVariables;
+    
+    @Parameter(property = "passThrough")
+    public String passThrough;
 
     public String fileName;
     public AWSCredentials credentials;
@@ -269,7 +281,10 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     private Map<String, String> environmentVariables(LambdaFunction lambdaFunction) {
         Map<String, String> envVar0 = ofNullable(environmentVariables).orElse(new HashMap<>());
         Map<String, String> envVar1 = ofNullable(lambdaFunction.getEnvironmentVariables()).orElse(new HashMap<>());
-        return Stream.of(envVar0, envVar1)
+        Type type = new TypeToken<Map<String, String>>(){}.getType();
+        Map<String, String> passThroughEnvironmentVariables = 
+            new GsonBuilder().create().fromJson(ofNullable(passThrough).orElse("{}"), type);
+        return Stream.of(envVar0, envVar1, passThroughEnvironmentVariables)
                      .map(Map::entrySet)
                      .flatMap(Collection::stream)
                      .collect(toMap(Entry::getKey, Entry::getValue));
