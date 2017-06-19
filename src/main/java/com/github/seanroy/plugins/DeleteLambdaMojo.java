@@ -1,9 +1,17 @@
 package com.github.seanroy.plugins;
 
 
+import static java.util.Optional.ofNullable;
+
+import java.util.List;
+import java.util.function.Function;
+
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 
+import com.amazonaws.services.cloudwatchevents.model.DeleteRuleRequest;
+import com.amazonaws.services.cloudwatchevents.model.ListRuleNamesByTargetRequest;
+import com.amazonaws.services.cloudwatchevents.model.RemoveTargetsRequest;
 import com.amazonaws.services.lambda.model.DeleteFunctionRequest;
 import com.amazonaws.services.lambda.model.GetFunctionRequest;
 
@@ -25,13 +33,10 @@ public class DeleteLambdaMojo extends AbstractLambdaMojo {
         super.execute();
         try {
             lambdaFunctions.forEach(context -> {
-                context.setFunctionArn(lambdaClient.getFunction(new GetFunctionRequest()
-                    .withFunctionName(context.getFunctionName())).getConfiguration().getFunctionArn());
-                
                 try {
-                    deleteFunction(context);
-                    deleteTriggers(context);
-                    
+                    deleteTriggers.andThen(deleteFunction).apply(
+                            context.withFunctionArn(lambdaClient.getFunction(new GetFunctionRequest()
+                                .withFunctionName(context.getFunctionName())).getConfiguration().getFunctionArn()));                      
                 } catch (Exception e) {
                     getLog().error(e.getMessage());
                 }
@@ -41,26 +46,34 @@ public class DeleteLambdaMojo extends AbstractLambdaMojo {
         }
     }
     
+    private Function<LambdaFunction, LambdaFunction> deleteDynamoDBTrigger = lambdaFunction -> {return lambdaFunction;};
+    private Function<LambdaFunction, LambdaFunction> deleteKinesisTrigger = lambdaFunction -> {return lambdaFunction;};
+    private Function<LambdaFunction, LambdaFunction> deleteSNSTrigger = lambdaFunction -> {return lambdaFunction;};
+    private Function<LambdaFunction, LambdaFunction> deleteAlexaSkillsTrigger = lambdaFunction -> {return lambdaFunction;};
+    
+    
     /*
-     * TODO
+     * Delete cloudwatch event rules.
      */
-    private void deleteTriggers(LambdaFunction context) {
-        context.getTriggers().forEach(trigger -> {
-            if (TRIG_INT_LABEL_CLOUDWATCH_EVENTS.equals(trigger.getIntegration())) {
-                
-            } else if (TRIG_INT_LABEL_DYNAMO_DB.equals(trigger.getIntegration())) {
-                
-            } else if (TRIG_INT_LABEL_KINESIS.equals(trigger.getIntegration())) {
-               
-            } else if (TRIG_INT_LABEL_SNS.equals(trigger.getIntegration())) {
-                
-            } else if (TRIG_INT_LABEL_ALEXA_SK.equals(trigger.getIntegration())) {
-                
-            } else {
-                getLog().error("Unknown integration for trigger " + trigger.getIntegration() + ". Correct your configuration");
+    private Function<LambdaFunction, LambdaFunction> deleteCloudWatchEventRules = lambdaFunction -> {
+        // Get the list of cloudwatch event rules defined for this function (if any).
+        List<String> existingRuleNames = cloudWatchEventsClient.listRuleNamesByTarget(new ListRuleNamesByTargetRequest()
+            .withTargetArn(lambdaFunction.getFunctionArn())).getRuleNames();
+        
+        existingRuleNames.stream().forEach(ern -> {
+            getLog().info("    Deleting CloudWatch Event Rule: " + ern);
+            cloudWatchEventsClient.removeTargets(new RemoveTargetsRequest()
+                .withIds("1")
+                .withRule(ern));
+            try {
+                cloudWatchEventsClient.deleteRule(new DeleteRuleRequest().withName(ern));
+            } catch (Exception e) {
+                getLog().info("    Could not delete orphaned rule: " + e.getMessage());
             }
         });
-    }
+        
+        return lambdaFunction;
+    };
 
     /**
      * Deletes the lambda function from AWS Lambda and removes the function code
@@ -74,7 +87,7 @@ public class DeleteLambdaMojo extends AbstractLambdaMojo {
      * @param functionName to delete
      * @throws Exception the exception from AWS API
      */
-    private void deleteFunction(LambdaFunction context) throws Exception {
+    private Function<LambdaFunction, LambdaFunction> deleteFunction = context -> {
         String functionName = context.getFunctionName();
         
         // Delete Lambda Function
@@ -85,5 +98,19 @@ public class DeleteLambdaMojo extends AbstractLambdaMojo {
 
         s3Client.deleteObject(s3Bucket, fileName);
         getLog().info("Lambda function code successfully removed from S3.");
-    }
+        
+        return context;
+    };
+    
+    /**
+     * For every Integration, ie Trigger, andThen a delete function for it here.
+     */
+    private Function<LambdaFunction, LambdaFunction> deleteTriggers = lambdaFunction -> {        
+        return deleteCloudWatchEventRules
+                .andThen(deleteDynamoDBTrigger)
+                .andThen(deleteKinesisTrigger)
+                .andThen(deleteSNSTrigger)
+                .andThen(deleteAlexaSkillsTrigger)
+                .apply(lambdaFunction);
+    };
 }

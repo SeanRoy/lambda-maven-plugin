@@ -185,6 +185,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     public AmazonCloudWatchEvents eventsClient;
     public AmazonDynamoDBStreams dynamoDBStreamsClient;
     public AmazonKinesis kinesisClient;
+    public AmazonCloudWatchEvents cloudWatchEventsClient;
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -242,6 +243,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
         eventsClient = (AmazonCloudWatchEvents) clientFactory.apply(AmazonCloudWatchEventsClientBuilder.standard());
         dynamoDBStreamsClient = (AmazonDynamoDBStreams) clientFactory.apply(AmazonDynamoDBStreamsClientBuilder.standard());
         kinesisClient = (AmazonKinesis) clientFactory.apply(AmazonKinesisClientBuilder.standard());
+        cloudWatchEventsClient = (AmazonCloudWatchEvents) clientFactory.apply(AmazonCloudWatchEventsClientBuilder.standard());
     }
 
     private void initLambdaFunctionsConfiguration() throws MojoExecutionException, IOException {
