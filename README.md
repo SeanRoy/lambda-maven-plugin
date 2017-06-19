@@ -5,7 +5,7 @@
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambda-maven-plugin`<br />
-`version: 2.2.0`<br />
+`version: 2.2.1`<br />
 <br/><br/>
 Please note that the artifact has been renamed from lambduh-maven-plugin to
 lambda-maven-plugin.
@@ -45,6 +45,10 @@ All of the AWS Lambda configuration parameters may be set within the lambda plug
 * `keepAlive` When specified, a CloudWatch event is scheduled to "ping" your function every X minutes, where X is the
  value you specify.  This keeps your lambda function resident and ready to receive real requests at all times.  This is
  useful for when you need your function to be responsive.
+* `passThrough` This directive is to be used only on the command line.  It allows you to pass environment variables from the command line to your functions using json. Example:
+```
+mvn package shade:shade lambda:deploy-lambda -DpassThrough="{'KEY1' : 'VAL1', 'KEY2' : 'VAL2'}"
+```
 
 Current configuration of LambdaFunction can be found in LambdaFunction.java.
 
@@ -67,7 +71,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
             <plugin>
                     <groupId>com.github.seanroy</groupId>
                     <artifactId>lambda-maven-plugin</artifactId>
-                    <version>2.2.0</version>
+                    <version>2.2.1</version>
                     <configuration>
                         <functionCode>${lambda.functionCode}</functionCode>
                         <version>${lambda.version}</version>
@@ -170,6 +174,10 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.2.1
+* Added passThrough environment variables feature, allowing you to pass environment variables from the command line.
+* Added cleanup code to remove cloudwatch event rules that have become orphaned on when the function is being deleted.  More triggers will be added to the cleanup list in a later revision.
+
 2.2.0
 * Added Keep Alive functionality
 * Fixed broken update schedule code.

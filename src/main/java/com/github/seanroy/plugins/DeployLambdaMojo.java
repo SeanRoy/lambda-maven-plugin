@@ -15,7 +15,6 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -23,18 +22,18 @@ import org.apache.maven.plugins.annotations.Mojo;
 
 import com.amazonaws.auth.policy.Policy;
 import com.amazonaws.auth.policy.Statement;
+import com.amazonaws.services.cloudwatchevents.model.DeleteRuleRequest;
 import com.amazonaws.services.cloudwatchevents.model.DescribeRuleRequest;
 import com.amazonaws.services.cloudwatchevents.model.DescribeRuleResult;
 import com.amazonaws.services.cloudwatchevents.model.ListRuleNamesByTargetRequest;
-import com.amazonaws.services.cloudwatchevents.model.ListTargetsByRuleRequest;
 import com.amazonaws.services.cloudwatchevents.model.PutRuleRequest;
 import com.amazonaws.services.cloudwatchevents.model.PutRuleResult;
 import com.amazonaws.services.cloudwatchevents.model.PutTargetsRequest;
+import com.amazonaws.services.cloudwatchevents.model.RemoveTargetsRequest;
 import com.amazonaws.services.cloudwatchevents.model.Target;
 import com.amazonaws.services.dynamodbv2.model.ListStreamsRequest;
 import com.amazonaws.services.dynamodbv2.model.ListStreamsResult;
 import com.amazonaws.services.dynamodbv2.model.Stream;
-import com.amazonaws.services.kinesis.model.DescribeStreamResult;
 import com.amazonaws.services.lambda.model.AddPermissionRequest;
 import com.amazonaws.services.lambda.model.AddPermissionResult;
 import com.amazonaws.services.lambda.model.AliasConfiguration;
@@ -87,34 +86,13 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
             lambdaFunctions.stream().map(f -> {
                 getLog().info("---- Create or update " + f.getFunctionName() + " -----");
                 return f;
-            }).forEach(this::createOrUpdate);
+            }).forEach(lf -> cleanUpOrphans.andThen(createOrUpdate).apply(lf));
         } catch (Exception e) {
             getLog().error("Error during processing", e);
             throw new MojoExecutionException(e.getMessage());
         }
     }
-
-    private Void createOrUpdate(LambdaFunction lambdaFunction) {
-        try {
-            lambdaFunction.setFunctionArn(lambdaClient.getFunction(
-                    new GetFunctionRequest().withFunctionName(lambdaFunction.getFunctionName())).getConfiguration().getFunctionArn());
-            of(getFunction(lambdaFunction))
-                    .filter(getFunctionResult -> shouldUpdate(lambdaFunction, getFunctionResult))
-                    .map(getFunctionResult ->
-                            updateFunctionCode.andThen(updateFunctionConfig)
-                                              .andThen(createOrUpdateAliases)
-                                              .andThen(createOrUpdateTriggers)
-                                              .andThen(createOrUpdateKeepAlive)
-                                              .apply(lambdaFunction));
-        } catch (ResourceNotFoundException ignored) {
-            createFunction.andThen(createOrUpdateAliases)
-                          .andThen(createOrUpdateTriggers)
-                          .apply(lambdaFunction);
-        }
-                        
-        return null;
-    }
-
+    
     private boolean shouldUpdate(LambdaFunction lambdaFunction, GetFunctionResult getFunctionResult) {
         boolean isConfigurationChanged = isConfigurationChanged(lambdaFunction, getFunctionResult);
         if (!isConfigurationChanged) {
@@ -270,16 +248,18 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     private Function<LambdaFunction, LambdaFunction> createOrUpdateKeepAlive = (LambdaFunction lambdaFunction) -> {
         if (isKeepAliveChanged(lambdaFunction)) {
             ofNullable(lambdaFunction.getKeepAlive()).flatMap(f -> {
-               getLog().info("Setting keepAlive to " + f + " minutes.");
-               
-               createOrUpdateScheduledRule.apply(new Trigger()
-                   .withIntegration("Function Keep Alive")
-                   .withDescription(String.format("This feature pings function %s every %d %s.",
-                                                   lambdaFunction.getFunctionName(), f,
-                                                   f > 1 ? "minutes" : "minute"))
-                   .withRuleName(lambdaFunction.getKeepAliveRuleName())        
-                   .withScheduleExpression(lambdaFunction.getKeepAliveScheduleExpression()),
-                   lambdaFunction);
+               if ( f > 0 ) { 
+                   getLog().info("Setting keepAlive to " + f + " minutes.");
+                   
+                   createOrUpdateScheduledRule.apply(new Trigger()
+                       .withIntegration("Function Keep Alive")
+                       .withDescription(String.format("This feature pings function %s every %d %s.",
+                                                       lambdaFunction.getFunctionName(), f,
+                                                       f > 1 ? "minutes" : "minute"))
+                       .withRuleName(lambdaFunction.getKeepAliveRuleName())        
+                       .withScheduleExpression(lambdaFunction.getKeepAliveScheduleExpression()),
+                       lambdaFunction);
+               }
                
                return Optional.of(f);
             });  
@@ -304,16 +284,12 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     private BiFunction<Trigger, LambdaFunction, Trigger> createOrUpdateKinesisStream = (Trigger trigger, LambdaFunction lambdaFunction) -> {
         getLog().info("About to create or update " + trigger.getIntegration() + " trigger for " + trigger.getKinesisStream());
 
-        DescribeStreamResult describeStreamResult = kinesisClient.describeStream(trigger.getKinesisStream());
-
-        String streamArn;
         try {
-             streamArn = describeStreamResult.getStreamDescription().getStreamARN();
-        } catch (NullPointerException e) {
+            return findorUpdateMappingConfiguration(trigger, lambdaFunction, 
+                    kinesisClient.describeStream(trigger.getKinesisStream()).getStreamDescription().getStreamARN());
+        } catch (Exception rnfe) {
             throw new IllegalArgumentException("Unable to find stream with name " + trigger.getKinesisStream());
-        }
-
-        return findorUpdateMappingConfiguration(trigger, lambdaFunction, streamArn);
+        }        
     };
 
     private Trigger findorUpdateMappingConfiguration(Trigger trigger, LambdaFunction lambdaFunction, String streamArn) {
@@ -398,8 +374,11 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     
     private boolean isKeepAliveChanged(LambdaFunction lambdaFunction) {
         try {
-            DescribeRuleResult res = eventsClient.describeRule(new DescribeRuleRequest().withName(lambdaFunction.getKeepAliveRuleName()));
-            return !(res.getScheduleExpression().equals(lambdaFunction.getKeepAliveScheduleExpression()));
+            return ofNullable(lambdaFunction.getKeepAlive()).map( ka -> {
+                DescribeRuleResult res = eventsClient.describeRule(new DescribeRuleRequest().withName(lambdaFunction.getKeepAliveRuleName()));
+                return !(res.getScheduleExpression().equals(lambdaFunction.getKeepAliveScheduleExpression()));
+            }).orElse(true);
+            
         } catch( com.amazonaws.services.cloudwatchevents.model.ResourceNotFoundException ignored ) {
             return true;
         }
@@ -488,6 +467,94 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                     return true;
                 });
     }
+    
+    Function<LambdaFunction, LambdaFunction> cleanUpOrphanedDynamoDBTriggers = lambdaFunction -> { return lambdaFunction; };
+    Function<LambdaFunction, LambdaFunction> cleanUpOrphanedKinesisTriggers = lambdaFunction -> { return lambdaFunction; };
+    Function<LambdaFunction, LambdaFunction> cleanUpOrphanedSNSTriggers = lambdaFunction -> { return lambdaFunction; };
+    Function<LambdaFunction, LambdaFunction> cleanUpOrphanedAlexaSkillsTriggers = lambdaFunction -> { return lambdaFunction; };
+    
+    Function<LambdaFunction, LambdaFunction> cleanUpOrphanedCloudWatchEventRules = lambdaFunction -> {
+        // Get the list of cloudwatch event rules defined for this function (if any).
+        List<String> existingRuleNames = cloudWatchEventsClient.listRuleNamesByTarget(new ListRuleNamesByTargetRequest()
+        .withTargetArn(lambdaFunction.getFunctionArn())).getRuleNames();
+    
+        // Get the list of cloudwatch event rules to be defined for this function (if any).
+        List<String> definedRuleNames = lambdaFunction.getTriggers().stream().filter(
+                t -> t.getIntegration().equals(TRIG_INT_LABEL_CLOUDWATCH_EVENTS)).map(t -> {
+                    return t.getRuleName();
+                }).collect(toList());
+        
+        // Add the keep alive rule name if the user has disabled keep alive for the function.
+        ofNullable(lambdaFunction.getKeepAlive()).ifPresent(ka -> {
+           if ( ka > 0 ) {
+               definedRuleNames.add(lambdaFunction.getKeepAliveRuleName());
+           }
+        });
+    
+        // Remove all of the rules that will be defined from the list of existing rules.
+        // The remainder is a set of event rules which should no longer be associated to this
+        // function.
+        existingRuleNames.removeAll(definedRuleNames);
+        
+        // For each remaining rule, remove the function as a target and attempt to delete
+        // the rule.
+        existingRuleNames.stream().forEach(ern -> {
+            getLog().info("    Deleting CloudWatch Event Rule: " + ern);
+            cloudWatchEventsClient.removeTargets(new RemoveTargetsRequest()
+                .withIds("1")
+                .withRule(ern));
+            try {
+                cloudWatchEventsClient.deleteRule(new DeleteRuleRequest().withName(ern));
+            } catch (Exception e) {
+                getLog().info("    Could not delete orphaned rule: " + e.getMessage());
+            }
+        });
+        
+        return lambdaFunction;  
+    };
+    
+    Function<LambdaFunction, LambdaFunction> cleanUpOrphans = lambdaFunction -> {
+        try {
+            lambdaFunction.setFunctionArn(lambdaClient.getFunction(
+                    new GetFunctionRequest().withFunctionName(lambdaFunction.getFunctionName())).getConfiguration().getFunctionArn());
+            
+            getLog().info("Cleaning up orphaned triggers.");
+            
+            // TODO: Add clean up orphaned trigger functions for each integration here:
+            cleanUpOrphanedCloudWatchEventRules
+                .andThen(cleanUpOrphanedDynamoDBTriggers)
+                .andThen(cleanUpOrphanedKinesisTriggers)
+                .andThen(cleanUpOrphanedSNSTriggers)
+                .andThen(cleanUpOrphanedAlexaSkillsTriggers)
+                .apply(lambdaFunction);
+            
+        } catch (ResourceNotFoundException ign) {
+            getLog().debug("Assuming function has no orphan triggers to clean up since it doesn't exist yet.");
+        }
+            
+        return lambdaFunction;  
+    };
+
+    Function<LambdaFunction, LambdaFunction> createOrUpdate = lambdaFunction -> {
+      try {
+          lambdaFunction.setFunctionArn(lambdaClient.getFunction(
+                  new GetFunctionRequest().withFunctionName(lambdaFunction.getFunctionName())).getConfiguration().getFunctionArn());
+          of(getFunction(lambdaFunction))
+                  .filter(getFunctionResult -> shouldUpdate(lambdaFunction, getFunctionResult))
+                  .map(getFujnctionResult ->
+                          updateFunctionCode.andThen(updateFunctionConfig)
+                                            .andThen(createOrUpdateAliases)
+                                            .andThen(createOrUpdateTriggers)
+                                            .andThen(createOrUpdateKeepAlive)
+                                            .apply(lambdaFunction));
+      } catch (ResourceNotFoundException ign) {
+          createFunction.andThen(createOrUpdateAliases)
+                        .andThen(createOrUpdateTriggers)
+                        .apply(lambdaFunction);
+      }
+                      
+      return lambdaFunction;
+    };
 
     private PutObjectResult upload(File file) {
         getLog().info("Uploading " + functionCode + " to AWS S3 bucket " + s3Bucket);
