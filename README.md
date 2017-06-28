@@ -174,6 +174,10 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.2.2-SNAPSHOT Not yet released
+* Fixed [Issue 66](https://github.com/SeanRoy/lambda-maven-plugin/issues/66)
+* Fixed sources of potential NPEs, thank [Jean Blanchard](https://github.com/jeanblanchard)
+
 2.2.1
 * Added passThrough environment variables feature, allowing you to pass environment variables from the command line.
 * Added cleanup code to remove cloudwatch event rules that have become orphaned on when the function is being deleted.  More triggers will be added to the cleanup list in a later revision.
