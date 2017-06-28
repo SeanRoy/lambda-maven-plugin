@@ -16,6 +16,7 @@ import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 
+import com.amazonaws.services.lambda.model.VpcConfigResponse;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -180,7 +181,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
             statementOpt = Policy.fromJson(GetPolicyResult.getPolicy()).getStatements().stream()
                                                      .filter(statement -> statement.getActions().stream().anyMatch(e -> "lambda:InvokeFunction".equals(e.getActionName())) &&
                                                              statement.getPrincipals().stream().anyMatch(principal -> "sns.amazonaws.com".equals(principal.getId())) &&
-                                                             statement.getConditions().stream().anyMatch(condition -> condition.getValues().stream().anyMatch(s -> createTopicResult.getTopicArn().equals(s)))
+                                                             statement.getConditions().stream().anyMatch(condition -> condition.getValues().stream().anyMatch(s -> Objects.equals(createTopicResult.getTopicArn(), s)))
                                                      ).findAny();
         } catch (ResourceNotFoundException ignored) {
             // no policy found
@@ -272,7 +273,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         ListStreamsResult listStreamsResult = dynamoDBStreamsClient.listStreams(listStreamsRequest);
 
         String streamArn = listStreamsResult.getStreams().stream()
-                                            .filter(s -> trigger.getDynamoDBTable().equals(s.getTableName()))
+                                            .filter(s -> Objects.equals(trigger.getDynamoDBTable(), s.getTableName()))
                                             .findFirst()
                                             .map(Stream::getStreamArn)
                                             .orElseThrow(() -> new IllegalArgumentException("Unable to find stream for table " + trigger.getDynamoDBTable()));
@@ -298,8 +299,8 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
 
         Optional<EventSourceMappingConfiguration> eventSourceMappingConfiguration = listEventSourceMappingsResult.getEventSourceMappings().stream()
                 .filter(stream -> {
-                    boolean isSameFunctionArn = stream.getFunctionArn().equals(lambdaFunction.getUnqualifiedFunctionArn());
-                    boolean isSameSourceArn = stream.getEventSourceArn().equals(streamArn);
+                    boolean isSameFunctionArn = Objects.equals(stream.getFunctionArn(), lambdaFunction.getUnqualifiedFunctionArn());
+                    boolean isSameSourceArn = Objects.equals(stream.getEventSourceArn(), streamArn);
                     return isSameFunctionArn && isSameSourceArn;
                 })
                 .findFirst();
@@ -357,13 +358,17 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         BiPredicate<List<String>, List<String>> isChangeList = (l0, l1) -> !(l0.containsAll(l1) && l1.containsAll(l0));
         return of(function.getConfiguration())
                 .map(config -> {
+                    VpcConfigResponse vpcConfig = config.getVpcConfig();
+                    if (vpcConfig == null) {
+                        vpcConfig = new VpcConfigResponse();
+                    }
                     boolean isDescriptionChanged = isChangeStr.test(config.getDescription(), lambdaFunction.getDescription());
                     boolean isHandlerChanged = isChangeStr.test(config.getHandler(), lambdaFunction.getHandler());
                     boolean isRoleChanged = isChangeStr.test(config.getRole(), lambdaRoleArn);
                     boolean isTimeoutChanged = isChangeInt.test(config.getTimeout(), lambdaFunction.getTimeout());
                     boolean isMemoryChanged = isChangeInt.test(config.getMemorySize(), lambdaFunction.getMemorySize());
-                    boolean isSecurityGroupIdsChanged = isChangeList.test(config.getVpcConfig().getSecurityGroupIds(), lambdaFunction.getSecurityGroupIds());
-                    boolean isVpcSubnetIdsChanged = isChangeList.test(config.getVpcConfig().getSubnetIds(), lambdaFunction.getSubnetIds());
+                    boolean isSecurityGroupIdsChanged = isChangeList.test(vpcConfig.getSecurityGroupIds(), lambdaFunction.getSecurityGroupIds());
+                    boolean isVpcSubnetIdsChanged = isChangeList.test(vpcConfig.getSubnetIds(), lambdaFunction.getSubnetIds());
                     return isDescriptionChanged || isHandlerChanged || isRoleChanged || isTimeoutChanged || isMemoryChanged || 
                            isSecurityGroupIdsChanged || isVpcSubnetIdsChanged || isAliasesChanged(lambdaFunction) || isKeepAliveChanged(lambdaFunction) ||
                            isScheduleRuleChanged(lambdaFunction);
@@ -375,7 +380,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         try {
             return ofNullable(lambdaFunction.getKeepAlive()).map( ka -> {
                 DescribeRuleResult res = eventsClient.describeRule(new DescribeRuleRequest().withName(lambdaFunction.getKeepAliveRuleName()));
-                return !(res.getScheduleExpression().equals(lambdaFunction.getKeepAliveScheduleExpression()));
+                return !Objects.equals(res.getScheduleExpression(), lambdaFunction.getKeepAliveScheduleExpression());
             }).orElse(false);
             
         } catch( com.amazonaws.services.cloudwatchevents.model.ResourceNotFoundException ignored ) {
@@ -385,12 +390,12 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     
     private boolean isScheduleRuleChanged(LambdaFunction lambdaFunction) {
         try {
-            return lambdaFunction.getTriggers().stream().filter(t -> t.getIntegration().equals(TRIG_INT_LABEL_CLOUDWATCH_EVENTS)).map(trigger -> {
+            return lambdaFunction.getTriggers().stream().filter(t -> TRIG_INT_LABEL_CLOUDWATCH_EVENTS.equals(t.getIntegration())).anyMatch(trigger -> {
                 DescribeRuleResult res = eventsClient.describeRule(new DescribeRuleRequest().withName(trigger.getRuleName()));
-                return !(res.getName().equals(trigger.getRuleName()) &&
-                         res.getDescription().equals(trigger.getRuleDescription()) &&
-                         res.getScheduleExpression().equals(trigger.getScheduleExpression()));
-            }).anyMatch(x -> x == true); 
+                return !(Objects.equals(res.getName(), trigger.getRuleName()) &&
+                        Objects.equals(res.getDescription(), trigger.getRuleDescription()) &&
+                        Objects.equals(res.getScheduleExpression(), trigger.getScheduleExpression()));
+            });
         } catch( com.amazonaws.services.cloudwatchevents.model.ResourceNotFoundException ignored ) {
             return true;
         }
@@ -479,7 +484,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     
         // Get the list of cloudwatch event rules to be defined for this function (if any).
         List<String> definedRuleNames = lambdaFunction.getTriggers().stream().filter(
-                t -> t.getIntegration().equals(TRIG_INT_LABEL_CLOUDWATCH_EVENTS)).map(t -> {
+                t -> TRIG_INT_LABEL_CLOUDWATCH_EVENTS.equals(t.getIntegration())).map(t -> {
                     return t.getRuleName();
                 }).collect(toList());
         
@@ -571,7 +576,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     }
 
     private String getBucket() {
-        if (s3Client.listBuckets().stream().noneMatch(p -> p.getName().equals(s3Bucket))) {
+        if (s3Client.listBuckets().stream().noneMatch(p -> Objects.equals(p.getName(), s3Bucket))) {
             getLog().info("Created bucket s3://" + s3Client.createBucket(s3Bucket).getName());
         }
         return s3Bucket;
