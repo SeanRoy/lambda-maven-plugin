@@ -217,10 +217,9 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     };
 
     private BiFunction<Trigger, LambdaFunction, Trigger> createOrUpdateScheduledRule = (Trigger trigger, LambdaFunction lambdaFunction) -> {
-        getLog().info("About to create or update " + trigger.getIntegration() + " trigger for " + trigger.getRuleName());
-        
         // TODO: I hate that these checks are done twice, but for the time being it beats updates that just didn't work.
         if ( isScheduleRuleChanged(lambdaFunction) || isKeepAliveChanged(lambdaFunction)) {
+            getLog().info("About to create or update " + trigger.getIntegration() + " trigger for " + trigger.getRuleName());
             PutRuleRequest putRuleRequest = new PutRuleRequest()
                     .withName(trigger.getRuleName())
                     .withDescription(trigger.getRuleDescription())
@@ -382,7 +381,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
             return ofNullable(lambdaFunction.getKeepAlive()).map( ka -> {
                 DescribeRuleResult res = eventsClient.describeRule(new DescribeRuleRequest().withName(lambdaFunction.getKeepAliveRuleName()));
                 return !Objects.equals(res.getScheduleExpression(), lambdaFunction.getKeepAliveScheduleExpression());
-            }).orElse(true);
+            }).orElse(false);
             
         } catch( com.amazonaws.services.cloudwatchevents.model.ResourceNotFoundException ignored ) {
             return true;
