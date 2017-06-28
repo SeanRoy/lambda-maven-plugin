@@ -176,6 +176,7 @@ please remember to add them to .gitignore.
 ### Releases
 2.2.2-SNAPSHOT Not yet released
 * Fixed [Issue 66](https://github.com/SeanRoy/lambda-maven-plugin/issues/66)
+* Fixed sources of potential NPEs, thank [Jean Blanchard](https://github.com/jeanblanchard)
 
 2.2.1
 * Added passThrough environment variables feature, allowing you to pass environment variables from the command line.
