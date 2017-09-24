@@ -178,7 +178,7 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
-2.2.3-SNAPShOT
+2.2.3-SNAPSHOT
 * Fixed [Issue 71](https://github.com/SeanRoy/lambda-maven-plugin/issues/71)
 * Fixed [Issue 72](https://github.com/SeanRoy/lambda-maven-plugin/issues/72) By adding Lex integration
 
