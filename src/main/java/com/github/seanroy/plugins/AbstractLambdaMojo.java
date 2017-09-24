@@ -60,6 +60,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     public static final String TRIG_INT_LABEL_KINESIS = "Kinesis";
     public static final String TRIG_INT_LABEL_SNS = "SNS";
     public static final String TRIG_INT_LABEL_ALEXA_SK = "Alexa Skills Kit";
+    public static final String TRIG_INT_LABEL_LEX = "Lex";
     
     /**
      * <p>The AWS access key.</p>
@@ -176,7 +177,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     
     @Parameter(property = "passThrough")
     public String passThrough;
-
+    
     public String fileName;
     public AWSCredentials credentials;
     public AmazonS3 s3Client;
@@ -270,6 +271,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
                                                                                                              trigger.withRuleName(addSuffix(trigger.getRuleName()));
                                                                                                              trigger.withSNSTopic(addSuffix(trigger.getSNSTopic()));
                                                                                                              trigger.withDynamoDBTable(addSuffix(trigger.getDynamoDBTable()));
+                                                                                                             trigger.withLexBotName(addSuffix(trigger.getLexBotName()));
                                                                                                              return trigger;
                                                                                                          })
                                                                                                          .collect(toList()))
