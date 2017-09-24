@@ -16,7 +16,6 @@ import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 
-import com.amazonaws.services.lambda.model.VpcConfigResponse;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -55,6 +54,7 @@ import com.amazonaws.services.lambda.model.ListAliasesRequest;
 import com.amazonaws.services.lambda.model.ListAliasesResult;
 import com.amazonaws.services.lambda.model.ListEventSourceMappingsRequest;
 import com.amazonaws.services.lambda.model.ListEventSourceMappingsResult;
+import com.amazonaws.services.lambda.model.RemovePermissionRequest;
 import com.amazonaws.services.lambda.model.ResourceNotFoundException;
 import com.amazonaws.services.lambda.model.UpdateAliasRequest;
 import com.amazonaws.services.lambda.model.UpdateEventSourceMappingRequest;
@@ -63,6 +63,7 @@ import com.amazonaws.services.lambda.model.UpdateFunctionCodeRequest;
 import com.amazonaws.services.lambda.model.UpdateFunctionCodeResult;
 import com.amazonaws.services.lambda.model.UpdateFunctionConfigurationRequest;
 import com.amazonaws.services.lambda.model.VpcConfig;
+import com.amazonaws.services.lambda.model.VpcConfigResponse;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectResult;
@@ -87,7 +88,10 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
             lambdaFunctions.stream().map(f -> {
                 getLog().info("---- Create or update " + f.getFunctionName() + " -----");
                 return f;
-            }).forEach(lf -> cleanUpOrphans.andThen(createOrUpdate).apply(lf));
+            }).forEach(lf -> 
+                    cleanUpOrphans
+                    .andThen(createOrUpdate)
+                    .apply(lf));
         } catch (Exception e) {
             getLog().error("Error during processing", e);
             throw new MojoExecutionException(e.getMessage());
@@ -202,19 +206,62 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     };
 
     private BiFunction<Trigger, LambdaFunction, Trigger> addAlexaSkillsKitPermission = (Trigger trigger, LambdaFunction lambdaFunction) -> {
-        getLog().info("About to create or update " + trigger.getIntegration() + " trigger.");
-
+        getLog().info("About to grant invoke permission to " + trigger.getIntegration());
+        
+        // This is an awful solution to preventing multiple permission entries in the policy file, but
+        // will do for now.
+        try {
+            lambdaClient.removePermission(new RemovePermissionRequest()
+                .withFunctionName(lambdaFunction.getFunctionName())
+                .withQualifier(lambdaFunction.getQualifier())
+                .withStatementId(getAlexaPermissionStatementId()));
+        } catch (ResourceNotFoundException rnfe1) {
+            getLog().debug("Alexa skill permission doesn't exist, will create it.");
+        }
+        
         AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
                 .withAction("lambda:InvokeFunction")
                 .withPrincipal("alexa-appkit.amazon.com")
                 .withFunctionName(lambdaFunction.getFunctionName())
-                .withStatementId(UUID.randomUUID().toString());
+                .withQualifier(lambdaFunction.getQualifier())
+                .withStatementId(getAlexaPermissionStatementId());
 
         AddPermissionResult addPermissionResult = lambdaClient.addPermission(addPermissionRequest);
-        getLog().debug("Added permission to lambda function " + addPermissionResult.toString());
 
         return trigger;
     };
+    private String getAlexaPermissionStatementId() {
+        return "lambda-maven-plugin-alexa-" + regionName + "-permission";
+    }
+  
+    private BiFunction<Trigger, LambdaFunction, Trigger> addLexPermission = (Trigger trigger, LambdaFunction lambdaFunction) -> {
+        getLog().info("About to grant invoke permission to " + trigger.getIntegration());
+        
+        // This is an awful solution to preventing multiple permission entries in the policy file, but
+        // will do for now.
+        try {
+            lambdaClient.removePermission(new RemovePermissionRequest()
+                .withFunctionName(lambdaFunction.getFunctionName())
+                .withQualifier(lambdaFunction.getQualifier())
+                .withStatementId(getLexPermissionStatementId(trigger.getLexBotName())));
+        } catch (ResourceNotFoundException rnfe2) {
+            getLog().debug("Lex bot " + trigger.getLexBotName() + " permission doesn't exist, will create it.");
+        }
+        
+        AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
+            .withAction("lambda:InvokeFunction")
+            .withPrincipal("lex.amazonaws.com")
+            .withFunctionName(lambdaFunction.getFunctionName())
+            .withQualifier(lambdaFunction.getQualifier())
+            .withStatementId(getLexPermissionStatementId(trigger.getLexBotName()));
+
+        AddPermissionResult addPermissionResult = lambdaClient.addPermission(addPermissionRequest);
+
+        return trigger;
+    };
+    private String getLexPermissionStatementId(String botName) {
+        return "lambda-maven-plugin-lex-" + regionName + "-permission-" + botName;
+    }
 
     private BiFunction<Trigger, LambdaFunction, Trigger> createOrUpdateScheduledRule = (Trigger trigger, LambdaFunction lambdaFunction) -> {
         // TODO: I hate that these checks are done twice, but for the time being it beats updates that just didn't work.
@@ -341,6 +388,8 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 createOrUpdateSNSTopicSubscription.apply(trigger, lambdaFunction);
             } else if (TRIG_INT_LABEL_ALEXA_SK.equals(trigger.getIntegration())) {
                 addAlexaSkillsKitPermission.apply(trigger, lambdaFunction);
+            } else if (TRIG_INT_LABEL_LEX.equals(trigger.getIntegration())) {
+                addLexPermission.apply(trigger, lambdaFunction);
             } else {
                 throw new IllegalArgumentException("Unknown integration for trigger " + trigger.getIntegration() + ". Correct your configuration");
             }

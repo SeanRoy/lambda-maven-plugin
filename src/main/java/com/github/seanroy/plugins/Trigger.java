@@ -28,6 +28,9 @@ public class Trigger {
 
     // Support for SNS
     private String SNSTopic;
+    
+    // Support for Lex Bots
+    private String lexBotName;
 
     // After create Trigger gets own arn
     private String triggerArn;
@@ -125,6 +128,14 @@ public class Trigger {
     public void setSNSTopic(String SNSTopic) {
         this.SNSTopic = SNSTopic;
     }
+    
+    public void setLexBotName(String arn) {
+        this.lexBotName = arn;
+    }
+    
+    public String getLexBotName() {
+        return lexBotName;
+    }
 
     public Trigger withIntegration(String integration) {
         this.integration = integration;
@@ -170,6 +181,11 @@ public class Trigger {
         this.SNSTopic = sNSTopic;
         return this;
     }
+    
+    public Trigger withLexBotName(String arn) {
+        this.lexBotName = arn;
+        return this;
+    }
 
     @Override
     public String toString() {
@@ -183,7 +199,8 @@ public class Trigger {
                 .append(", ruleDescription='").append(ruleDescription).append('\'')
                 .append(", scheduleExpression='").append(scheduleExpression).append('\'')
                 .append(", SNSTopic='").append(SNSTopic).append('\'')
-                .append(", triggerArn=").append(triggerArn)
+                .append(", triggerArn='").append(triggerArn).append('\'')
+                .append(", lextBotName='").append(lexBotName).append('\'')
                 .append(", enabled=").append(enabled)
                 .append('}').toString();
     }
