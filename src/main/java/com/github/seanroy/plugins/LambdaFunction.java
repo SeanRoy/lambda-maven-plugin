@@ -1,10 +1,13 @@
 package com.github.seanroy.plugins;
 
+import static java.util.Optional.ofNullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Optional.ofNullable;
+import com.amazonaws.auth.policy.Policy;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * I am a domain class for Lambda Function.
@@ -82,6 +85,17 @@ public class LambdaFunction {
     private Map<String, String> environmentVariables;
     
     private String qualifier;
+    
+    @JsonIgnore
+    private Policy existingPolicy;
+
+    public Policy getExistingPolicy() {
+        return existingPolicy;
+    }
+
+    public void setExistingPolicy(Policy existingPolicy) {
+        this.existingPolicy = existingPolicy;
+    }
 
     public LambdaFunction() {
     }
@@ -286,6 +300,11 @@ public class LambdaFunction {
     
     public LambdaFunction withQualifier(String qualifier) {
         this.qualifier = qualifier;
+        return this;
+    }
+    
+    public LambdaFunction withExistingPolicy(Policy policy) {
+        this.existingPolicy = policy;
         return this;
     }
     

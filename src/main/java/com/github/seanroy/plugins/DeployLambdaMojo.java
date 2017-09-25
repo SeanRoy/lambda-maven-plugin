@@ -88,8 +88,9 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
             lambdaFunctions.stream().map(f -> {
                 getLog().info("---- Create or update " + f.getFunctionName() + " -----");
                 return f;
-            }).forEach(lf -> 
-                    cleanUpOrphans
+            }).forEach(lf ->
+                getFunctionPolicy
+                    .andThen(cleanUpOrphans)
                     .andThen(createOrUpdate)
                     .apply(lf));
         } catch (Exception e) {
@@ -109,6 +110,21 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
 
         return forceUpdate || isConfigurationChanged;
     }
+    
+    /*
+     *  Get the existing policy function (on updates) and assign it to the lambdaFunction.
+     */
+    private Function<LambdaFunction, LambdaFunction> getFunctionPolicy = (LambdaFunction lambdaFunction) -> {
+        try {
+            lambdaFunction.setExistingPolicy(Policy.fromJson(lambdaClient.getPolicy(new GetPolicyRequest()
+                .withFunctionName(lambdaFunction.getFunctionName())
+                .withQualifier(lambdaFunction.getQualifier())).getPolicy()));
+        } catch (ResourceNotFoundException rnfe3) {
+            getLog().debug("Probably creating a new function, policy doesn't exist yet: " + rnfe3.getMessage());
+        } 
+        
+        return lambdaFunction;
+    };
 
     private Function<LambdaFunction, LambdaFunction> updateFunctionCode = (LambdaFunction lambdaFunction) -> {
         getLog().info("About to update functionCode for " + lambdaFunction.getFunctionName());
@@ -147,7 +163,8 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                     .withFunctionVersion(lambdaFunction.getVersion())
                     .withName(alias);
             try {
-                lambdaClient.updateAlias(updateAliasRequest);
+                lambdaClient.updateAlias(updateAliasRequest
+                        );
                 getLog().info("Alias " + alias + " updated for " + lambdaFunction.getFunctionName() + " with version " + lambdaFunction.getVersion());
             } catch (ResourceNotFoundException ignored) {
                 CreateAliasRequest createAliasRequest = new CreateAliasRequest()
@@ -205,28 +222,22 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         return trigger;
     };
 
-    private BiFunction<Trigger, LambdaFunction, Trigger> addAlexaSkillsKitPermission = (Trigger trigger, LambdaFunction lambdaFunction) -> {
-        getLog().info("About to grant invoke permission to " + trigger.getIntegration());
-        
-        // This is an awful solution to preventing multiple permission entries in the policy file, but
-        // will do for now.
-        try {
-            lambdaClient.removePermission(new RemovePermissionRequest()
-                .withFunctionName(lambdaFunction.getFunctionName())
-                .withQualifier(lambdaFunction.getQualifier())
-                .withStatementId(getAlexaPermissionStatementId()));
-        } catch (ResourceNotFoundException rnfe1) {
-            getLog().debug("Alexa skill permission doesn't exist, will create it.");
+    /**
+     * TODO: Much of this code can be factored out into an addPermission function.
+     */
+    private BiFunction<Trigger, LambdaFunction, Trigger> addAlexaSkillsKitPermission = (Trigger trigger, LambdaFunction lambdaFunction) -> { 
+        if (!ofNullable(lambdaFunction.getExistingPolicy()).orElse(new Policy()).getStatements().stream().anyMatch(s ->
+                s.getId().equals(getAlexaPermissionStatementId()))) {
+            getLog().info("Granting invoke permission to " + trigger.getIntegration());    
+            AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
+                    .withAction("lambda:InvokeFunction")
+                    .withPrincipal("alexa-appkit.amazon.com")
+                    .withFunctionName(lambdaFunction.getFunctionName())
+                    .withQualifier(lambdaFunction.getQualifier())
+                    .withStatementId(getAlexaPermissionStatementId());
+    
+            AddPermissionResult addPermissionResult = lambdaClient.addPermission(addPermissionRequest);
         }
-        
-        AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
-                .withAction("lambda:InvokeFunction")
-                .withPrincipal("alexa-appkit.amazon.com")
-                .withFunctionName(lambdaFunction.getFunctionName())
-                .withQualifier(lambdaFunction.getQualifier())
-                .withStatementId(getAlexaPermissionStatementId());
-
-        AddPermissionResult addPermissionResult = lambdaClient.addPermission(addPermissionRequest);
 
         return trigger;
     };
@@ -234,29 +245,22 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         return "lambda-maven-plugin-alexa-" + regionName + "-permission";
     }
   
+    /**
+     * TODO: Much of this code can be factored out into an addPermission function.
+     */
     private BiFunction<Trigger, LambdaFunction, Trigger> addLexPermission = (Trigger trigger, LambdaFunction lambdaFunction) -> {
-        getLog().info("About to grant invoke permission to " + trigger.getIntegration());
-        
-        // This is an awful solution to preventing multiple permission entries in the policy file, but
-        // will do for now.
-        try {
-            lambdaClient.removePermission(new RemovePermissionRequest()
+        if (!ofNullable(lambdaFunction.getExistingPolicy()).orElse(new Policy()).getStatements().stream().anyMatch(s ->
+                 s.getId().equals(getLexPermissionStatementId(trigger.getLexBotName())))) {
+            getLog().info("Granting invoke permission to " + trigger.getLexBotName());
+            AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
+                .withAction("lambda:InvokeFunction")
+                .withPrincipal("lex.amazonaws.com")
                 .withFunctionName(lambdaFunction.getFunctionName())
                 .withQualifier(lambdaFunction.getQualifier())
-                .withStatementId(getLexPermissionStatementId(trigger.getLexBotName())));
-        } catch (ResourceNotFoundException rnfe2) {
-            getLog().debug("Lex bot " + trigger.getLexBotName() + " permission doesn't exist, will create it.");
+                .withStatementId(getLexPermissionStatementId(trigger.getLexBotName()));
+    
+            AddPermissionResult addPermissionResult = lambdaClient.addPermission(addPermissionRequest);
         }
-        
-        AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
-            .withAction("lambda:InvokeFunction")
-            .withPrincipal("lex.amazonaws.com")
-            .withFunctionName(lambdaFunction.getFunctionName())
-            .withQualifier(lambdaFunction.getQualifier())
-            .withStatementId(getLexPermissionStatementId(trigger.getLexBotName()));
-
-        AddPermissionResult addPermissionResult = lambdaClient.addPermission(addPermissionRequest);
-
         return trigger;
     };
     private String getLexPermissionStatementId(String botName) {
@@ -524,7 +528,55 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     Function<LambdaFunction, LambdaFunction> cleanUpOrphanedDynamoDBTriggers = lambdaFunction -> { return lambdaFunction; };
     Function<LambdaFunction, LambdaFunction> cleanUpOrphanedKinesisTriggers = lambdaFunction -> { return lambdaFunction; };
     Function<LambdaFunction, LambdaFunction> cleanUpOrphanedSNSTriggers = lambdaFunction -> { return lambdaFunction; };
-    Function<LambdaFunction, LambdaFunction> cleanUpOrphanedAlexaSkillsTriggers = lambdaFunction -> { return lambdaFunction; };
+    
+    /**
+     * Removes the Alexa permission if it isn't found in the current configuration.
+     * TODO: Factor out code common with other orphan clean up functions.
+     */
+    Function<LambdaFunction, LambdaFunction> cleanUpOrphanedAlexaSkillsTriggers = lambdaFunction -> {
+        lambdaFunction.getExistingPolicy().getStatements().stream()
+            .filter(
+                stmt -> stmt.getActions().stream().anyMatch( e -> "lambda:InvokeFunction".equals(e.getActionName())) &&
+                stmt.getPrincipals().stream().anyMatch(principal -> "alexa-appkit.amazon.com".equals(principal.getId())) &&
+                !lambdaFunction.getTriggers().stream().anyMatch( t -> t.getIntegration().equals("Alexa Skills Kit")))
+            .forEach( s -> {    
+                try {
+                    getLog().info("    Removing orphaned permission for " + s.getId());
+                    lambdaClient.removePermission(new RemovePermissionRequest()
+                        .withFunctionName(lambdaFunction.getFunctionName())
+                        .withQualifier(lambdaFunction.getQualifier())
+                        .withStatementId(s.getId()));
+                } catch (ResourceNotFoundException rnfe1) {
+                    getLog().error("    Error removing permission for " + s.getId() + ": " + rnfe1.getMessage());
+                }
+            });
+                    
+        return lambdaFunction; 
+    };
+    
+    /**
+     * Removes any Lex permissions that aren't found in the current configuration.
+     * TODO: Factor out code common with other orphan clean up functions.
+     */
+    Function<LambdaFunction, LambdaFunction> cleanUpOrphanedLexSkillsTriggers = lambdaFunction -> {
+        lambdaFunction.getExistingPolicy().getStatements().stream()
+            .filter(stmt -> stmt.getActions().stream().anyMatch( e -> "lambda:InvokeFunction".equals(e.getActionName())) &&
+                    stmt.getPrincipals().stream().anyMatch(principal -> "lex.amazonaws.com".equals(principal.getId())) &&
+                    !lambdaFunction.getTriggers().stream().anyMatch( t -> stmt.getId().contains(t.getLexBotName())))
+            .forEach( s -> {    
+                try {
+                    getLog().info("    Removing orphaned permission for " + s.getId());
+                    lambdaClient.removePermission(new RemovePermissionRequest()
+                        .withFunctionName(lambdaFunction.getFunctionName())
+                        .withQualifier(lambdaFunction.getQualifier())
+                        .withStatementId(s.getId()));
+                } catch (Exception ign2) { 
+                    getLog().error("   Error removing permission for " + s.getId() + ign2.getMessage() ); 
+                }
+            });
+        
+        return lambdaFunction;
+    };
     
     Function<LambdaFunction, LambdaFunction> cleanUpOrphanedCloudWatchEventRules = lambdaFunction -> {
         // Get the list of cloudwatch event rules defined for this function (if any).
@@ -552,14 +604,14 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         // For each remaining rule, remove the function as a target and attempt to delete
         // the rule.
         existingRuleNames.stream().forEach(ern -> {
-            getLog().info("    Deleting CloudWatch Event Rule: " + ern);
+            getLog().info("    Removing CloudWatch Event Rule: " + ern);
             cloudWatchEventsClient.removeTargets(new RemoveTargetsRequest()
                 .withIds("1")
                 .withRule(ern));
             try {
                 cloudWatchEventsClient.deleteRule(new DeleteRuleRequest().withName(ern));
             } catch (Exception e) {
-                getLog().info("    Could not delete orphaned rule: " + e.getMessage());
+                getLog().error("    Error removing orphaned rule: " + e.getMessage());
             }
         });
         
@@ -579,9 +631,10 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 .andThen(cleanUpOrphanedKinesisTriggers)
                 .andThen(cleanUpOrphanedSNSTriggers)
                 .andThen(cleanUpOrphanedAlexaSkillsTriggers)
+                .andThen(cleanUpOrphanedLexSkillsTriggers)
                 .apply(lambdaFunction);
             
-        } catch (ResourceNotFoundException ign) {
+        } catch (ResourceNotFoundException ign1) {
             getLog().debug("Assuming function has no orphan triggers to clean up since it doesn't exist yet.");
         }
             
@@ -595,11 +648,12 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
           of(getFunction(lambdaFunction))
                   .filter(getFunctionResult -> shouldUpdate(lambdaFunction, getFunctionResult))
                   .map(getFujnctionResult ->
-                          updateFunctionCode.andThen(updateFunctionConfig)
-                                            .andThen(createOrUpdateAliases)
-                                            .andThen(createOrUpdateTriggers)
-                                            .andThen(createOrUpdateKeepAlive)
-                                            .apply(lambdaFunction));
+                  updateFunctionCode
+                          .andThen(updateFunctionConfig)
+                          .andThen(createOrUpdateAliases)
+                          .andThen(createOrUpdateTriggers)
+                          .andThen(createOrUpdateKeepAlive)
+                          .apply(lambdaFunction));
       } catch (ResourceNotFoundException ign) {
           createFunction.andThen(createOrUpdateAliases)
                         .andThen(createOrUpdateTriggers)

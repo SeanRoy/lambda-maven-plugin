@@ -5,7 +5,7 @@
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambda-maven-plugin`<br />
-`version: 2.2.3`<br />
+`version: 2.2.4`<br />
 <br/><br/>
 Please note that the artifact has been renamed from lambduh-maven-plugin to
 lambda-maven-plugin.
@@ -71,7 +71,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
             <plugin>
                     <groupId>com.github.seanroy</groupId>
                     <artifactId>lambda-maven-plugin</artifactId>
-                    <version>2.2.3</version>
+                    <version>2.2.4</version>
                     <configuration>
                         <functionCode>${lambda.functionCode}</functionCode>
                         <version>${lambda.version}</version>
@@ -178,6 +178,9 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.2.4
+* Smarter orphaned permission handling.
+ 
 2.2.3
 * Fixed [Issue 71](https://github.com/SeanRoy/lambda-maven-plugin/issues/71)
 * Fixed [Issue 72](https://github.com/SeanRoy/lambda-maven-plugin/issues/72) By adding Lex integration
