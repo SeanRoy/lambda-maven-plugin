@@ -178,6 +178,9 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.2.5
+* Fixed [Issue 77](https://github.com/SeanRoy/lambda-maven-plugin/issues/77)
+
 2.2.4
 * Smarter orphaned permission handling.
  
