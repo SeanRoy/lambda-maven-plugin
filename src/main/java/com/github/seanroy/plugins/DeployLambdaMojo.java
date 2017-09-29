@@ -534,22 +534,25 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
      * TODO: Factor out code common with other orphan clean up functions.
      */
     Function<LambdaFunction, LambdaFunction> cleanUpOrphanedAlexaSkillsTriggers = lambdaFunction -> {
-        lambdaFunction.getExistingPolicy().getStatements().stream()
-            .filter(
-                stmt -> stmt.getActions().stream().anyMatch( e -> "lambda:InvokeFunction".equals(e.getActionName())) &&
-                stmt.getPrincipals().stream().anyMatch(principal -> "alexa-appkit.amazon.com".equals(principal.getId())) &&
-                !lambdaFunction.getTriggers().stream().anyMatch( t -> t.getIntegration().equals("Alexa Skills Kit")))
-            .forEach( s -> {    
-                try {
-                    getLog().info("    Removing orphaned permission for " + s.getId());
-                    lambdaClient.removePermission(new RemovePermissionRequest()
-                        .withFunctionName(lambdaFunction.getFunctionName())
-                        .withQualifier(lambdaFunction.getQualifier())
-                        .withStatementId(s.getId()));
-                } catch (ResourceNotFoundException rnfe1) {
-                    getLog().error("    Error removing permission for " + s.getId() + ": " + rnfe1.getMessage());
-                }
-            });
+        ofNullable(lambdaFunction.getExistingPolicy()).flatMap( policy -> {
+            policy.getStatements().stream()
+                .filter(
+                    stmt -> stmt.getActions().stream().anyMatch( e -> "lambda:InvokeFunction".equals(e.getActionName())) &&
+                    stmt.getPrincipals().stream().anyMatch(principal -> "alexa-appkit.amazon.com".equals(principal.getId())) &&
+                    !lambdaFunction.getTriggers().stream().anyMatch( t -> t.getIntegration().equals("Alexa Skills Kit")))
+                .forEach( s -> {    
+                    try {
+                        getLog().info("    Removing orphaned permission for " + s.getId());
+                        lambdaClient.removePermission(new RemovePermissionRequest()
+                            .withFunctionName(lambdaFunction.getFunctionName())
+                            .withQualifier(lambdaFunction.getQualifier())
+                            .withStatementId(s.getId()));
+                    } catch (ResourceNotFoundException rnfe1) {
+                        getLog().error("    Error removing permission for " + s.getId() + ": " + rnfe1.getMessage());
+                    }
+                });
+            return of(policy);
+        });
                     
         return lambdaFunction; 
     };
@@ -559,21 +562,24 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
      * TODO: Factor out code common with other orphan clean up functions.
      */
     Function<LambdaFunction, LambdaFunction> cleanUpOrphanedLexSkillsTriggers = lambdaFunction -> {
-        lambdaFunction.getExistingPolicy().getStatements().stream()
-            .filter(stmt -> stmt.getActions().stream().anyMatch( e -> "lambda:InvokeFunction".equals(e.getActionName())) &&
-                    stmt.getPrincipals().stream().anyMatch(principal -> "lex.amazonaws.com".equals(principal.getId())) &&
-                    !lambdaFunction.getTriggers().stream().anyMatch( t -> stmt.getId().contains(t.getLexBotName())))
-            .forEach( s -> {    
-                try {
-                    getLog().info("    Removing orphaned permission for " + s.getId());
-                    lambdaClient.removePermission(new RemovePermissionRequest()
-                        .withFunctionName(lambdaFunction.getFunctionName())
-                        .withQualifier(lambdaFunction.getQualifier())
-                        .withStatementId(s.getId()));
-                } catch (Exception ign2) { 
-                    getLog().error("   Error removing permission for " + s.getId() + ign2.getMessage() ); 
-                }
-            });
+        ofNullable(lambdaFunction.getExistingPolicy()).flatMap( policy -> {
+            policy.getStatements().stream()
+                .filter(stmt -> stmt.getActions().stream().anyMatch( e -> "lambda:InvokeFunction".equals(e.getActionName())) &&
+                        stmt.getPrincipals().stream().anyMatch(principal -> "lex.amazonaws.com".equals(principal.getId())) &&
+                        !lambdaFunction.getTriggers().stream().anyMatch( t -> stmt.getId().contains(t.getLexBotName())))
+                .forEach( s -> {    
+                    try {
+                        getLog().info("    Removing orphaned permission for " + s.getId());
+                        lambdaClient.removePermission(new RemovePermissionRequest()
+                            .withFunctionName(lambdaFunction.getFunctionName())
+                            .withQualifier(lambdaFunction.getQualifier())
+                            .withStatementId(s.getId()));
+                    } catch (Exception ign2) { 
+                        getLog().error("   Error removing permission for " + s.getId() + ign2.getMessage() ); 
+                    }
+                });
+            return of(policy);
+        });
         
         return lambdaFunction;
     };
