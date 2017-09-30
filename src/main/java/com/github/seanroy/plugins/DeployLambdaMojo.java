@@ -15,6 +15,7 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -31,9 +32,11 @@ import com.amazonaws.services.cloudwatchevents.model.PutRuleResult;
 import com.amazonaws.services.cloudwatchevents.model.PutTargetsRequest;
 import com.amazonaws.services.cloudwatchevents.model.RemoveTargetsRequest;
 import com.amazonaws.services.cloudwatchevents.model.Target;
+import com.amazonaws.services.dynamodbv2.model.DescribeStreamRequest;
 import com.amazonaws.services.dynamodbv2.model.ListStreamsRequest;
 import com.amazonaws.services.dynamodbv2.model.ListStreamsResult;
 import com.amazonaws.services.dynamodbv2.model.Stream;
+import com.amazonaws.services.dynamodbv2.model.StreamDescription;
 import com.amazonaws.services.lambda.model.AddPermissionRequest;
 import com.amazonaws.services.lambda.model.AddPermissionResult;
 import com.amazonaws.services.lambda.model.AliasConfiguration;
@@ -42,6 +45,7 @@ import com.amazonaws.services.lambda.model.CreateEventSourceMappingRequest;
 import com.amazonaws.services.lambda.model.CreateEventSourceMappingResult;
 import com.amazonaws.services.lambda.model.CreateFunctionRequest;
 import com.amazonaws.services.lambda.model.CreateFunctionResult;
+import com.amazonaws.services.lambda.model.DeleteEventSourceMappingRequest;
 import com.amazonaws.services.lambda.model.Environment;
 import com.amazonaws.services.lambda.model.EventSourceMappingConfiguration;
 import com.amazonaws.services.lambda.model.EventSourcePosition;
@@ -525,9 +529,36 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 });
     }
     
-    Function<LambdaFunction, LambdaFunction> cleanUpOrphanedDynamoDBTriggers = lambdaFunction -> { return lambdaFunction; };
     Function<LambdaFunction, LambdaFunction> cleanUpOrphanedKinesisTriggers = lambdaFunction -> { return lambdaFunction; };
     Function<LambdaFunction, LambdaFunction> cleanUpOrphanedSNSTriggers = lambdaFunction -> { return lambdaFunction; };
+    Function<LambdaFunction, LambdaFunction> cleanUpOrphanedDynamoDBTriggers = lambdaFunction -> {
+        ListEventSourceMappingsResult listEventSourceMappingsResult = 
+                lambdaClient.listEventSourceMappings(new ListEventSourceMappingsRequest()
+                        .withFunctionName(lambdaFunction.getUnqualifiedFunctionArn()));
+
+        
+        List<String> tableNames = lambdaFunction.getTriggers().stream().map(t -> {
+            return ofNullable(t.getDynamoDBTable()).orElse("");
+        }).collect(Collectors.toList());
+        
+        listEventSourceMappingsResult.getEventSourceMappings().stream().forEach(s -> {
+            StreamDescription sd = dynamoDBStreamsClient.describeStream(new DescribeStreamRequest()
+                .withStreamArn(s.getEventSourceArn())).getStreamDescription();
+            
+            if ( ! tableNames.contains(sd.getTableName()) ) {
+                try {
+                    getLog().info("    Removing orphaned DynamoDB trigger for table " + sd.getTableName());
+                    lambdaClient.deleteEventSourceMapping(new DeleteEventSourceMappingRequest().withUUID(s.getUUID()));
+                } catch (Exception e4) {
+                    getLog().error("    Error removing DynamoDB trigger for table " + sd.getTableName());
+                }
+            }
+            
+        });
+        
+        return lambdaFunction; 
+     };
+
     
     /**
      * Removes the Alexa permission if it isn't found in the current configuration.
@@ -566,7 +597,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
             policy.getStatements().stream()
                 .filter(stmt -> stmt.getActions().stream().anyMatch( e -> "lambda:InvokeFunction".equals(e.getActionName())) &&
                         stmt.getPrincipals().stream().anyMatch(principal -> "lex.amazonaws.com".equals(principal.getId())) &&
-                        !lambdaFunction.getTriggers().stream().anyMatch( t -> stmt.getId().contains(t.getLexBotName())))
+                        !lambdaFunction.getTriggers().stream().anyMatch( t -> stmt.getId().contains(ofNullable(t.getLexBotName()).orElse(""))))
                 .forEach( s -> {    
                     try {
                         getLog().info("    Removing orphaned permission for " + s.getId());
