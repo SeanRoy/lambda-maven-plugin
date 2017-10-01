@@ -178,6 +178,9 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.2.7-SNAPSHOT
+* Added SNS trigger orphan handling.
+
 2.2.6
 * Fixed another potential NPE, added orphan trigger cleanup for DynamoDB integrations.
 

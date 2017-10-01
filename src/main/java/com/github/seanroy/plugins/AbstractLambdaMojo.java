@@ -62,6 +62,13 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     public static final String TRIG_INT_LABEL_ALEXA_SK = "Alexa Skills Kit";
     public static final String TRIG_INT_LABEL_LEX = "Lex";
     
+    public static final String PERM_LAMBDA_INVOKE = "lambda:InvokeFunction";
+    
+    public static final String PRINCIPAL_ALEXA  = "alexa-appkit.amazon.com";
+    public static final String PRINCIPAL_LEX    = "lex.amazonaws.com";
+    public static final String PRINCIPAL_SNS    = "sns.amazonaws.com";
+    public static final String PRINCIPAL_EVENTS = "events.amazonaws.com"; // Cloudwatch events
+    
     /**
      * <p>The AWS access key.</p>
      */
