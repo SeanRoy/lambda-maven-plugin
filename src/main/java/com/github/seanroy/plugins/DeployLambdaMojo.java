@@ -198,7 +198,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 .withEndpoint(lambdaFunction.getUnqualifiedFunctionArn())
                 .withProtocol("lambda");
         SubscribeResult subscribeResult = snsClient.subscribe(subscribeRequest);
-        getLog().info(lambdaFunction.getUnqualifiedFunctionArn() + " subscribed to " + createTopicResult.getTopicArn());
+        getLog().info("Lambda function " + lambdaFunction.getFunctionName() + " subscribed to " + createTopicResult.getTopicArn());
         getLog().info("Created " + trigger.getIntegration() + " trigger " + subscribeResult.getSubscriptionArn());
 
 
@@ -259,7 +259,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     private BiFunction<Trigger, LambdaFunction, Trigger> addLexPermission = (Trigger trigger, LambdaFunction lambdaFunction) -> {
         if (!ofNullable(lambdaFunction.getExistingPolicy()).orElse(new Policy()).getStatements().stream().anyMatch(s ->
                  s.getId().equals(getLexPermissionStatementId(trigger.getLexBotName())))) {
-            getLog().info("Granting invoke permission to " + trigger.getLexBotName());
+            getLog().info("Granting invoke permission to Lex bot " + trigger.getLexBotName());
             AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
                 .withAction(PERM_LAMBDA_INVOKE)
                 .withPrincipal(PRINCIPAL_LEX)
@@ -544,14 +544,21 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                         .withFunctionName(lambdaFunction.getUnqualifiedFunctionArn()));
 
         
-        List<String> streamNames = lambdaFunction.getTriggers().stream().map(t -> {
-            return ofNullable(t.getKinesisStream()).orElse("");
-        }).collect(Collectors.toList());
+        List<String> streamNames = new ArrayList<String>();
         
+        // This nonsense is to prevent cleanupOrphanedDynamoDBTriggers from removing DynamoDB triggers
+        // and vice versa.  Unfortunately this assumes that stream names won't be the same as table names.
+        lambdaFunction.getTriggers().stream().forEach(t -> {
+            ofNullable(t.getKinesisStream()).ifPresent(x -> streamNames.add(x));
+            ofNullable(t.getDynamoDBTable()).ifPresent(x -> streamNames.add(x));
+        });
+
         listEventSourceMappingsResult.getEventSourceMappings().stream().forEach(s -> {
-            if ( s.getEventSourceArn().contains(":kinesis:") ) {
+            if ( s.getEventSourceArn().contains(":kinesis:") ) {                
                 if ( ! streamNames.contains(kinesisClient.describeStream(new com.amazonaws.services.kinesis.model.DescribeStreamRequest()
-                    .withStreamName(s.getEventSourceArn().substring(s.getEventSourceArn().lastIndexOf('/')+1)).getStreamName())) ){
+                        .withStreamName(s.getEventSourceArn().substring(s.getEventSourceArn().lastIndexOf('/')+1)))
+                        .getStreamDescription()
+                        .getStreamName()) ){
                     getLog().info("    Removing orphaned Kinesis trigger for stream " + s.getEventSourceArn());
                     try {
                         lambdaClient.deleteEventSourceMapping(new DeleteEventSourceMappingRequest().withUUID(s.getUUID()));
@@ -635,9 +642,14 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                         .withFunctionName(lambdaFunction.getUnqualifiedFunctionArn()));
 
         
-        List<String> tableNames = lambdaFunction.getTriggers().stream().map(t -> {
-            return ofNullable(t.getDynamoDBTable()).orElse("");
-        }).collect(Collectors.toList());
+        List<String> tableNames = new ArrayList<String>();
+        
+        // This nonsense is to prevent cleanupOrphanedDynamoDBTriggers from removing DynamoDB triggers
+        // and vice versa.  Unfortunately this assumes that stream names won't be the same as table names.
+        lambdaFunction.getTriggers().stream().forEach(t -> {
+            ofNullable(t.getKinesisStream()).ifPresent(x -> tableNames.add(x));
+            ofNullable(t.getDynamoDBTable()).ifPresent(x -> tableNames.add(x));
+        });
         
         listEventSourceMappingsResult.getEventSourceMappings().stream().forEach(s -> {
             if ( s.getEventSourceArn().contains(":dynamodb:")) {
@@ -672,7 +684,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                     !lambdaFunction.getTriggers().stream().anyMatch( t -> t.getIntegration().equals(TRIG_INT_LABEL_ALEXA_SK)))
                 .forEach( s -> {    
                     try {
-                        getLog().info("    Removing orphaned permission for " + s.getId());
+                        getLog().info("    Removing orphaned Alexa permission " + s.getId());
                         lambdaClient.removePermission(new RemovePermissionRequest()
                             .withFunctionName(lambdaFunction.getFunctionName())
                             .withQualifier(lambdaFunction.getQualifier())
@@ -699,7 +711,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                         !lambdaFunction.getTriggers().stream().anyMatch( t -> stmt.getId().contains(ofNullable(t.getLexBotName()).orElse(""))))
                 .forEach( s -> {    
                     try {
-                        getLog().info("    Removing orphaned permission for " + s.getId());
+                        getLog().info("    Removing orphaned Lex permission " + s.getId());
                         lambdaClient.removePermission(new RemovePermissionRequest()
                             .withFunctionName(lambdaFunction.getFunctionName())
                             .withQualifier(lambdaFunction.getQualifier())
