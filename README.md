@@ -26,7 +26,8 @@ All of the AWS Lambda configuration parameters may be set within the lambda plug
 * `accessKey` Your user's AWS access key.
 * `secretKey` Your user's AWS secret access key.
 * `functionCode` REQUIRED The location of your deliverable. For instance, a jar file for a Java8 lambda function.
-* `version` REQUIRED version of the deliverable.
+* `version` REQUIRED version of the deliverable. Note that this is the version you assign to your function, not the one assigned by AWS when publish=true.
+* `alias` OPTIONAL, but requires publish=true.  Assigns an alias to the AWS version of this function.  Useful for maintaining versions intended for different environments on the same function.  For instance, development, qa, production, etc.
 * `s3Bucket` REQUIRED Defaults to lambda-function-code. The AWS S3 bucket to which to upload your code from which it will be deployed to Lambda.
 * `region` Defaults to eu-west-1 The AWS region to use for your function.
 * `runtime` Defaults to Java8 Specifies whether this is Java8, NodeJs and Python.
@@ -37,7 +38,7 @@ All of the AWS Lambda configuration parameters may be set within the lambda plug
 * `memorySize` Defaults to 1024MB NOTE: Please review the AWS Lambda documentation on this setting as it could have an impact on your billing.
 * `vpcSubnetIds` The VPC Subnets that Lambda should use to set up your VPC configuration. Format: "subnet-id (cidr-block) | az name-tag".
 * `vpcSecurityGroupIds` The VPC Security Groups that Lambda should use to set up your VPC configuration. Format: "sg-id (sg-name) | name-tag". Should be configured.
-* `publish` This boolean parameter can be used to request AWS Lambda to update the Lambda function and publish a version as an atomic operation. This is global for all functions and won't overwrite publish paramter in provided Lambda configuration
+* `publish` This boolean parameter can be used to request AWS Lambda to update the Lambda function and publish a version as an atomic operation. This is global for all functions and won't overwrite publish paramter in provided Lambda configuration. Setting to false will only update $LATEST.
 * `functionNameSuffix` The suffix for the lambda function. Function name is automatically suffixed with it. When left blank no suffix will be applied.
 * `forceUpdate` This boolean parameter can be used to force update of existing configuration. Use it when you don't publish a function and want to deploy code in your Lambda function.
 * `triggers` A list of one or more triggers that execute Lambda function. Currently `CloudWatch Events - Schedule`, `SNS`, `DynamoDB` and `Kinesis` are supported. When `functionNameSuffix` is present then suffix will be added automatically.
@@ -179,6 +180,9 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.2.8
+* Added the ability to set an alias for the new function version, provided publish=true. Fixes [Issue 74](https://github.com/SeanRoy/lambda-maven-plugin/issues/74)
+
 2.2.7
 * Added SNS & Kinesis trigger orphan handling. This resolves [Issue 50](https://github.com/SeanRoy/lambda-maven-plugin/issues/50)
 
