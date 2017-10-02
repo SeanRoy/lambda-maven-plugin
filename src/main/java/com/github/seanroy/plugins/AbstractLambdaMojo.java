@@ -89,6 +89,10 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
      */
     @Parameter(property = "version", defaultValue = "${version}", required = true)
     public String version;
+    
+    @Parameter(property = "alias")
+    public String alias;
+    
     /**
      * <p>Amazon region. Default value is us-east-1.</p>
      */
@@ -308,7 +312,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
 
     private List<String> aliases(boolean publish) {
         if (publish) {
-            return Collections.singletonList(version);
+            return new ArrayList<String>() {{ add(version); ofNullable(alias).ifPresent(a -> add(a)); }};
         }
         return emptyList();
     }
