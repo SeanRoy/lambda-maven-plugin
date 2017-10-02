@@ -8,6 +8,7 @@ import static java.util.stream.Collectors.toList;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -73,8 +74,11 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.sns.model.CreateTopicRequest;
 import com.amazonaws.services.sns.model.CreateTopicResult;
+import com.amazonaws.services.sns.model.ListSubscriptionsResult;
 import com.amazonaws.services.sns.model.SubscribeRequest;
 import com.amazonaws.services.sns.model.SubscribeResult;
+import com.amazonaws.services.sns.model.Subscription;
+import com.amazonaws.services.sns.model.UnsubscribeRequest;
 
 /**
  * I am a deploy mojo responsible to upload and create or update lambda function in AWS.
@@ -194,7 +198,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 .withEndpoint(lambdaFunction.getUnqualifiedFunctionArn())
                 .withProtocol("lambda");
         SubscribeResult subscribeResult = snsClient.subscribe(subscribeRequest);
-        getLog().info(lambdaFunction.getUnqualifiedFunctionArn() + " subscribed to " + createTopicResult.getTopicArn());
+        getLog().info("Lambda function " + lambdaFunction.getFunctionName() + " subscribed to " + createTopicResult.getTopicArn());
         getLog().info("Created " + trigger.getIntegration() + " trigger " + subscribeResult.getSubscriptionArn());
 
 
@@ -204,8 +208,8 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                     .withFunctionName(lambdaFunction.getFunctionName());
             GetPolicyResult GetPolicyResult = lambdaClient.getPolicy(getPolicyRequest);
             statementOpt = Policy.fromJson(GetPolicyResult.getPolicy()).getStatements().stream()
-                                                     .filter(statement -> statement.getActions().stream().anyMatch(e -> "lambda:InvokeFunction".equals(e.getActionName())) &&
-                                                             statement.getPrincipals().stream().anyMatch(principal -> "sns.amazonaws.com".equals(principal.getId())) &&
+                                                     .filter(statement -> statement.getActions().stream().anyMatch(e -> PERM_LAMBDA_INVOKE.equals(e.getActionName())) &&
+                                                             statement.getPrincipals().stream().anyMatch(principal -> PRINCIPAL_SNS.equals(principal.getId())) &&
                                                              statement.getConditions().stream().anyMatch(condition -> condition.getValues().stream().anyMatch(s -> Objects.equals(createTopicResult.getTopicArn(), s)))
                                                      ).findAny();
         } catch (ResourceNotFoundException ignored) {
@@ -215,8 +219,8 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
 
         if (!statementOpt.isPresent()) {
             AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
-                    .withAction("lambda:InvokeFunction")
-                    .withPrincipal("sns.amazonaws.com")
+                    .withAction(PERM_LAMBDA_INVOKE)
+                    .withPrincipal(PRINCIPAL_SNS)
                     .withSourceArn(createTopicResult.getTopicArn())
                     .withFunctionName(lambdaFunction.getFunctionName())
                     .withStatementId(UUID.randomUUID().toString());
@@ -234,8 +238,8 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 s.getId().equals(getAlexaPermissionStatementId()))) {
             getLog().info("Granting invoke permission to " + trigger.getIntegration());    
             AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
-                    .withAction("lambda:InvokeFunction")
-                    .withPrincipal("alexa-appkit.amazon.com")
+                    .withAction(PERM_LAMBDA_INVOKE)
+                    .withPrincipal(PRINCIPAL_ALEXA)
                     .withFunctionName(lambdaFunction.getFunctionName())
                     .withQualifier(lambdaFunction.getQualifier())
                     .withStatementId(getAlexaPermissionStatementId());
@@ -255,10 +259,10 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     private BiFunction<Trigger, LambdaFunction, Trigger> addLexPermission = (Trigger trigger, LambdaFunction lambdaFunction) -> {
         if (!ofNullable(lambdaFunction.getExistingPolicy()).orElse(new Policy()).getStatements().stream().anyMatch(s ->
                  s.getId().equals(getLexPermissionStatementId(trigger.getLexBotName())))) {
-            getLog().info("Granting invoke permission to " + trigger.getLexBotName());
+            getLog().info("Granting invoke permission to Lex bot " + trigger.getLexBotName());
             AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
-                .withAction("lambda:InvokeFunction")
-                .withPrincipal("lex.amazonaws.com")
+                .withAction(PERM_LAMBDA_INVOKE)
+                .withPrincipal(PRINCIPAL_LEX)
                 .withFunctionName(lambdaFunction.getFunctionName())
                 .withQualifier(lambdaFunction.getQualifier())
                 .withStatementId(getLexPermissionStatementId(trigger.getLexBotName()));
@@ -283,8 +287,8 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
             getLog().info("Created " + trigger.getIntegration() + " trigger " + putRuleResult.getRuleArn());
 
             AddPermissionRequest addPermissionRequest = new AddPermissionRequest()
-                    .withAction("lambda:InvokeFunction")
-                    .withPrincipal("events.amazonaws.com")
+                    .withAction(PERM_LAMBDA_INVOKE)
+                    .withPrincipal(PRINCIPAL_EVENTS)
                     .withSourceArn(putRuleResult.getRuleArn())
                     .withFunctionName(lambdaFunction.getFunctionName())
                     .withStatementId(UUID.randomUUID().toString());
@@ -343,6 +347,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
             return findorUpdateMappingConfiguration(trigger, lambdaFunction, 
                     kinesisClient.describeStream(trigger.getKinesisStream()).getStreamDescription().getStreamARN());
         } catch (Exception rnfe) {
+            getLog().info(rnfe.getMessage());
             throw new IllegalArgumentException("Unable to find stream with name " + trigger.getKinesisStream());
         }        
     };
@@ -529,31 +534,137 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 });
     }
     
-    Function<LambdaFunction, LambdaFunction> cleanUpOrphanedKinesisTriggers = lambdaFunction -> { return lambdaFunction; };
-    Function<LambdaFunction, LambdaFunction> cleanUpOrphanedSNSTriggers = lambdaFunction -> { return lambdaFunction; };
+    /**
+     * Remove orphaned kinesis stream triggers.
+     * TODO: Combine with cleanUpOrphanedDynamoDBTriggers.
+     */
+    Function<LambdaFunction, LambdaFunction> cleanUpOrphanedKinesisTriggers = lambdaFunction -> { 
+        ListEventSourceMappingsResult listEventSourceMappingsResult = 
+                lambdaClient.listEventSourceMappings(new ListEventSourceMappingsRequest()
+                        .withFunctionName(lambdaFunction.getUnqualifiedFunctionArn()));
+
+        
+        List<String> streamNames = new ArrayList<String>();
+        
+        // This nonsense is to prevent cleanupOrphanedDynamoDBTriggers from removing DynamoDB triggers
+        // and vice versa.  Unfortunately this assumes that stream names won't be the same as table names.
+        lambdaFunction.getTriggers().stream().forEach(t -> {
+            ofNullable(t.getKinesisStream()).ifPresent(x -> streamNames.add(x));
+            ofNullable(t.getDynamoDBTable()).ifPresent(x -> streamNames.add(x));
+        });
+
+        listEventSourceMappingsResult.getEventSourceMappings().stream().forEach(s -> {
+            if ( s.getEventSourceArn().contains(":kinesis:") ) {                
+                if ( ! streamNames.contains(kinesisClient.describeStream(new com.amazonaws.services.kinesis.model.DescribeStreamRequest()
+                        .withStreamName(s.getEventSourceArn().substring(s.getEventSourceArn().lastIndexOf('/')+1)))
+                        .getStreamDescription()
+                        .getStreamName()) ){
+                    getLog().info("    Removing orphaned Kinesis trigger for stream " + s.getEventSourceArn());
+                    try {
+                        lambdaClient.deleteEventSourceMapping(new DeleteEventSourceMappingRequest().withUUID(s.getUUID()));
+                    } catch(Exception e8) {
+                        getLog().error("    Error removing orphaned Kinesis trigger for stream " + s.getEventSourceArn());
+                    }
+                }
+            }
+        });
+        
+        return lambdaFunction;  
+     };
+    
+    /**
+     * Removes orphaned sns triggers.
+     */
+    Function<LambdaFunction, LambdaFunction> cleanUpOrphanedSNSTriggers = lambdaFunction -> {
+        
+        List<Subscription> subscriptions = new ArrayList<Subscription>();
+        ListSubscriptionsResult result = snsClient.listSubscriptions();
+        
+        do {
+            subscriptions.addAll(result.getSubscriptions().stream().filter( sub -> {
+                return sub.getEndpoint().equals(lambdaFunction.getFunctionArn());
+            }).collect(Collectors.toList()));
+            
+            result = snsClient.listSubscriptions(result.getNextToken());
+        } while( result.getNextToken() != null );
+        
+        if (subscriptions.size() > 0 ) {
+            List<String> snsTopicNames = lambdaFunction.getTriggers().stream().map(t -> {
+                return ofNullable(t.getSNSTopic()).orElse("");
+            }).collect(Collectors.toList());
+            
+            subscriptions.stream().forEach(s -> {
+                String topicName = s.getTopicArn().substring(s.getTopicArn().lastIndexOf(":")+1);
+                if (!snsTopicNames.contains(topicName)) {
+                    getLog().info("    Removing orphaned SNS trigger for topic " + topicName);
+                    try {
+                        snsClient.unsubscribe(new UnsubscribeRequest().withSubscriptionArn(s.getSubscriptionArn()));
+                        
+                        ofNullable(lambdaFunction.getExistingPolicy()).flatMap( policy -> {
+                            policy.getStatements().stream()
+                                .filter(
+                                    stmt -> stmt.getActions().stream().anyMatch( e -> PERM_LAMBDA_INVOKE.equals(e.getActionName())) &&
+                                    stmt.getPrincipals().stream().anyMatch(principal -> PRINCIPAL_SNS.equals(principal.getId())) &&
+                                    stmt.getResources().stream().anyMatch(r -> r.getId().equals(lambdaFunction.getFunctionArn()))
+                                ).forEach( st -> {
+                                    if( st.getConditions().stream().anyMatch(condition -> condition.getValues().contains(s.getTopicArn())) ) {
+                                        getLog().info("      Removing invoke permission for SNS trigger");       
+                                        try {
+                                            lambdaClient.removePermission(new RemovePermissionRequest()
+                                                .withFunctionName(lambdaFunction.getFunctionName())
+                                                .withQualifier(lambdaFunction.getQualifier())
+                                                .withStatementId(st.getId()));
+                                        } catch (Exception e7) {
+                                            getLog().error("      Error removing invoke permission for SNS trigger");
+                                        }
+                                    }
+                                });
+                            return of(policy);
+                        });
+                        
+                    } catch(Exception e5) {
+                        getLog().error("    Error removing SNS trigger for topic " + topicName);
+                    }
+                }
+            });
+        }
+        
+        return lambdaFunction; 
+    };
+    
+    /**
+     * Removes orphaned dynamo db triggers.
+     * TODO: Combine with cleanUpOrphanedKinesisTriggers
+     */
     Function<LambdaFunction, LambdaFunction> cleanUpOrphanedDynamoDBTriggers = lambdaFunction -> {
         ListEventSourceMappingsResult listEventSourceMappingsResult = 
                 lambdaClient.listEventSourceMappings(new ListEventSourceMappingsRequest()
                         .withFunctionName(lambdaFunction.getUnqualifiedFunctionArn()));
 
         
-        List<String> tableNames = lambdaFunction.getTriggers().stream().map(t -> {
-            return ofNullable(t.getDynamoDBTable()).orElse("");
-        }).collect(Collectors.toList());
+        List<String> tableNames = new ArrayList<String>();
+        
+        // This nonsense is to prevent cleanupOrphanedDynamoDBTriggers from removing DynamoDB triggers
+        // and vice versa.  Unfortunately this assumes that stream names won't be the same as table names.
+        lambdaFunction.getTriggers().stream().forEach(t -> {
+            ofNullable(t.getKinesisStream()).ifPresent(x -> tableNames.add(x));
+            ofNullable(t.getDynamoDBTable()).ifPresent(x -> tableNames.add(x));
+        });
         
         listEventSourceMappingsResult.getEventSourceMappings().stream().forEach(s -> {
-            StreamDescription sd = dynamoDBStreamsClient.describeStream(new DescribeStreamRequest()
-                .withStreamArn(s.getEventSourceArn())).getStreamDescription();
-            
-            if ( ! tableNames.contains(sd.getTableName()) ) {
-                try {
+            if ( s.getEventSourceArn().contains(":dynamodb:")) {
+                StreamDescription sd = dynamoDBStreamsClient.describeStream(new DescribeStreamRequest()
+                    .withStreamArn(s.getEventSourceArn())).getStreamDescription();
+                
+                if ( ! tableNames.contains(sd.getTableName()) ) {    
                     getLog().info("    Removing orphaned DynamoDB trigger for table " + sd.getTableName());
-                    lambdaClient.deleteEventSourceMapping(new DeleteEventSourceMappingRequest().withUUID(s.getUUID()));
-                } catch (Exception e4) {
-                    getLog().error("    Error removing DynamoDB trigger for table " + sd.getTableName());
+                    try {    
+                        lambdaClient.deleteEventSourceMapping(new DeleteEventSourceMappingRequest().withUUID(s.getUUID()));
+                    } catch (Exception e4) {
+                        getLog().error("    Error removing DynamoDB trigger for table " + sd.getTableName());
+                    }
                 }
             }
-            
         });
         
         return lambdaFunction; 
@@ -568,12 +679,12 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         ofNullable(lambdaFunction.getExistingPolicy()).flatMap( policy -> {
             policy.getStatements().stream()
                 .filter(
-                    stmt -> stmt.getActions().stream().anyMatch( e -> "lambda:InvokeFunction".equals(e.getActionName())) &&
-                    stmt.getPrincipals().stream().anyMatch(principal -> "alexa-appkit.amazon.com".equals(principal.getId())) &&
-                    !lambdaFunction.getTriggers().stream().anyMatch( t -> t.getIntegration().equals("Alexa Skills Kit")))
+                    stmt -> stmt.getActions().stream().anyMatch( e -> PERM_LAMBDA_INVOKE.equals(e.getActionName())) &&
+                    stmt.getPrincipals().stream().anyMatch(principal -> PRINCIPAL_ALEXA.equals(principal.getId())) &&
+                    !lambdaFunction.getTriggers().stream().anyMatch( t -> t.getIntegration().equals(TRIG_INT_LABEL_ALEXA_SK)))
                 .forEach( s -> {    
                     try {
-                        getLog().info("    Removing orphaned permission for " + s.getId());
+                        getLog().info("    Removing orphaned Alexa permission " + s.getId());
                         lambdaClient.removePermission(new RemovePermissionRequest()
                             .withFunctionName(lambdaFunction.getFunctionName())
                             .withQualifier(lambdaFunction.getQualifier())
@@ -595,12 +706,12 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     Function<LambdaFunction, LambdaFunction> cleanUpOrphanedLexSkillsTriggers = lambdaFunction -> {
         ofNullable(lambdaFunction.getExistingPolicy()).flatMap( policy -> {
             policy.getStatements().stream()
-                .filter(stmt -> stmt.getActions().stream().anyMatch( e -> "lambda:InvokeFunction".equals(e.getActionName())) &&
-                        stmt.getPrincipals().stream().anyMatch(principal -> "lex.amazonaws.com".equals(principal.getId())) &&
+                .filter(stmt -> stmt.getActions().stream().anyMatch( e -> PERM_LAMBDA_INVOKE.equals(e.getActionName())) &&
+                        stmt.getPrincipals().stream().anyMatch(principal -> PRINCIPAL_LEX.equals(principal.getId())) &&
                         !lambdaFunction.getTriggers().stream().anyMatch( t -> stmt.getId().contains(ofNullable(t.getLexBotName()).orElse(""))))
                 .forEach( s -> {    
                     try {
-                        getLog().info("    Removing orphaned permission for " + s.getId());
+                        getLog().info("    Removing orphaned Lex permission " + s.getId());
                         lambdaClient.removePermission(new RemovePermissionRequest()
                             .withFunctionName(lambdaFunction.getFunctionName())
                             .withQualifier(lambdaFunction.getQualifier())
@@ -662,7 +773,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
             
             getLog().info("Cleaning up orphaned triggers.");
             
-            // TODO: Add clean up orphaned trigger functions for each integration here:
+            // Add clean up orphaned trigger functions for each integration here:
             cleanUpOrphanedCloudWatchEventRules
                 .andThen(cleanUpOrphanedDynamoDBTriggers)
                 .andThen(cleanUpOrphanedKinesisTriggers)

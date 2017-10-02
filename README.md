@@ -166,6 +166,7 @@ IAM permissions required by this plugin:
 * action `lambda:ListAliases`
 * action `events:PutRule` on  resource `arn:aws:events:<region>:<acount-number>:rule/*`
 * action `events:PutTargets` on  resource `arn:aws:events:<region>:<acount-number>:rule/*`
+* action `kinesis:GetRecords, GetShardIterator, DescribeStream, and ListStreams on Kinesis streams`
 
 ### Developers
 If you are interested in contributing to this project, please note that current development can be found in the SNAPSHOT branch of the coming release.  When making pull requests, please create them against this branch.
@@ -178,6 +179,9 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.2.7-SNAPSHOT
+* Added SNS & Kinesis trigger orphan handling. This resolves [Issue 50](https://github.com/SeanRoy/lambda-maven-plugin/issues/50)
+
 2.2.6
 * Fixed another potential NPE, added orphan trigger cleanup for DynamoDB integrations.
 
