@@ -347,6 +347,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
             return findorUpdateMappingConfiguration(trigger, lambdaFunction, 
                     kinesisClient.describeStream(trigger.getKinesisStream()).getStreamDescription().getStreamARN());
         } catch (Exception rnfe) {
+            getLog().info(rnfe.getMessage());
             throw new IllegalArgumentException("Unable to find stream with name " + trigger.getKinesisStream());
         }        
     };
@@ -533,7 +534,36 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 });
     }
     
-    Function<LambdaFunction, LambdaFunction> cleanUpOrphanedKinesisTriggers = lambdaFunction -> { return lambdaFunction; };
+    /**
+     * Remove orphaned kinesis stream triggers.
+     * TODO: Combine with cleanUpOrphanedDynamoDBTriggers.
+     */
+    Function<LambdaFunction, LambdaFunction> cleanUpOrphanedKinesisTriggers = lambdaFunction -> { 
+        ListEventSourceMappingsResult listEventSourceMappingsResult = 
+                lambdaClient.listEventSourceMappings(new ListEventSourceMappingsRequest()
+                        .withFunctionName(lambdaFunction.getUnqualifiedFunctionArn()));
+
+        
+        List<String> streamNames = lambdaFunction.getTriggers().stream().map(t -> {
+            return ofNullable(t.getKinesisStream()).orElse("");
+        }).collect(Collectors.toList());
+        
+        listEventSourceMappingsResult.getEventSourceMappings().stream().forEach(s -> {
+            if ( s.getEventSourceArn().contains(":kinesis:") ) {
+                if ( ! streamNames.contains(kinesisClient.describeStream(new com.amazonaws.services.kinesis.model.DescribeStreamRequest()
+                    .withStreamName(s.getEventSourceArn().substring(s.getEventSourceArn().lastIndexOf('/')+1)).getStreamName())) ){
+                    getLog().info("    Removing orphaned Kinesis trigger for stream " + s.getEventSourceArn());
+                    try {
+                        lambdaClient.deleteEventSourceMapping(new DeleteEventSourceMappingRequest().withUUID(s.getUUID()));
+                    } catch(Exception e8) {
+                        getLog().error("    Error removing orphaned Kinesis trigger for stream " + s.getEventSourceArn());
+                    }
+                }
+            }
+        });
+        
+        return lambdaFunction;  
+     };
     
     /**
      * Removes orphaned sns triggers.
@@ -597,6 +627,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     
     /**
      * Removes orphaned dynamo db triggers.
+     * TODO: Combine with cleanUpOrphanedKinesisTriggers
      */
     Function<LambdaFunction, LambdaFunction> cleanUpOrphanedDynamoDBTriggers = lambdaFunction -> {
         ListEventSourceMappingsResult listEventSourceMappingsResult = 
@@ -609,18 +640,19 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         }).collect(Collectors.toList());
         
         listEventSourceMappingsResult.getEventSourceMappings().stream().forEach(s -> {
-            StreamDescription sd = dynamoDBStreamsClient.describeStream(new DescribeStreamRequest()
-                .withStreamArn(s.getEventSourceArn())).getStreamDescription();
-            
-            if ( ! tableNames.contains(sd.getTableName()) ) {    
-                getLog().info("    Removing orphaned DynamoDB trigger for table " + sd.getTableName());
-                try {    
-                    lambdaClient.deleteEventSourceMapping(new DeleteEventSourceMappingRequest().withUUID(s.getUUID()));
-                } catch (Exception e4) {
-                    getLog().error("    Error removing DynamoDB trigger for table " + sd.getTableName());
+            if ( s.getEventSourceArn().contains(":dynamodb:")) {
+                StreamDescription sd = dynamoDBStreamsClient.describeStream(new DescribeStreamRequest()
+                    .withStreamArn(s.getEventSourceArn())).getStreamDescription();
+                
+                if ( ! tableNames.contains(sd.getTableName()) ) {    
+                    getLog().info("    Removing orphaned DynamoDB trigger for table " + sd.getTableName());
+                    try {    
+                        lambdaClient.deleteEventSourceMapping(new DeleteEventSourceMappingRequest().withUUID(s.getUUID()));
+                    } catch (Exception e4) {
+                        getLog().error("    Error removing DynamoDB trigger for table " + sd.getTableName());
+                    }
                 }
             }
-            
         });
         
         return lambdaFunction; 
