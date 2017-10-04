@@ -194,8 +194,8 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
-2.2.9-SNAPSHOT Unreleased
-* Adding ability to set proxy
+2.2.9
+* Added ability to set http proxy on AWS clients. [Issue 39](https://github.com/SeanRoy/lambda-maven-plugin/issues/39)
 
 2.2.8
 * Added the ability to set an alias for the new function version, provided publish=true. Fixes [Issue 74](https://github.com/SeanRoy/lambda-maven-plugin/issues/74)
