@@ -48,13 +48,13 @@ All of the AWS Lambda configuration parameters may be set within the lambda plug
  useful for when you need your function to be responsive.
 * `passThrough` This directive is to be used only on the command line.  It allows you to pass environment variables from the command line to your functions using json. Example:
 * `clientConfiguration` Allows you to specify a http(s) proxy when communicating with AWS. The following parameters may be specified, see the Example configuration below for an example.
-  * protocol`
-  * proxyHost`
-  * proxyPort`
-  * proxyDomain`
-  * proxyUsername`
-  * proxyPassword`
-  * proxyWorkstation`
+  * `protocol`
+  * `proxyHost`
+  * `proxyPort`
+  * `proxyDomain`
+  * `proxyUsername`
+  * `proxyPassword`
+  * `proxyWorkstation`
 ```
 mvn package shade:shade lambda:deploy-lambda -DpassThrough="{'KEY1' : 'VAL1', 'KEY2' : 'VAL2'}"
 ```
