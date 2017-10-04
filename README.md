@@ -47,6 +47,14 @@ All of the AWS Lambda configuration parameters may be set within the lambda plug
  value you specify.  This keeps your lambda function resident and ready to receive real requests at all times.  This is
  useful for when you need your function to be responsive.
 * `passThrough` This directive is to be used only on the command line.  It allows you to pass environment variables from the command line to your functions using json. Example:
+* `clientConfiguration` Allows you to specify a http(s) proxy when communicating with AWS. The following parameters may be specified, see the Example configuration below for an example.
+⋅⋅*`protocol`
+⋅⋅*`proxyHost`
+⋅⋅*`proxyPort`
+⋅⋅*`proxyDomain`
+⋅⋅*`proxyUsername`
+⋅⋅*`proxyPassword`
+⋅⋅*`proxyWorkstation`
 ```
 mvn package shade:shade lambda:deploy-lambda -DpassThrough="{'KEY1' : 'VAL1', 'KEY2' : 'VAL2'}"
 ```
@@ -85,8 +93,13 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                         <forceUpdate>${lambda.forceUpdate}</forceUpdate>
                         <functionNameSuffix>${lambda.functionNameSuffix}</functionNameSuffix>
                         <environmentVariables>
-                           <key0>value0</key0>
+                          <key0>value0</key0>
                         </environmentVariables>
+			<clientConfiguration>
+			  <protocol>https</protocol>
+			  <proxyHost>proxy-host.net</proxyHost>
+			  <proxyPort>1234</proxyPort>
+			</clientConfiguration>
                         <lambdaFunctionsJSON>
                             [
                               {
@@ -181,6 +194,9 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.2.9-SNAPSHOT Unreleased
+* Adding ability to set proxy
+
 2.2.8
 * Added the ability to set an alias for the new function version, provided publish=true. Fixes [Issue 74](https://github.com/SeanRoy/lambda-maven-plugin/issues/74)
 
