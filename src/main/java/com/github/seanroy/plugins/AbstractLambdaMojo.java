@@ -12,12 +12,11 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -27,6 +26,8 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import com.amazonaws.AmazonWebServiceClient;
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -189,6 +190,12 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     @Parameter(property = "passThrough")
     public String passThrough;
     
+    /**
+     * Allows for proxy settings to passed to the lambda client.
+     */
+    @Parameter(property = "clientConfiguration")
+    public Map<String, String> clientConfiguration;
+    
     public String fileName;
     public AWSCredentials credentials;
     public AmazonS3 s3Client;
@@ -240,22 +247,25 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     }
     
     @SuppressWarnings("rawtypes")
-    Function<AwsClientBuilder, AmazonWebServiceClient> clientFactory = b -> {
+    BiFunction<AwsClientBuilder, ClientConfiguration, AmazonWebServiceClient> clientFactory = (builder, clientConfig) -> {
         Regions region = Regions.fromName(regionName);
         
         return (AmazonWebServiceClient) of(credentials)
-        .map(credentials -> b.withCredentials(new AWSStaticCredentialsProvider(credentials)).withRegion(region).build())
-        .orElse(b.withRegion(region).withCredentials(new DefaultAWSCredentialsProviderChain()).build());
+        .map(credentials -> builder.withCredentials(new AWSStaticCredentialsProvider(credentials))
+                                   .withClientConfiguration(clientConfig)
+                                   .withRegion(region).build())
+        .orElse(builder.withRegion(region).withCredentials(new DefaultAWSCredentialsProviderChain()).build());
     };
 
     private void initAWSClients() {
-        s3Client = (AmazonS3) clientFactory.apply(AmazonS3ClientBuilder.standard());
-        lambdaClient = (AWSLambda) clientFactory.apply(AWSLambdaClientBuilder.standard());
-        snsClient = (AmazonSNS) clientFactory.apply(AmazonSNSClientBuilder.standard());
-        eventsClient = (AmazonCloudWatchEvents) clientFactory.apply(AmazonCloudWatchEventsClientBuilder.standard());
-        dynamoDBStreamsClient = (AmazonDynamoDBStreams) clientFactory.apply(AmazonDynamoDBStreamsClientBuilder.standard());
-        kinesisClient = (AmazonKinesis) clientFactory.apply(AmazonKinesisClientBuilder.standard());
-        cloudWatchEventsClient = (AmazonCloudWatchEvents) clientFactory.apply(AmazonCloudWatchEventsClientBuilder.standard());
+        ClientConfiguration clientConfig = clientConfiguration();
+        s3Client = (AmazonS3) clientFactory.apply(AmazonS3ClientBuilder.standard(), clientConfig);
+        lambdaClient = (AWSLambda) clientFactory.apply(AWSLambdaClientBuilder.standard(), clientConfig);
+        snsClient = (AmazonSNS) clientFactory.apply(AmazonSNSClientBuilder.standard(), clientConfig);
+        eventsClient = (AmazonCloudWatchEvents) clientFactory.apply(AmazonCloudWatchEventsClientBuilder.standard(), clientConfig);
+        dynamoDBStreamsClient = (AmazonDynamoDBStreams) clientFactory.apply(AmazonDynamoDBStreamsClientBuilder.standard(), clientConfig);
+        kinesisClient = (AmazonKinesis) clientFactory.apply(AmazonKinesisClientBuilder.standard(), clientConfig);
+        cloudWatchEventsClient = (AmazonCloudWatchEvents) clientFactory.apply(AmazonCloudWatchEventsClientBuilder.standard(), clientConfig);
     }
 
     private void initLambdaFunctionsConfiguration() throws MojoExecutionException, IOException {
@@ -287,7 +297,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
                                                                                                          })
                                                                                                          .collect(toList()))
                                                                                 .orElse(new ArrayList<>()))
-                          .withEnvironmentVariables(environmentVariables(lambdaFunction));
+                          .withEnvironmentVariables(environmentVariables(lambdaFunction));                          
 
             return lambdaFunction;
         }).collect(toList());
@@ -303,6 +313,20 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
                      .map(Map::entrySet)
                      .flatMap(Collection::stream)
                      .collect(toMap(Entry::getKey, Entry::getValue));
+    }
+    
+    private ClientConfiguration clientConfiguration() {
+        return ofNullable(clientConfiguration).flatMap(clientConfigObject -> {    
+                return of(new ClientConfiguration()
+                    .withProtocol(Protocol.valueOf(
+                            clientConfigObject.getOrDefault("protocol", Protocol.HTTPS.toString()).toUpperCase()))
+                    .withProxyHost(clientConfigObject.get("proxyHost"))
+                    .withProxyPort(Integer.getInteger(clientConfigObject.get("proxyPort"), -1))
+                    .withProxyDomain(clientConfigObject.get("proxyDomain"))
+                    .withProxyUsername(clientConfigObject.get("proxyUsername"))
+                    .withProxyPassword(clientConfigObject.get("proxyPassword"))
+                    .withProxyWorkstation(clientConfigObject.get("proxyWorkstation")));
+        }).orElse(new ClientConfiguration());
     }
 
     private String addSuffix(String functionName) {
