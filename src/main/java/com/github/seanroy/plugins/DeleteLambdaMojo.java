@@ -19,7 +19,7 @@ import com.amazonaws.services.lambda.model.GetFunctionRequest;
 
 
 /**
- * I am a delete mojo responsible for deleteing lambda function configuration and code from AWS.
+ * I am a delete mojo responsible for deleting lambda function configuration and code from AWS.
  *
  * @author Sean N. Roy
  */

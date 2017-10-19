@@ -62,6 +62,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     public static final String TRIG_INT_LABEL_SNS = "SNS";
     public static final String TRIG_INT_LABEL_ALEXA_SK = "Alexa Skills Kit";
     public static final String TRIG_INT_LABEL_LEX = "Lex";
+    public static final String TRIG_INT_LABEL_S3 = "S3";
     
     public static final String PERM_LAMBDA_INVOKE = "lambda:InvokeFunction";
     
@@ -69,6 +70,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     public static final String PRINCIPAL_LEX    = "lex.amazonaws.com";
     public static final String PRINCIPAL_SNS    = "sns.amazonaws.com";
     public static final String PRINCIPAL_EVENTS = "events.amazonaws.com"; // Cloudwatch events
+    public static final String PRINCIPAL_S3     = "s3.amazonaws.com";
     
     /**
      * <p>The AWS access key.</p>
@@ -223,11 +225,13 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     }
 
     private void initAWSCredentials() throws MojoExecutionException {
-        DefaultAWSCredentialsProviderChain defaultChain = new DefaultAWSCredentialsProviderChain();
         if (accessKey != null && secretKey != null) {
             credentials = new BasicAWSCredentials(accessKey, secretKey);
-        } else if (defaultChain.getCredentials() != null) {
-            credentials = defaultChain.getCredentials();
+        } else {
+            ofNullable(new DefaultAWSCredentialsProviderChain()).flatMap(defaultChain -> {
+                credentials = defaultChain.getCredentials();
+                return of(defaultChain); 
+            });
         }
 
         if (credentials == null) {
@@ -237,8 +241,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     }
 
     private void initFileName() {
-        String pattern = Pattern.quote(File.separator);
-        String[] pieces = functionCode.split(pattern);
+        String[] pieces = functionCode.split(Pattern.quote(File.separator));
         fileName = pieces[pieces.length - 1];
     }
 
@@ -251,21 +254,22 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
         Regions region = Regions.fromName(regionName);
         
         return (AmazonWebServiceClient) of(credentials)
-        .map(credentials -> builder.withCredentials(new AWSStaticCredentialsProvider(credentials))
-                                   .withClientConfiguration(clientConfig)
-                                   .withRegion(region).build())
-        .orElse(builder.withRegion(region).withCredentials(new DefaultAWSCredentialsProviderChain()).build());
+            .map(credentials -> builder.withCredentials(new AWSStaticCredentialsProvider(credentials))
+                                       .withClientConfiguration(clientConfig)
+                                       .withRegion(region).build())
+            .orElse(builder.withRegion(region).withCredentials(new DefaultAWSCredentialsProviderChain()).build());
     };
 
     private void initAWSClients() {
-        ClientConfiguration clientConfig = clientConfiguration();
-        s3Client = (AmazonS3) clientFactory.apply(AmazonS3ClientBuilder.standard(), clientConfig);
-        lambdaClient = (AWSLambda) clientFactory.apply(AWSLambdaClientBuilder.standard(), clientConfig);
-        snsClient = (AmazonSNS) clientFactory.apply(AmazonSNSClientBuilder.standard(), clientConfig);
-        eventsClient = (AmazonCloudWatchEvents) clientFactory.apply(AmazonCloudWatchEventsClientBuilder.standard(), clientConfig);
-        dynamoDBStreamsClient = (AmazonDynamoDBStreams) clientFactory.apply(AmazonDynamoDBStreamsClientBuilder.standard(), clientConfig);
-        kinesisClient = (AmazonKinesis) clientFactory.apply(AmazonKinesisClientBuilder.standard(), clientConfig);
-        cloudWatchEventsClient = (AmazonCloudWatchEvents) clientFactory.apply(AmazonCloudWatchEventsClientBuilder.standard(), clientConfig);
+        Stream.of(clientConfiguration()).forEach(clientConfig -> {
+            s3Client = (AmazonS3) clientFactory.apply(AmazonS3ClientBuilder.standard(), clientConfig);
+            lambdaClient = (AWSLambda) clientFactory.apply(AWSLambdaClientBuilder.standard(), clientConfig);
+            snsClient = (AmazonSNS) clientFactory.apply(AmazonSNSClientBuilder.standard(), clientConfig);
+            eventsClient = (AmazonCloudWatchEvents) clientFactory.apply(AmazonCloudWatchEventsClientBuilder.standard(), clientConfig);
+            dynamoDBStreamsClient = (AmazonDynamoDBStreams) clientFactory.apply(AmazonDynamoDBStreamsClientBuilder.standard(), clientConfig);
+            kinesisClient = (AmazonKinesis) clientFactory.apply(AmazonKinesisClientBuilder.standard(), clientConfig);
+            cloudWatchEventsClient = (AmazonCloudWatchEvents) clientFactory.apply(AmazonCloudWatchEventsClientBuilder.standard(), clientConfig);
+        });
     }
 
     private void initLambdaFunctionsConfiguration() throws MojoExecutionException, IOException {
@@ -287,16 +291,17 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
                           .withVersion(version)
                           .withPublish(ofNullable(lambdaFunction.isPublish()).orElse(publish))
                           .withAliases(aliases(lambdaFunction.isPublish()))
-                          .withTriggers(ofNullable(lambdaFunction.getTriggers()).map(triggers -> triggers.stream()
-                                                                                                         .map(trigger -> {
-                                                                                                             trigger.withRuleName(addSuffix(trigger.getRuleName()));
-                                                                                                             trigger.withSNSTopic(addSuffix(trigger.getSNSTopic()));
-                                                                                                             trigger.withDynamoDBTable(addSuffix(trigger.getDynamoDBTable()));
-                                                                                                             trigger.withLexBotName(addSuffix(trigger.getLexBotName()));
-                                                                                                             return trigger;
-                                                                                                         })
-                                                                                                         .collect(toList()))
-                                                                                .orElse(new ArrayList<>()))
+                          .withTriggers(ofNullable(lambdaFunction.getTriggers())
+                                  .map(triggers -> triggers.stream()
+                                         .map(trigger -> {
+                                             trigger.withRuleName(addSuffix(trigger.getRuleName()));
+                                             trigger.withSNSTopic(addSuffix(trigger.getSNSTopic()));
+                                             trigger.withDynamoDBTable(addSuffix(trigger.getDynamoDBTable()));
+                                             trigger.withLexBotName(addSuffix(trigger.getLexBotName()));
+                                             return trigger;
+                                         })
+                                         .collect(toList()))
+                                  .orElse(new ArrayList<>()))
                           .withEnvironmentVariables(environmentVariables(lambdaFunction));                          
 
             return lambdaFunction;

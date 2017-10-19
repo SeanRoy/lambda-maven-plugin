@@ -8,6 +8,7 @@ import java.util.Map;
 
 import com.amazonaws.auth.policy.Policy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.github.seanroy.plugins.triggers.Trigger;
 
 /**
  * I am a domain class for Lambda Function.

@@ -59,7 +59,6 @@ import com.amazonaws.services.lambda.model.ListAliasesRequest;
 import com.amazonaws.services.lambda.model.ListAliasesResult;
 import com.amazonaws.services.lambda.model.ListEventSourceMappingsRequest;
 import com.amazonaws.services.lambda.model.ListEventSourceMappingsResult;
-import com.amazonaws.services.lambda.model.RemovePermissionRequest;
 import com.amazonaws.services.lambda.model.ResourceNotFoundException;
 import com.amazonaws.services.lambda.model.UpdateAliasRequest;
 import com.amazonaws.services.lambda.model.UpdateEventSourceMappingRequest;
@@ -70,15 +69,19 @@ import com.amazonaws.services.lambda.model.UpdateFunctionConfigurationRequest;
 import com.amazonaws.services.lambda.model.VpcConfig;
 import com.amazonaws.services.lambda.model.VpcConfigResponse;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.LambdaConfiguration;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectResult;
+import com.amazonaws.services.s3.model.SetBucketNotificationConfigurationRequest;
 import com.amazonaws.services.sns.model.CreateTopicRequest;
 import com.amazonaws.services.sns.model.CreateTopicResult;
 import com.amazonaws.services.sns.model.ListSubscriptionsResult;
+import com.amazonaws.services.sns.model.RemovePermissionRequest;
 import com.amazonaws.services.sns.model.SubscribeRequest;
 import com.amazonaws.services.sns.model.SubscribeResult;
 import com.amazonaws.services.sns.model.Subscription;
 import com.amazonaws.services.sns.model.UnsubscribeRequest;
+import com.github.seanroy.plugins.triggers.Trigger;
 
 /**
  * I am a deploy mojo responsible to upload and create or update lambda function in AWS.
@@ -351,6 +354,15 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
             throw new IllegalArgumentException("Unable to find stream with name " + trigger.getKinesisStream());
         }        
     };
+    
+    private BiFunction<Trigger, LambdaFunction, Trigger> createOrUpdateS3Trigger = (Trigger trigger, LambdaFunction lambdaFunction) -> {
+        getLog().info("About to create or update " + trigger.getIntegration() + " trigger");
+        /*
+        new SetBucketNotificationConfigurationRequest(trigger.getS3TriggerBucketName);
+        new LambdaConfiguration(lambdaFunction.getUnqualifiedFunctionArn(), trigger.getS3Events());
+        */
+        return trigger;
+    };
 
     private Trigger findorUpdateMappingConfiguration(Trigger trigger, LambdaFunction lambdaFunction, String streamArn) {
         ListEventSourceMappingsRequest listEventSourceMappingsRequest = new ListEventSourceMappingsRequest()
@@ -403,6 +415,8 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 addAlexaSkillsKitPermission.apply(trigger, lambdaFunction);
             } else if (TRIG_INT_LABEL_LEX.equals(trigger.getIntegration())) {
                 addLexPermission.apply(trigger, lambdaFunction);
+            } else if (TRIG_INT_LABEL_S3.equals(trigger.getIntegration())) {
+                createOrUpdateS3Trigger.apply(trigger, lambdaFunction);
             } else {
                 throw new IllegalArgumentException("Unknown integration for trigger " + trigger.getIntegration() + ". Correct your configuration");
             }
@@ -610,7 +624,8 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                                     if( st.getConditions().stream().anyMatch(condition -> condition.getValues().contains(s.getTopicArn())) ) {
                                         getLog().info("      Removing invoke permission for SNS trigger");       
                                         try {
-                                            lambdaClient.removePermission(new RemovePermissionRequest()
+                                            lambdaClient.removePermission(
+                                              new com.amazonaws.services.lambda.model.RemovePermissionRequest()
                                                 .withFunctionName(lambdaFunction.getFunctionName())
                                                 .withQualifier(lambdaFunction.getQualifier())
                                                 .withStatementId(st.getId()));
@@ -685,7 +700,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 .forEach( s -> {    
                     try {
                         getLog().info("    Removing orphaned Alexa permission " + s.getId());
-                        lambdaClient.removePermission(new RemovePermissionRequest()
+                        lambdaClient.removePermission(new com.amazonaws.services.lambda.model.RemovePermissionRequest()
                             .withFunctionName(lambdaFunction.getFunctionName())
                             .withQualifier(lambdaFunction.getQualifier())
                             .withStatementId(s.getId()));
@@ -712,7 +727,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 .forEach( s -> {    
                     try {
                         getLog().info("    Removing orphaned Lex permission " + s.getId());
-                        lambdaClient.removePermission(new RemovePermissionRequest()
+                        lambdaClient.removePermission(new com.amazonaws.services.lambda.model.RemovePermissionRequest()
                             .withFunctionName(lambdaFunction.getFunctionName())
                             .withQualifier(lambdaFunction.getQualifier())
                             .withStatementId(s.getId()));

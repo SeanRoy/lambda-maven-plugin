@@ -1,4 +1,4 @@
-package com.github.seanroy.plugins;
+package com.github.seanroy.plugins.triggers;
 
 /**
  * I am a Trigger.
@@ -34,6 +34,8 @@ public class Trigger {
 
     // After create Trigger gets own arn
     private String triggerArn;
+    
+    private Bucket [] buckets;
 
     private Boolean enabled;
 
@@ -136,6 +138,14 @@ public class Trigger {
     public String getLexBotName() {
         return lexBotName;
     }
+    
+    public void setBuckets(Bucket [] buckets) {
+        this.buckets = buckets;
+    }
+    
+    public Bucket [] getBuckets() {
+        return buckets;
+    }
 
     public Trigger withIntegration(String integration) {
         this.integration = integration;
@@ -184,6 +194,11 @@ public class Trigger {
     
     public Trigger withLexBotName(String arn) {
         this.lexBotName = arn;
+        return this;
+    }
+    
+    public Trigger withBuckets(Bucket [] buckets) {
+        this.buckets = buckets;
         return this;
     }
 
