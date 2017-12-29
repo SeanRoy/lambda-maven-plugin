@@ -12,7 +12,7 @@ lambda-maven-plugin.
 
 ### Deploy from command line
 ```
-mvn package shade:shade lambda:deploy-lambda 
+mvn package shade:shade lambda:deploy-lambda
 ```
 
 ### Delete from command line
@@ -64,7 +64,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
 ### Example configuration in pom.xml
 ```
         <project
-        
+
             ...
 
             <properties>
@@ -74,9 +74,9 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                 <lambda.forceUpdate>true</lambda.forceUpdate>
                 <lambda.functionNameSuffix>dev</lambda.functionNameSuffix>
             </properties>
-            
+
            ...
-           
+
             <plugin>
                     <groupId>com.github.seanroy</groupId>
                     <artifactId>lambda-maven-plugin</artifactId>
@@ -85,8 +85,8 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                         <functionCode>${lambda.functionCode}</functionCode>
                         <version>${lambda.version}</version>
                         <alias>development</alias>
-                        <environmentVpcSecurityGroupsIds>sg-123456</environmentVpcSecurityGroupsIds>
-                        <environmentVpcSubnetIds>subnet-123456,subnet-123456,subnet-123456</environmentVpcSubnetIds>
+                        <vpcSecurityGroupIds>sg-123456</vpcSecurityGroupIds>
+                        <vpcSubnetIds>subnet-123456,subnet-123456,subnet-123456</vpcSubnetIds>
                         <lambdaRoleArn>arn:aws:iam::1234567:role/YourLambdaS3Role</lambdaRoleArn>
                         <s3Bucket>mys3bucket</s3Bucket>
                         <publish>${lambda.publish}</publish>
@@ -158,9 +158,9 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                         </lambdaFunctionsJSON>
                     </configuration>
             </plugin>
-            
+
             ...
-            
+
         </project>
 ```
 
@@ -186,7 +186,7 @@ IAM permissions required by this plugin:
 ### Developers
 If you are interested in contributing to this project, please note that current development can be found in the SNAPSHOT branch of the coming release.  When making pull requests, please create them against this branch.
 
-A test harness has been provided which can be run with `mvn test` Please use 
+A test harness has been provided which can be run with `mvn test` Please use
 this and feel free to add additional tests. Note that the basic-pom.xml file
 requires you to add your role arn in order to work.  As such, basic-pom.xml
 has been added to .gitignore so that you don't accidentally commit your role
@@ -211,7 +211,7 @@ please remember to add them to .gitignore.
 
 2.2.4
 * Smarter orphaned permission handling.
- 
+
 2.2.3
 * Fixed [Issue 71](https://github.com/SeanRoy/lambda-maven-plugin/issues/71)
 * Fixed [Issue 72](https://github.com/SeanRoy/lambda-maven-plugin/issues/72) By adding Lex integration
@@ -289,7 +289,7 @@ please remember to add them to .gitignore.
 * Added functionNameSuffix optional property.
 
 1.1.3
-* Fixed [Issue 28] (https://github.com/SeanRoy/lambda-maven-plugin/issues/28) 
+* Fixed [Issue 28] (https://github.com/SeanRoy/lambda-maven-plugin/issues/28)
 
 1.1.2
 * Fixed invalid dependency to lambda-maven-annotations
@@ -307,7 +307,7 @@ please remember to add them to .gitignore.
 deleting and recreating every time.  Thanks Guillermo Menendez
 
 1.0.5
-* Accidental deployment of release.  Should be functionally equivalent to 
+* Accidental deployment of release.  Should be functionally equivalent to
 1.0.4.
 
 1.0.4
@@ -316,10 +316,10 @@ deleting and recreating every time.  Thanks Guillermo Menendez
   development cycle over slow connections.  Thanks Philip M. White.
 * Fixed logging.
 
-1.0.3 
+1.0.3
 * Fixed a bug where getting a bucket fails if existing. Thanks buri17
 * Fixed problem with region specification. Thanks buri17
 * Adding ability to pull creds from the default provider. Thanks Chris Weiss
 
-1.0.2 
+1.0.2
 * Fixed PatternSyntaxException on windows https://github.com/SeanRoy/lambda-maven-plugin/issues/1
