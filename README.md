@@ -5,7 +5,7 @@
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambda-maven-plugin`<br />
-`version: 2.2.9`<br />
+`version: 2.3.0`<br />
 <br/><br/>
 Please note that the artifact has been renamed from lambduh-maven-plugin to
 lambda-maven-plugin.
@@ -80,7 +80,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
             <plugin>
                     <groupId>com.github.seanroy</groupId>
                     <artifactId>lambda-maven-plugin</artifactId>
-                    <version>2.2.9</version>
+                    <version>2.3.0</version>
                     <configuration>
                         <functionCode>${lambda.functionCode}</functionCode>
                         <version>${lambda.version}</version>
@@ -163,6 +163,14 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
 
         </project>
 ```
+### A Note About Environment Variables
+Environment variables set by this plugin respect the following hierarchy:
+1. Variables set within the AWS Lambda Console.
+2. Variables set within the Configuration block of the plugin (See above).
+3. Variables set within the JSON lambda function descriptors (See above).
+4. Pass through variables defined on the command line when deploying the function.
+
+Variables defined at a higher level (top of the list above) may be overridden by those at a lower level.
 
 ### Credentials
 Your AWS credentials may be set on the command line or in the plugin configuration. If `accessKey` and
@@ -194,6 +202,9 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.3.0
+* Resolves [Issue 84], Environment variables respect a hierarchy of definition and plugin will no longer wipe out existing variables
+
 2.2.9
 * Added ability to set http proxy on AWS clients. [Issue 39](https://github.com/SeanRoy/lambda-maven-plugin/issues/39)
 
