@@ -42,6 +42,7 @@ import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder;
 import com.amazonaws.services.lambda.AWSLambda;
 import com.amazonaws.services.lambda.AWSLambdaClientBuilder;
+import com.amazonaws.services.lambda.model.GetFunctionConfigurationRequest;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sns.AmazonSNS;
@@ -304,15 +305,26 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     }
 
     private Map<String, String> environmentVariables(LambdaFunction lambdaFunction) {
-        Map<String, String> envVar0 = ofNullable(environmentVariables).orElse(new HashMap<>());
-        Map<String, String> envVar1 = ofNullable(lambdaFunction.getEnvironmentVariables()).orElse(new HashMap<>());
+        // Get existing environment variables to interleave them with the new ones or replacements.
+        Map<String, String> awsDefinedEnvVars = ofNullable(lambdaClient.getFunctionConfiguration(new GetFunctionConfigurationRequest()
+            .withFunctionName(lambdaFunction.getFunctionName())
+            .withQualifier(lambdaFunction.getQualifier())).getEnvironment()).flatMap(x -> {return of(x.getVariables());}).orElse(new HashMap<>());
+        Map<String, String> configurationEnvVars = ofNullable(environmentVariables).orElse(new HashMap<>());
+        Map<String, String> functionEnvVars = ofNullable(lambdaFunction.getEnvironmentVariables()).orElse(new HashMap<>());
         Type type = new TypeToken<Map<String, String>>(){}.getType();
-        Map<String, String> passThroughEnvironmentVariables = 
+        Map<String, String> passThroughEnvVars = 
             new GsonBuilder().create().fromJson(ofNullable(passThrough).orElse("{}"), type);
-        return Stream.of(envVar0, envVar1, passThroughEnvironmentVariables)
-                     .map(Map::entrySet)
-                     .flatMap(Collection::stream)
-                     .collect(toMap(Entry::getKey, Entry::getValue));
+        // There may be a smarter way of doing this, but we have a hierarchy of environment variables. Those at the top
+        // may be overridden by variables below them.
+        // 1. Variables defined manually in the AWS Lambda Console
+        // 2. Variables defined at the Configuration Level of the pom.xml
+        // 3. Variables defined at the Function Level within the Configuration Level of the pom.xml.
+        // 4. Pass through variables defined at the command line.
+        awsDefinedEnvVars.putAll(configurationEnvVars);
+        awsDefinedEnvVars.putAll(functionEnvVars);
+        awsDefinedEnvVars.putAll(passThroughEnvVars);
+        
+        return awsDefinedEnvVars;
     }
     
     private ClientConfiguration clientConfiguration() {
