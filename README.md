@@ -5,7 +5,7 @@
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambda-maven-plugin`<br />
-`version: 2.3.0`<br />
+`version: 2.3.1`<br />
 <br/><br/>
 Please note that the artifact has been renamed from lambduh-maven-plugin to
 lambda-maven-plugin.
@@ -80,7 +80,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
             <plugin>
                     <groupId>com.github.seanroy</groupId>
                     <artifactId>lambda-maven-plugin</artifactId>
-                    <version>2.3.0</version>
+                    <version>2.3.1</version>
                     <configuration>
                         <functionCode>${lambda.functionCode}</functionCode>
                         <version>${lambda.version}</version>
@@ -202,8 +202,11 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.3.1
+* Resolves [Issue 87](https://github.com/SeanRoy/lambda-maven-plugin/issues/87), which was introduced in 2.3.0.
+
 2.3.0
-* Resolves [Issue 84], Environment variables respect a hierarchy of definition and plugin will no longer wipe out existing variables
+* Resolves [Issue 84](https://github.com/SeanRoy/lambda-maven-plugin/issues/84), Environment variables respect a hierarchy of definition and plugin will no longer wipe out existing variables
 
 2.2.9
 * Added ability to set http proxy on AWS clients. [Issue 39](https://github.com/SeanRoy/lambda-maven-plugin/issues/39)
