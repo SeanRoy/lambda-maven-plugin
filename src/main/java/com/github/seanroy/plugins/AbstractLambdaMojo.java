@@ -5,17 +5,14 @@ import static java.util.Collections.emptyList;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -43,6 +40,7 @@ import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder;
 import com.amazonaws.services.lambda.AWSLambda;
 import com.amazonaws.services.lambda.AWSLambdaClientBuilder;
 import com.amazonaws.services.lambda.model.GetFunctionConfigurationRequest;
+import com.amazonaws.services.lambda.model.ResourceNotFoundException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sns.AmazonSNS;
@@ -306,9 +304,19 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
 
     private Map<String, String> environmentVariables(LambdaFunction lambdaFunction) {
         // Get existing environment variables to interleave them with the new ones or replacements.
-        Map<String, String> awsDefinedEnvVars = ofNullable(lambdaClient.getFunctionConfiguration(new GetFunctionConfigurationRequest()
-            .withFunctionName(lambdaFunction.getFunctionName())
-            .withQualifier(lambdaFunction.getQualifier())).getEnvironment()).flatMap(x -> {return of(x.getVariables());}).orElse(new HashMap<>());
+        Map<String, String> awsDefinedEnvVars = new HashMap<String, String>();
+        
+        try {
+            awsDefinedEnvVars = ofNullable(lambdaClient.getFunctionConfiguration(new GetFunctionConfigurationRequest()
+                .withFunctionName(lambdaFunction.getFunctionName())
+                .withQualifier(lambdaFunction.getQualifier())).getEnvironment()).flatMap(x -> {
+                    return of(x.getVariables());}).orElse(new HashMap<>());
+        } catch(ResourceNotFoundException rnfe) {
+            getLog().debug("Lambda function doesn't exist yet, no existing environment variables retrieved.");
+        } catch(Exception e) {
+            getLog().error("Could not retrieve existing environment variables " + e.getMessage());
+        }
+        
         Map<String, String> configurationEnvVars = ofNullable(environmentVariables).orElse(new HashMap<>());
         Map<String, String> functionEnvVars = ofNullable(lambdaFunction.getEnvironmentVariables()).orElse(new HashMap<>());
         Type type = new TypeToken<Map<String, String>>(){}.getType();
