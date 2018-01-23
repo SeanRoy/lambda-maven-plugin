@@ -3,6 +3,8 @@ package com.github.seanroy.plugins;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
+import com.github.seanroy.utils.JsonUtil;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
