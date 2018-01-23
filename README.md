@@ -5,7 +5,7 @@
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambda-maven-plugin`<br />
-`version: 2.3.1`<br />
+`version: 2.3.2`<br />
 <br/><br/>
 Please note that the artifact has been renamed from lambduh-maven-plugin to
 lambda-maven-plugin.
@@ -50,6 +50,8 @@ All of the AWS Lambda configuration parameters may be set within the lambda plug
 ```
 mvn package shade:shade lambda:deploy-lambda -DpassThrough="{'KEY1' : 'VAL1', 'KEY2' : 'VAL2'}"
 ```
+* `kmsEncryptionKeyArn` The AWS KMS encryption key you wish to use to encrypt/decrypt sensitive environment variables.
+* `encryptedPassThrough` Similar to passThrough (see above), but these variables will be encrypted using the KMS encryption key specified above. Requires that kmsEncryptionKeyArn is specified.
 * `clientConfiguration` Allows you to specify a http(s) proxy when communicating with AWS. The following parameters may be specified, see the Example configuration below for an example.
   * `protocol`
   * `proxyHost`
@@ -80,7 +82,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
             <plugin>
                     <groupId>com.github.seanroy</groupId>
                     <artifactId>lambda-maven-plugin</artifactId>
-                    <version>2.3.1</version>
+                    <version>2.3.2</version>
                     <configuration>
                         <functionCode>${lambda.functionCode}</functionCode>
                         <version>${lambda.version}</version>
@@ -95,11 +97,11 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                         <environmentVariables>
                           <key0>value0</key0>
                         </environmentVariables>
-			<clientConfiguration>
-			  <protocol>https</protocol>
-			  <proxyHost>proxy-host.net</proxyHost>
-			  <proxyPort>1234</proxyPort>
-			</clientConfiguration>
+                        <clientConfiguration>
+                          <protocol>https</protocol>
+                          <proxyHost>proxy-host.net</proxyHost>
+                          <proxyPort>1234</proxyPort>
+                        </clientConfiguration>
                         <lambdaFunctionsJSON>
                             [
                               {
@@ -202,6 +204,9 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.3.2
+* Resolves [Issue 89](https://github.com/SeanRoy/lambda-maven-plugin/issues/89), allowing for encryption of environment variables defined on the command line.  See kmsEncryptionKey and encryptedPassThrough above.
+
 2.3.1
 * Resolves [Issue 87](https://github.com/SeanRoy/lambda-maven-plugin/issues/87), which was introduced in 2.3.0.
 

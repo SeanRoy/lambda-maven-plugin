@@ -1,8 +1,9 @@
-package com.github.seanroy.plugins;
+package com.github.seanroy.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.seanroy.plugins.LambdaFunction;
 
 import java.io.IOException;
 import java.util.List;
