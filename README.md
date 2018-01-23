@@ -111,7 +111,6 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                                 "timeout": 30,
                                 "memorySize": 512,
                                 "keepAlive": 15,
-                                "kmsEncryptionKeyArn": "XYZ",
                                 "triggers": [
                                   {
                                     "integration": "CloudWatch Events - Schedule",
@@ -150,10 +149,6 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                                 "environmentVariables": {
                                   "key1": "value1",
                                   "key2": "value2"
-                                },
-                                "encryptedEnvironmentVariables": {
-                                  "key3" : "value3",
-                                  "key4" : "value4"
                                 }
                               },
                               {
