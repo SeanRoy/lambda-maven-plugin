@@ -50,6 +50,8 @@ All of the AWS Lambda configuration parameters may be set within the lambda plug
 ```
 mvn package shade:shade lambda:deploy-lambda -DpassThrough="{'KEY1' : 'VAL1', 'KEY2' : 'VAL2'}"
 ```
+* `kmsEncryptionKeyArn` The AWS KMS encryption key you wish to use to encrypt/decrypt sensitive environment variables.
+* `encryptedPassThrough` Similar to passThrough (see above), but these variables will be encrypted using the KMS encryption key specified above. Requires that kmsEncryptionKeyArn is specified.
 * `clientConfiguration` Allows you to specify a http(s) proxy when communicating with AWS. The following parameters may be specified, see the Example configuration below for an example.
   * `protocol`
   * `proxyHost`
@@ -95,11 +97,11 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                         <environmentVariables>
                           <key0>value0</key0>
                         </environmentVariables>
-			<clientConfiguration>
-			  <protocol>https</protocol>
-			  <proxyHost>proxy-host.net</proxyHost>
-			  <proxyPort>1234</proxyPort>
-			</clientConfiguration>
+                        <clientConfiguration>
+                          <protocol>https</protocol>
+                          <proxyHost>proxy-host.net</proxyHost>
+                          <proxyPort>1234</proxyPort>
+                        </clientConfiguration>
                         <lambdaFunctionsJSON>
                             [
                               {

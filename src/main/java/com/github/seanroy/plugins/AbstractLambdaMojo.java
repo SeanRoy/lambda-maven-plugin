@@ -10,10 +10,12 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,6 +47,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sns.AmazonSNSClientBuilder;
+import com.github.seanroy.utils.AWSEncryption;
+import com.github.seanroy.utils.JsonUtil;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
@@ -189,6 +193,12 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     @Parameter(property = "passThrough")
     public String passThrough;
     
+    @Parameter(property = "kmsEncryptionKeyArn")
+    public String kmsEncryptionKeyArn;
+    
+    @Parameter(property = "encryptedPassThrough")
+    public String encryptedPassThrough;
+    
     /**
      * Allows for proxy settings to passed to the lambda client.
      */
@@ -302,6 +312,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
         }).collect(toList());
     }
 
+    @SuppressWarnings("unchecked")
     private Map<String, String> environmentVariables(LambdaFunction lambdaFunction) {
         // Get existing environment variables to interleave them with the new ones or replacements.
         Map<String, String> awsDefinedEnvVars = new HashMap<String, String>();
@@ -320,8 +331,20 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
         Map<String, String> configurationEnvVars = ofNullable(environmentVariables).orElse(new HashMap<>());
         Map<String, String> functionEnvVars = ofNullable(lambdaFunction.getEnvironmentVariables()).orElse(new HashMap<>());
         Type type = new TypeToken<Map<String, String>>(){}.getType();
+        
         Map<String, String> passThroughEnvVars = 
             new GsonBuilder().create().fromJson(ofNullable(passThrough).orElse("{}"), type);
+        
+        passThroughEnvVars.putAll(ofNullable(kmsEncryptionKeyArn).flatMap(arn -> {
+           AWSEncryption awsEncryptor = new AWSEncryption(arn);
+           Map<String, String> encryptedVariables = 
+                   new GsonBuilder().create().fromJson(ofNullable(encryptedPassThrough).orElse("{}"), type);
+           encryptedVariables.replaceAll((k, v) -> {
+               return awsEncryptor.encryptString(v);
+           });
+           return of(encryptedVariables);
+        }).orElse(new HashMap<String,String>()));
+        
         // There may be a smarter way of doing this, but we have a hierarchy of environment variables. Those at the top
         // may be overridden by variables below them.
         // 1. Variables defined manually in the AWS Lambda Console
