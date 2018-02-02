@@ -3,6 +3,7 @@
     "functionName": "flowlab-example-lambda",
     "description": "Receives input and logs it",
     "handler": "no.flowlab.ExampleLambda",
+    "lambdaRoleArn": "arn:aws:iam::280237693431:role/lambda_basic_execution",
     "triggers": [
       {
         "integration": "SNS",

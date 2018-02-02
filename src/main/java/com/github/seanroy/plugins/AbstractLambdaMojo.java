@@ -7,17 +7,22 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.amazonaws.services.lambda.model.UpdateFunctionCodeRequest;
+import com.amazonaws.services.lambda.model.UpdateFunctionCodeResult;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectResult;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -227,6 +232,68 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
             getLog().error("Initialization of configuration failed", e);
             throw new MojoExecutionException(e.getMessage());
         }
+    }
+
+    void uploadJarToS3() throws Exception {
+        String bucket = getBucket();
+        File file = new File(functionCode);
+        String localmd5 = DigestUtils.md5Hex(new FileInputStream(file));
+        getLog().debug(String.format("Local file's MD5 hash is %s.", localmd5));
+
+        ofNullable(getObjectMetadata(bucket))
+                .map(ObjectMetadata::getETag)
+                .map(remoteMD5 -> {
+                    getLog().info(fileName + " exists in S3 with MD5 hash " + remoteMD5);
+                    // This comparison will no longer work if we ever go to multipart uploads.  Etags are not
+                    // computed as MD5 sums for multipart uploads in s3.
+                    return localmd5.equals(remoteMD5);
+                })
+                .map(isTheSame -> {
+                    if (isTheSame) {
+                        getLog().info(fileName + " is up to date in AWS S3 bucket " + s3Bucket + ". Not uploading...");
+                        return true;
+                    }
+                    return null; // file should be imported
+                })
+                .orElseGet(() -> {
+                    upload(file);
+                    return true;
+                });
+    }
+
+    Function<LambdaFunction, LambdaFunction> updateFunctionCode = (LambdaFunction lambdaFunction) -> {
+        getLog().info("About to update functionCode for " + lambdaFunction.getFunctionName());
+        UpdateFunctionCodeRequest updateFunctionRequest = new UpdateFunctionCodeRequest()
+                .withFunctionName(lambdaFunction.getFunctionName())
+                .withS3Bucket(s3Bucket)
+                .withS3Key(fileName)
+                .withPublish(lambdaFunction.isPublish());
+        UpdateFunctionCodeResult updateFunctionCodeResult = lambdaClient.updateFunctionCode(updateFunctionRequest);
+        return lambdaFunction
+                .withVersion(updateFunctionCodeResult.getVersion())
+                .withFunctionArn(updateFunctionCodeResult.getFunctionArn());
+    };
+
+    private ObjectMetadata getObjectMetadata(String bucket) {
+        try {
+            return s3Client.getObjectMetadata(bucket, fileName);
+        } catch (AmazonS3Exception ignored) {
+            return null;
+        }
+    }
+
+    private String getBucket() {
+        if (s3Client.listBuckets().stream().noneMatch(p -> Objects.equals(p.getName(), s3Bucket))) {
+            getLog().info("Created bucket s3://" + s3Client.createBucket(s3Bucket).getName());
+        }
+        return s3Bucket;
+    }
+
+    private PutObjectResult upload(File file) {
+        getLog().info("Uploading " + functionCode + " to AWS S3 bucket " + s3Bucket);
+        PutObjectResult putObjectResult = s3Client.putObject(s3Bucket, fileName, file);
+        getLog().info("Upload complete...");
+        return putObjectResult;
     }
 
     private void initAWSCredentials() throws MojoExecutionException {
