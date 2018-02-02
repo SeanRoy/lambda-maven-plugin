@@ -153,7 +153,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 .withFunctionName(lambdaFunction.getFunctionName())
                 .withDescription(lambdaFunction.getDescription())
                 .withHandler(lambdaFunction.getHandler())
-                .withRole(lambdaRoleArn)
+                .withRole(lambdaFunction.getLambdaRoleArn())
                 .withTimeout(lambdaFunction.getTimeout())
                 .withMemorySize(lambdaFunction.getMemorySize())
                 .withRuntime(runtime)
@@ -426,7 +426,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                     }
                     boolean isDescriptionChanged = isChangeStr.test(config.getDescription(), lambdaFunction.getDescription());
                     boolean isHandlerChanged = isChangeStr.test(config.getHandler(), lambdaFunction.getHandler());
-                    boolean isRoleChanged = isChangeStr.test(config.getRole(), lambdaRoleArn);
+                    boolean isRoleChanged = isChangeStr.test(config.getRole(), lambdaFunction.getLambdaRoleArn());
                     boolean isTimeoutChanged = isChangeInt.test(config.getTimeout(), lambdaFunction.getTimeout());
                     boolean isMemoryChanged = isChangeInt.test(config.getMemorySize(), lambdaFunction.getMemorySize());
                     boolean isSecurityGroupIdsChanged = isChangeList.test(vpcConfig.getSecurityGroupIds(), lambdaFunction.getSecurityGroupIds());
@@ -480,7 +480,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         getLog().info("About to create function " + lambdaFunction.getFunctionName());
         CreateFunctionRequest createFunctionRequest = new CreateFunctionRequest()
                 .withDescription(lambdaFunction.getDescription())
-                .withRole(lambdaRoleArn)
+                .withRole(lambdaFunction.getLambdaRoleArn())
                 .withFunctionName(lambdaFunction.getFunctionName())
                 .withHandler(lambdaFunction.getHandler())
                 .withRuntime(runtime)

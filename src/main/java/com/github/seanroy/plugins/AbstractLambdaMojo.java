@@ -10,12 +10,10 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -125,7 +123,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     /**
      * <p>The Amazon Resource Name (ARN) of the IAM role that Lambda will assume when it executes your function.</p>
      */
-    @Parameter(property = "lambdaRoleArn", defaultValue = "${lambdaRoleArn}", required = true)
+    @Parameter(property = "lambdaRoleArn", defaultValue = "${lambdaRoleArn}")
     public String lambdaRoleArn;
     /**
      * <p>The JSON confuguration for Lambda functions. @see {@link LambdaFunction}.</p>
@@ -295,6 +293,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
                           .withSecurityGroupsIds(ofNullable(vpcSecurityGroupIds).orElse(new ArrayList<>()))
                           .withVersion(version)
                           .withPublish(ofNullable(lambdaFunction.isPublish()).orElse(publish))
+                          .withLambdaRoleArn(ofNullable(lambdaFunction.getLambdaRoleArn()).orElse(lambdaRoleArn))
                           .withAliases(aliases(lambdaFunction.isPublish()))
                           .withTriggers(ofNullable(lambdaFunction.getTriggers()).map(triggers -> triggers.stream()
                                                                                                          .map(trigger -> {
