@@ -29,7 +29,7 @@ All of the AWS Lambda configuration parameters may be set within the lambda plug
 * `version` REQUIRED version of the deliverable. Note that this is the version you assign to your function, not the one assigned by AWS when publish=true.
 * `alias` OPTIONAL, but requires publish=true.  Assigns an alias to the AWS version of this function.  Useful for maintaining versions intended for different environments on the same function.  For instance, development, qa, production, etc.
 * `s3Bucket` REQUIRED Defaults to lambda-function-code. The AWS S3 bucket to which to upload your code from which it will be deployed to Lambda.
-* `region` Defaults to eu-west-1 The AWS region to use for your function.
+* `region` Defaults to us-east-1 The AWS region to use for your function.
 * `runtime` Defaults to Java8 Specifies whether this is Java8, NodeJs and Python.
 * `lambdaRoleArn` REQUIRED The ARN of the AWS role which the lambda user will assume when it executes. Note that the role must be assumable by Lambda and must have Cloudwatch Logs permissions and AWSLambdaDynamoDBExecutionRole policy.
 * `lambdaFunctions` Lamda functions that can be configured using tags in pom.xml.
