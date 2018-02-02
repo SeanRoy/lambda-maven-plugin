@@ -44,7 +44,7 @@
     </contributors>
 
     <properties>
-        <aws.version>1.11.202</aws.version>
+        <aws.version>1.11.271</aws.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
