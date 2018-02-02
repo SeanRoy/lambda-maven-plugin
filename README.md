@@ -31,7 +31,7 @@ All of the AWS Lambda configuration parameters may be set within the lambda plug
 * `s3Bucket` REQUIRED Defaults to lambda-function-code. The AWS S3 bucket to which to upload your code from which it will be deployed to Lambda.
 * `region` Defaults to us-east-1 The AWS region to use for your function.
 * `runtime` Defaults to Java8 Specifies whether this is Java8, NodeJs and Python.
-* `lambdaRoleArn` REQUIRED The ARN of the AWS role which the lambda user will assume when it executes. Note that the role must be assumable by Lambda and must have Cloudwatch Logs permissions and AWSLambdaDynamoDBExecutionRole policy.
+* `lambdaRoleArn` The ARN of the AWS role which the lambda user will assume when it executes. Note that the role must be assumable by Lambda and must have Cloudwatch Logs permissions and AWSLambdaDynamoDBExecutionRole policy.
 * `lambdaFunctions` Lamda functions that can be configured using tags in pom.xml.
 * `lambdaFunctionsJSON` JSON configuration for Lambda Functions. This is preferable configuration.
 * `timeout` Defaults to 30 seconds. The amount of time in which the function is allowed to run.
