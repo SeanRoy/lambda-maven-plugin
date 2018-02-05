@@ -19,9 +19,7 @@ import java.util.stream.Stream;
 
 import com.amazonaws.services.lambda.model.UpdateFunctionCodeRequest;
 import com.amazonaws.services.lambda.model.UpdateFunctionCodeResult;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectResult;
+import com.amazonaws.services.s3.model.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -114,6 +112,20 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
      */
     @Parameter(property = "s3Bucket", defaultValue = "lambda-function-code")
     public String s3Bucket;
+    /**
+     * <p>
+     * AWS S3 Server Side Encryption (SSE)
+     * </p>
+     */
+    @Parameter(property = "sse", defaultValue = "false")
+    public boolean sse;
+    /**
+     * <p>
+     * AWS KMS Key ID for S3 Server Side Encryption (SSE)
+     * </p>
+     */
+    @Parameter(property = "sseKmsEncryptionKeyArn")
+    public String sseKmsEncryptionKeyArn;
     /**
      * <p>
      * The runtime environment for the Lambda function.
@@ -291,7 +303,14 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
 
     private PutObjectResult upload(File file) {
         getLog().info("Uploading " + functionCode + " to AWS S3 bucket " + s3Bucket);
-        PutObjectResult putObjectResult = s3Client.putObject(s3Bucket, fileName, file);
+        PutObjectRequest putObjectRequest = new PutObjectRequest(s3Bucket, fileName, file);
+        if (sse) {
+            putObjectRequest = putObjectRequest.withSSEAwsKeyManagementParams(
+                    (sseKmsEncryptionKeyArn != null && sseKmsEncryptionKeyArn.length() > 0) ?
+                            new SSEAwsKeyManagementParams(sseKmsEncryptionKeyArn) :
+                            new SSEAwsKeyManagementParams());
+        }
+        PutObjectResult putObjectResult = s3Client.putObject(putObjectRequest);
         getLog().info("Upload complete...");
         return putObjectResult;
     }
