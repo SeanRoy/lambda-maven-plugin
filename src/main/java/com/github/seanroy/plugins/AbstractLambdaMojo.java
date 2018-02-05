@@ -305,10 +305,13 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
         getLog().info("Uploading " + functionCode + " to AWS S3 bucket " + s3Bucket);
         PutObjectRequest putObjectRequest = new PutObjectRequest(s3Bucket, fileName, file);
         if (sse) {
-            putObjectRequest = putObjectRequest.withSSEAwsKeyManagementParams(
-                    (sseKmsEncryptionKeyArn != null && sseKmsEncryptionKeyArn.length() > 0) ?
-                            new SSEAwsKeyManagementParams(sseKmsEncryptionKeyArn) :
-                            new SSEAwsKeyManagementParams());
+            if (sseKmsEncryptionKeyArn != null && sseKmsEncryptionKeyArn.length() > 0) {
+                putObjectRequest.setSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams(sseKmsEncryptionKeyArn));
+            } else {
+                ObjectMetadata objectMetadata = new ObjectMetadata();
+                objectMetadata.setSSEAlgorithm(ObjectMetadata.AES_256_SERVER_SIDE_ENCRYPTION);
+                putObjectRequest.setMetadata(objectMetadata);
+            }
         }
         PutObjectResult putObjectResult = s3Client.putObject(putObjectRequest);
         getLog().info("Upload complete...");
