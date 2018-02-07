@@ -128,6 +128,13 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     public String sseKmsEncryptionKeyArn;
     /**
      * <p>
+     * S3 key prefix for the uploaded jar
+     * </p>
+     */
+    @Parameter(property = "keyPrefix", defaultValue = "/")
+    public String keyPrefix;
+    /**
+     * <p>
      * The runtime environment for the Lambda function.
      * </p>
      * <p>
@@ -335,7 +342,10 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     private void initFileName() {
         String pattern = Pattern.quote(File.separator);
         String[] pieces = functionCode.split(pattern);
-        fileName = pieces[pieces.length - 1];
+        if (!keyPrefix.endsWith("/")) {
+            keyPrefix += "/";
+        }
+        fileName = keyPrefix + pieces[pieces.length - 1];
     }
 
     private void initVersion() {
