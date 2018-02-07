@@ -29,6 +29,9 @@ All of the AWS Lambda configuration parameters may be set within the lambda plug
 * `version` REQUIRED version of the deliverable. Note that this is the version you assign to your function, not the one assigned by AWS when publish=true.
 * `alias` OPTIONAL, but requires publish=true.  Assigns an alias to the AWS version of this function.  Useful for maintaining versions intended for different environments on the same function.  For instance, development, qa, production, etc.
 * `s3Bucket` REQUIRED Defaults to lambda-function-code. The AWS S3 bucket to which to upload your code from which it will be deployed to Lambda.
+* `sse` OPTIONAL Turns on Server Side Encryption when uploading the function code
+* `sseKmsEncryptionKeyArn` OPTIONAL Specifies a kms arn used to encrypt the lambda code, if desired.
+* `keyPrefix` OPTIONAL Specifies the key prefix to use when uploading the function code jar. Defaults to "/"
 * `region` Defaults to us-east-1 The AWS region to use for your function.
 * `runtime` Defaults to Java8 Specifies whether this is Java8, NodeJs and Python.
 * `lambdaRoleArn` The ARN of the AWS role which the lambda user will assume when it executes. Note that the role must be assumable by Lambda and must have Cloudwatch Logs permissions and AWSLambdaDynamoDBExecutionRole policy.
@@ -91,6 +94,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                         <vpcSubnetIds>subnet-123456,subnet-123456,subnet-123456</vpcSubnetIds>
                         <lambdaRoleArn>arn:aws:iam::1234567:role/YourLambdaS3Role</lambdaRoleArn>
                         <s3Bucket>mys3bucket</s3Bucket>
+                        <keyPrefix>my/awesome/prefix</keyPrefix>
                         <publish>${lambda.publish}</publish>
                         <forceUpdate>${lambda.forceUpdate}</forceUpdate>
                         <functionNameSuffix>${lambda.functionNameSuffix}</functionNameSuffix>
