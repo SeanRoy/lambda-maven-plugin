@@ -8,6 +8,7 @@ import static java.util.stream.Collectors.toList;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -18,8 +19,11 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.amazonaws.services.lambda.AWSLambda;
+import com.amazonaws.services.s3.AmazonS3;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Mojo;
 
 import com.amazonaws.auth.policy.Policy;
@@ -92,31 +96,52 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     public void execute() throws MojoExecutionException {
         super.execute();
         try {
-            uploadJarToS3();
-            lambdaFunctions.stream().map(f -> {
-                getLog().info("---- Create or update " + f.getFunctionName() + " -----");
-                return f;
-            }).forEach(lf ->
-                getFunctionPolicy
-                    .andThen(cleanUpOrphans)
-                    .andThen(createOrUpdate)
-                    .apply(lf));
+            final LambdaCodeComparisonOutcome codeDeployOutcome = uploadJarToS3();
+            lambdaFunctions.stream()
+                .peek(f ->
+                    getLog().info("---- Create or update " + f.getFunctionName() + " -----"))
+                .forEach(lf -> {
+                    // check if we need to update
+                    final GetFunctionResult functionResult = getLambdaFunction(lambdaClient, lf.getFunctionName());
+                    final Function<LambdaFunction, LambdaFunction> updateFunction;
+                    updateFunction = shouldUpdate(lf, functionResult, codeDeployOutcome)
+                        ? createOrUpdate
+                        : Function.identity();
+
+                    // clean up and update
+                    getFunctionPolicy
+                        .andThen(cleanUpOrphans)
+                        .andThen(updateFunction)
+                        .apply(lf);
+                });
         } catch (Exception e) {
             getLog().error("Error during processing", e);
             throw new MojoExecutionException(e.getMessage());
         }
     }
     
-    private boolean shouldUpdate(LambdaFunction lambdaFunction, GetFunctionResult getFunctionResult) {
-        boolean isConfigurationChanged = isConfigurationChanged(lambdaFunction, getFunctionResult);
-        if (!isConfigurationChanged) {
-            getLog().info("Config hasn't changed for " + lambdaFunction.getFunctionName());
-        }
-        if (forceUpdate) {
-            getLog().info("Forcing update for " + lambdaFunction.getFunctionName());
+    private boolean shouldUpdate(
+        LambdaFunction lambdaFunction, GetFunctionResult getFunctionResult,
+        LambdaCodeComparisonOutcome codeDeployOutcome) {
+
+        // shortcut: if function does not exist we need to deploy
+        if (getFunctionResult == null) {
+            getLog().info(String.format("Deploy. Function %s does not exist.", lambdaFunction.getFunctionName()));
+            return true;
         }
 
-        return forceUpdate || isConfigurationChanged;
+        boolean isConfigurationChanged = isConfigurationChanged(lambdaFunction, getFunctionResult);
+        if (!isConfigurationChanged) {
+            getLog().info(String.format("Config hasn't changed for %s.", lambdaFunction.getFunctionName()));
+        }
+        if (forceUpdate) {
+            getLog().info(String.format("Deploy. Update forced for %s.", lambdaFunction.getFunctionName()));
+        }
+        if (codeDeployOutcome.shouldUpdateS3) {
+            getLog().info(String.format("Deploy. Local function code differs with S3 for %s.", lambdaFunction.getFunctionName()));
+        }
+
+        return forceUpdate || isConfigurationChanged || codeDeployOutcome.shouldUpdateS3;
     }
     
     /*
@@ -507,31 +532,38 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 .withSubnetIds(lambdaFunction.getSubnetIds());
     }
 
-    private void uploadJarToS3() throws Exception {
-        String bucket = getBucket();
-        File file = new File(functionCode);
-        String localmd5 = DigestUtils.md5Hex(new FileInputStream(file));
-        getLog().debug(String.format("Local file's MD5 hash is %s.", localmd5));
+    private LambdaCodeComparisonOutcome uploadJarToS3() throws IOException {
+        final File localFunctionCode = new File(functionCode);
+        final LambdaCodeComparisonOutcome outcome = compareCodeWithS3(localFunctionCode, s3Bucket, fileName, s3Client, getLog());
+        if (outcome.shouldUpdateS3) {
+            upload(localFunctionCode);
+        }
 
-        ofNullable(getObjectMetadata(bucket))
-                .map(ObjectMetadata::getETag)
-                .map(remoteMD5 -> {
-                    getLog().info(fileName + " exists in S3 with MD5 hash " + remoteMD5);
-                    // This comparison will no longer work if we ever go to multipart uploads.  Etags are not
-                    // computed as MD5 sums for multipart uploads in s3.
-                    return localmd5.equals(remoteMD5);
-                })
-                .map(isTheSame -> {
-                    if (isTheSame) {
-                        getLog().info(fileName + " is up to date in AWS S3 bucket " + s3Bucket + ". Not uploading...");
-                        return true;
-                    }
-                    return null; // file should be imported
-                })
-                .orElseGet(() -> {
-                    upload(file);
-                    return true;
-                });
+        return outcome;
+    }
+
+    private static LambdaCodeComparisonOutcome compareCodeWithS3(
+        final File localDeliverable, final String s3Bucket, final String remoteS3File,
+        final AmazonS3 s3, final Log log) throws IOException {
+
+        String localMD5 = DigestUtils.md5Hex(new FileInputStream(localDeliverable));
+        log.debug(String.format("Local file's MD5 hash is %s.", localMD5));
+
+        final ObjectMetadata objectMetadata = getObjectMetadata(s3, s3Bucket, remoteS3File);
+        if (objectMetadata == null) {
+            return LambdaCodeComparisonOutcome.S3_OBJECT_MISSING;
+        }
+
+        final String remoteS3FileMD5 = objectMetadata.getETag();
+        log.info(String.format("%s exists in S3 with MD5 hash %s", remoteS3File, remoteS3FileMD5));
+
+        if (localMD5.equals(remoteS3FileMD5)) {
+            log.info(String.format("%s is up to date in AWS S3 bucket %s. Not uploading...", remoteS3File, s3Bucket));
+            return LambdaCodeComparisonOutcome.MD5_EQUALS;
+        } else {
+            log.info(String.format("Local file %s hash differs with file in AWS S3 bucket %s. Uploading...", localDeliverable, s3Bucket));
+            return LambdaCodeComparisonOutcome.MD5_DIFFERENT;
+        }
     }
     
     /**
@@ -789,26 +821,22 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         return lambdaFunction;  
     };
 
-    Function<LambdaFunction, LambdaFunction> createOrUpdate = lambdaFunction -> {
-      try {
-          lambdaFunction.setFunctionArn(lambdaClient.getFunction(
-                  new GetFunctionRequest().withFunctionName(lambdaFunction.getFunctionName())).getConfiguration().getFunctionArn());
-          of(getFunction(lambdaFunction))
-                  .filter(getFunctionResult -> shouldUpdate(lambdaFunction, getFunctionResult))
-                  .map(getFujnctionResult ->
-                  updateFunctionCode
-                          .andThen(updateFunctionConfig)
-                          .andThen(createOrUpdateAliases)
-                          .andThen(createOrUpdateTriggers)
-                          .andThen(createOrUpdateKeepAlive)
-                          .apply(lambdaFunction));
-      } catch (ResourceNotFoundException ign) {
-          createFunction.andThen(createOrUpdateAliases)
-                        .andThen(createOrUpdateTriggers)
-                        .apply(lambdaFunction);
-      }
-                      
-      return lambdaFunction;
+    Function<LambdaFunction, LambdaFunction> createOrUpdate = (lambdaFunction) -> {
+        final GetFunctionResult result = getLambdaFunction(lambdaClient, lambdaFunction.getFunctionName());
+        if (result == null) {
+            createFunction.andThen(createOrUpdateAliases)
+                .andThen(createOrUpdateTriggers)
+                .apply(lambdaFunction);
+        } else {
+            lambdaFunction.setFunctionArn(result.getConfiguration().getFunctionArn());
+            updateFunctionCode
+                .andThen(updateFunctionConfig)
+                .andThen(createOrUpdateAliases)
+                .andThen(createOrUpdateTriggers)
+                .andThen(createOrUpdateKeepAlive)
+                .apply(lambdaFunction);
+        }
+        return lambdaFunction;
     };
 
     private PutObjectResult upload(File file) {
@@ -818,10 +846,18 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         return putObjectResult;
     }
 
-    private ObjectMetadata getObjectMetadata(String bucket) {
+    private static ObjectMetadata getObjectMetadata(final AmazonS3 s3, final String bucket, final String fileName) {
         try {
-            return s3Client.getObjectMetadata(bucket, fileName);
+            return s3.getObjectMetadata(bucket, fileName);
         } catch (AmazonS3Exception ignored) {
+            return null;
+        }
+    }
+
+    private static GetFunctionResult getLambdaFunction(final AWSLambda lambda, final String name) {
+        try {
+            return lambda.getFunction(new GetFunctionRequest().withFunctionName(name));
+        } catch (ResourceNotFoundException rnfe) {
             return null;
         }
     }
@@ -831,5 +867,21 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
             getLog().info("Created bucket s3://" + s3Client.createBucket(s3Bucket).getName());
         }
         return s3Bucket;
+    }
+
+    /**
+     * {@link LambdaCodeComparisonOutcome} states the possible outcomes of comparing the local
+     * lambda code deliverable with the corresponding object in S3.
+     */
+    enum LambdaCodeComparisonOutcome {
+        MD5_EQUALS(false),
+        MD5_DIFFERENT(true),
+        S3_OBJECT_MISSING(true);
+
+        final boolean shouldUpdateS3;
+
+        LambdaCodeComparisonOutcome(final boolean shouldUpdateS3) {
+            this.shouldUpdateS3 = shouldUpdateS3;
+        }
     }
 }
