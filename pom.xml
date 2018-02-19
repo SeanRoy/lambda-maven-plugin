@@ -1,13 +1,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.quinovas</groupId>
+    <groupId>com.github.seanroy</groupId>
     <artifactId>lambda-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
     <version>2.3.2</version>
 
     <name>lambda-maven-plugin Maven Mojo</name>
     <description>A maven plugin that deploys functions to AWS Lambda</description>
-    <url>https://github.com/QuiNovas/lambda-maven-plugin</url>
+    <url>https://github.com/SeanRoy/lambda-maven-plugin</url>
 
     <licenses>
         <license>
@@ -19,16 +19,16 @@
 
     <developers>
         <developer>
-            <name>Joseph Wortmann</name>
-            <email>jwortmann@quinovas.com</email>
-            <organizationUrl>https://github.com/QuiNovas/lambda-maven-plugin</organizationUrl>
+            <name>Sean N. Roy</name>
+            <email>Sean.Roy@gmail.com</email>
+            <organizationUrl>https://github.com/SeanRoy/lambda-maven-plugin</organizationUrl>
         </developer>
     </developers>
 
     <contributors>
         <contributor>
-            <name>Sean N. Roy</name>
-            <email>Sean.Roy@gmail.com</email>
+            <name>Joseph Wortmann</name>
+            <email>joseph.wortmann@gmail.com</email>
         </contributor>
         <contributor>
             <name>Philip M. White</name>
