@@ -27,6 +27,10 @@
 
     <contributors>
         <contributor>
+            <name>Joseph Wortmann</name>
+            <email>joseph.wortmann@gmail.com</email>
+        </contributor>
+        <contributor>
             <name>Philip M. White</name>
             <email>philip@mailworks.org</email>
         </contributor>
@@ -44,14 +48,14 @@
     </contributors>
 
     <properties>
-        <aws.version>1.11.202</aws.version>
+        <aws.version>1.11.271</aws.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <scm>
-        <connection>scm:git:git@github.com:SeanRoy/lambda-maven-plugin.git</connection>
-        <developerConnection>scm:git:git@github.com:SeanRoy/lambda-maven-plugin.git</developerConnection>
-        <url>git@github.com:SeanRoy/lambda-maven-plugin.git</url>
+        <connection>scm:git:git@github.com:QuiNovas/lambda-maven-plugin.git</connection>
+        <developerConnection>scm:git:git@github.com:QuiNovas/lambda-maven-plugin.git</developerConnection>
+        <url>git@github.com:QuiNovas/lambda-maven-plugin.git</url>
     </scm>
 
     <dependencies>

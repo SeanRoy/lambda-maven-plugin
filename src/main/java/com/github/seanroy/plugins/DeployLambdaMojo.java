@@ -6,8 +6,6 @@ import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -18,7 +16,6 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 
@@ -64,14 +61,9 @@ import com.amazonaws.services.lambda.model.ResourceNotFoundException;
 import com.amazonaws.services.lambda.model.UpdateAliasRequest;
 import com.amazonaws.services.lambda.model.UpdateEventSourceMappingRequest;
 import com.amazonaws.services.lambda.model.UpdateEventSourceMappingResult;
-import com.amazonaws.services.lambda.model.UpdateFunctionCodeRequest;
-import com.amazonaws.services.lambda.model.UpdateFunctionCodeResult;
 import com.amazonaws.services.lambda.model.UpdateFunctionConfigurationRequest;
 import com.amazonaws.services.lambda.model.VpcConfig;
 import com.amazonaws.services.lambda.model.VpcConfigResponse;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.sns.model.CreateTopicRequest;
 import com.amazonaws.services.sns.model.CreateTopicResult;
 import com.amazonaws.services.sns.model.ListSubscriptionsResult;
@@ -134,26 +126,13 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         return lambdaFunction;
     };
 
-    private Function<LambdaFunction, LambdaFunction> updateFunctionCode = (LambdaFunction lambdaFunction) -> {
-        getLog().info("About to update functionCode for " + lambdaFunction.getFunctionName());
-        UpdateFunctionCodeRequest updateFunctionRequest = new UpdateFunctionCodeRequest()
-                .withFunctionName(lambdaFunction.getFunctionName())
-                .withS3Bucket(s3Bucket)
-                .withS3Key(fileName)
-                .withPublish(lambdaFunction.isPublish());
-        UpdateFunctionCodeResult updateFunctionCodeResult = lambdaClient.updateFunctionCode(updateFunctionRequest);
-        return lambdaFunction
-                .withVersion(updateFunctionCodeResult.getVersion())
-                .withFunctionArn(updateFunctionCodeResult.getFunctionArn());
-    };
-
     private Function<LambdaFunction, LambdaFunction> updateFunctionConfig = (LambdaFunction lambdaFunction) -> {
         getLog().info("About to update functionConfig for " + lambdaFunction.getFunctionName());
         UpdateFunctionConfigurationRequest updateFunctionRequest = new UpdateFunctionConfigurationRequest()
                 .withFunctionName(lambdaFunction.getFunctionName())
                 .withDescription(lambdaFunction.getDescription())
                 .withHandler(lambdaFunction.getHandler())
-                .withRole(lambdaRoleArn)
+                .withRole(lambdaFunction.getLambdaRoleArn())
                 .withTimeout(lambdaFunction.getTimeout())
                 .withMemorySize(lambdaFunction.getMemorySize())
                 .withRuntime(runtime)
@@ -426,7 +405,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                     }
                     boolean isDescriptionChanged = isChangeStr.test(config.getDescription(), lambdaFunction.getDescription());
                     boolean isHandlerChanged = isChangeStr.test(config.getHandler(), lambdaFunction.getHandler());
-                    boolean isRoleChanged = isChangeStr.test(config.getRole(), lambdaRoleArn);
+                    boolean isRoleChanged = isChangeStr.test(config.getRole(), lambdaFunction.getLambdaRoleArn());
                     boolean isTimeoutChanged = isChangeInt.test(config.getTimeout(), lambdaFunction.getTimeout());
                     boolean isMemoryChanged = isChangeInt.test(config.getMemorySize(), lambdaFunction.getMemorySize());
                     boolean isSecurityGroupIdsChanged = isChangeList.test(vpcConfig.getSecurityGroupIds(), lambdaFunction.getSecurityGroupIds());
@@ -480,7 +459,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         getLog().info("About to create function " + lambdaFunction.getFunctionName());
         CreateFunctionRequest createFunctionRequest = new CreateFunctionRequest()
                 .withDescription(lambdaFunction.getDescription())
-                .withRole(lambdaRoleArn)
+                .withRole(lambdaFunction.getLambdaRoleArn())
                 .withFunctionName(lambdaFunction.getFunctionName())
                 .withHandler(lambdaFunction.getHandler())
                 .withRuntime(runtime)
@@ -507,33 +486,6 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 .withSubnetIds(lambdaFunction.getSubnetIds());
     }
 
-    private void uploadJarToS3() throws Exception {
-        String bucket = getBucket();
-        File file = new File(functionCode);
-        String localmd5 = DigestUtils.md5Hex(new FileInputStream(file));
-        getLog().debug(String.format("Local file's MD5 hash is %s.", localmd5));
-
-        ofNullable(getObjectMetadata(bucket))
-                .map(ObjectMetadata::getETag)
-                .map(remoteMD5 -> {
-                    getLog().info(fileName + " exists in S3 with MD5 hash " + remoteMD5);
-                    // This comparison will no longer work if we ever go to multipart uploads.  Etags are not
-                    // computed as MD5 sums for multipart uploads in s3.
-                    return localmd5.equals(remoteMD5);
-                })
-                .map(isTheSame -> {
-                    if (isTheSame) {
-                        getLog().info(fileName + " is up to date in AWS S3 bucket " + s3Bucket + ". Not uploading...");
-                        return true;
-                    }
-                    return null; // file should be imported
-                })
-                .orElseGet(() -> {
-                    upload(file);
-                    return true;
-                });
-    }
-    
     /**
      * Remove orphaned kinesis stream triggers.
      * TODO: Combine with cleanUpOrphanedDynamoDBTriggers.
@@ -810,26 +762,4 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                       
       return lambdaFunction;
     };
-
-    private PutObjectResult upload(File file) {
-        getLog().info("Uploading " + functionCode + " to AWS S3 bucket " + s3Bucket);
-        PutObjectResult putObjectResult = s3Client.putObject(s3Bucket, fileName, file);
-        getLog().info("Upload complete...");
-        return putObjectResult;
-    }
-
-    private ObjectMetadata getObjectMetadata(String bucket) {
-        try {
-            return s3Client.getObjectMetadata(bucket, fileName);
-        } catch (AmazonS3Exception ignored) {
-            return null;
-        }
-    }
-
-    private String getBucket() {
-        if (s3Client.listBuckets().stream().noneMatch(p -> Objects.equals(p.getName(), s3Bucket))) {
-            getLog().info("Created bucket s3://" + s3Client.createBucket(s3Bucket).getName());
-        }
-        return s3Bucket;
-    }
 }
