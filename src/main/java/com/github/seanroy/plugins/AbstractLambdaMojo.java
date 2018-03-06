@@ -342,7 +342,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     private void initFileName() {
         String pattern = Pattern.quote(File.separator);
         String[] pieces = functionCode.split(pattern);
-        if (!keyPrefix.endsWith("/")) {
+        if (!ofNullable(keyPrefix).orElse("/").endsWith("/")) {
             keyPrefix += "/";
         }
         fileName = keyPrefix + pieces[pieces.length - 1];
