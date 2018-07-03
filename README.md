@@ -193,9 +193,16 @@ IAM permissions required by this plugin:
 * action `lambda:UpdateFunctionCode`
 * action `lambda:UpdateFunctionConfiguration`
 * action `lambda:ListAliases`
+* action `lambda:GetPolicy` on resource: `arn:aws:lambda:<region>:<acount-number>:function:<function-name>`
+* action `lambda:UpdateAlias` on resource: `arn:aws:lambda:<region>:<acount-number>:function:<function-name>`
+* action `lambda:ListEventSourceMappings` on resource: *
 * action `events:PutRule` on  resource `arn:aws:events:<region>:<acount-number>:rule/*`
 * action `events:PutTargets` on  resource `arn:aws:events:<region>:<acount-number>:rule/*`
+* action `events:ListRuleNamesByTarget` on  resource `arn:aws:events:<region>:<acount-number>:rule/*`
+* action `events:DescribeRule` on  resource `arn:aws:events:<region>:<acount-number>:rule/KEEP-ALIVE-<function-name>`
 * action `kinesis:GetRecords, GetShardIterator, DescribeStream, and ListStreams on Kinesis streams`
+* action `iam:PassRole` on  resource `<lambdaRoleArn>`
+* action `SNS:ListSubscriptions` on  resource `arn:aws:events:<region>:<acount-number>:*`
 
 ### Developers
 If you are interested in contributing to this project, please note that current development can be found in the SNAPSHOT branch of the coming release.  When making pull requests, please create them against this branch.
