@@ -148,7 +148,7 @@ public class Trigger {
 	}
 
 	public void setStandardQueue(String standardQueue) {
-		standardQueue = standardQueue;
+		this.standardQueue = standardQueue;
 	}
 
 	public Trigger withIntegration(String integration) {
