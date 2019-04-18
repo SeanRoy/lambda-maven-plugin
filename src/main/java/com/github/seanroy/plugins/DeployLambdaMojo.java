@@ -339,54 +339,12 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
 	    			.withQueueUrl(queueUrl).withAttributeNames(QueueAttributeName.QueueArn));
 	    	
 	    	queueArn = getQueueAttributesResult.getAttributes().get(QueueAttributeName.QueueArn.name());
-	        
-	        /*boolean fifoQueue = Boolean.valueOf(getQueueAttributesResult.getAttributes().get(QueueAttributeName.FifoQueue.name()));
-	        
-	        if (fifoQueue) {
-	        	throw new IllegalArgumentException("FIFO queue - " + trigger.getStandardQueue() +" is not supported " );
-	        }*/
-        	
+
         } else {
         	throw new IllegalArgumentException("Unable to find queue " + trigger.getStandardQueue());
         }
         
-		/*getQueueUrlOptionalResult.ifPresent(queue -> {
-				String queueUrl = queue.getQueueUrl();
-				GetQueueAttributesResult getQueueAttributesResult = sqsClient.getQueueAttributes( new GetQueueAttributesRequest()
-		    			.withQueueUrl(queueUrl).withAttributeNames(QueueAttributeName.QueueArn,QueueAttributeName.FifoQueue));
-		    	
-		    	String queueArn = getQueueAttributesResult.getAttributes().get(QueueAttributeName.QueueArn.name());
-		        
-		        boolean fifoQueue = Boolean.valueOf(getQueueAttributesResult.getAttributes().get(QueueAttributeName.FifoQueue.name()));
-		});
 		
-		getQueueUrlOptionalResult.orElseThrow(() -> new IllegalArgumentException("Unable to find queue " + trigger.getStandardQueue()));*/
-		
-        
-        
-        /*GetQueueUrlResult getQueueUrlResult = sqsClient.getQueueUrl(new GetQueueUrlRequest()
-    			.withQueueName(trigger.getStandardQueue()));
-    	
-    	String queueUrl = getQueueUrlResult.getQueueUrl();
-    	
-    	GetQueueAttributesResult getQueueAttributesResult = sqsClient.getQueueAttributes( new GetQueueAttributesRequest()
-    			.withQueueUrl(queueUrl).withAttributeNames(QueueAttributeName.QueueArn,QueueAttributeName.FifoQueue));
-    	
-    	String queueArn = getQueueAttributesResult.getAttributes().get(QueueAttributeName.QueueArn.name());
-        
-        boolean fifoQueue = Boolean.valueOf(getQueueAttributesResult.getAttributes().get(QueueAttributeName.FifoQueue.name()));*/
-        // TODO if FIFO queue throw exception
-        // TODO include Not null Validation
-        
-       /* ListStreamsRequest listStreamsRequest = new ListStreamsRequest().withTableName(trigger.getDynamoDBTable());
-        ListStreamsResult listStreamsResult = dynamoDBStreamsClient.listStreams(listStreamsRequest);
-
-        String streamArn = listStreamsResult.getStreams().stream()
-                                            .filter(s -> Objects.equals(trigger.getDynamoDBTable(), s.getTableName()))
-                                            .findFirst()
-                                            .map(Stream::getStreamArn)
-                                            .orElseThrow(() -> new IllegalArgumentException("Unable to find stream for table " + trigger.getDynamoDBTable()));*/
-
         return findorUpdateMappingConfiguration(trigger, lambdaFunction, queueArn);
     };
 
@@ -401,43 +359,6 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
             throw new IllegalArgumentException("Unable to find stream with name " + trigger.getKinesisStream());
         }        
     };
-    
-   /* private Trigger findorUpdateSQSMappingConfiguration(Trigger trigger, LambdaFunction lambdaFunction, String queueArn) {
-    	//Don't want to disturb the existing code, hence created separate method for SQS Trigger
-        ListEventSourceMappingsRequest listEventSourceMappingsRequest = new ListEventSourceMappingsRequest()
-                .withFunctionName(lambdaFunction.getUnqualifiedFunctionArn());
-        ListEventSourceMappingsResult listEventSourceMappingsResult = lambdaClient.listEventSourceMappings(listEventSourceMappingsRequest);
-
-        Optional<EventSourceMappingConfiguration> eventSourceMappingConfiguration = listEventSourceMappingsResult.getEventSourceMappings().stream()
-                .filter(stream -> {
-                    boolean isSameFunctionArn = Objects.equals(stream.getFunctionArn(), lambdaFunction.getUnqualifiedFunctionArn());
-                    boolean isSameSourceArn = Objects.equals(stream.getEventSourceArn(), queueArn);
-                    return isSameFunctionArn && isSameSourceArn;
-                })
-                .findFirst();
-
-        if (eventSourceMappingConfiguration.isPresent()) {
-            UpdateEventSourceMappingRequest updateEventSourceMappingRequest = new UpdateEventSourceMappingRequest()
-                    .withUUID(eventSourceMappingConfiguration.get().getUUID())
-                    .withFunctionName(lambdaFunction.getUnqualifiedFunctionArn())
-                    .withBatchSize(ofNullable(trigger.getBatchSize()).orElse(10))
-                    .withEnabled(ofNullable(trigger.getEnabled()).orElse(true));
-            UpdateEventSourceMappingResult updateEventSourceMappingResult = lambdaClient.updateEventSourceMapping(updateEventSourceMappingRequest);
-            trigger.withTriggerArn(updateEventSourceMappingResult.getEventSourceArn());
-            getLog().info("Updated " + trigger.getIntegration() + " trigger " + trigger.getTriggerArn());
-        } else {
-            CreateEventSourceMappingRequest createEventSourceMappingRequest = new CreateEventSourceMappingRequest()
-                    .withFunctionName(lambdaFunction.getUnqualifiedFunctionArn())
-                    .withEventSourceArn(queueArn)
-                    .withBatchSize(ofNullable(trigger.getBatchSize()).orElse(10))
-                    .withEnabled(ofNullable(trigger.getEnabled()).orElse(true));
-            CreateEventSourceMappingResult createEventSourceMappingResult = lambdaClient.createEventSourceMapping(createEventSourceMappingRequest);
-            trigger.withTriggerArn(createEventSourceMappingResult.getEventSourceArn());
-            getLog().info("Created " + trigger.getIntegration() + " trigger " + trigger.getTriggerArn());
-        }
-
-        return trigger;
-    }*/
 
     private Trigger findorUpdateMappingConfiguration(Trigger trigger, LambdaFunction lambdaFunction, String streamArn) {
         ListEventSourceMappingsRequest listEventSourceMappingsRequest = new ListEventSourceMappingsRequest()
@@ -734,19 +655,6 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
 	            	}
             			
             	);
-            	
-            	/*GetQueueUrlResult getQueueUrlResult = sqsClient.getQueueUrl(new GetQueueUrlRequest()
-            			.withQueueName(s.getEventSourceArn().substring(s.getEventSourceArn().lastIndexOf(':')+1)));
-            	String queueName = getQueueUrlResult.getQueueUrl().substring(getQueueUrlResult.getQueueUrl().lastIndexOf('/')+1);
-            	if ( ! standardQueues.contains(queueName) ) {    
-                    getLog().info("    Removing orphaned SQS trigger for queue " + queueName);
-                    try {    
-                        lambdaClient.deleteEventSourceMapping(new DeleteEventSourceMappingRequest().withUUID(s.getUUID()));
-                    } catch (Exception exp) {
-                        getLog().error("    Error removing SQS trigger for queue " + queueName + ", Error Message :" + exp.getMessage());
-                    }
-                }*/
-            	
             }
         });
         
