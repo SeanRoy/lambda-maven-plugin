@@ -74,6 +74,12 @@ public class LambdaFunction {
      */
     private Boolean publish;
     /**
+     * <p>
+     * The Amazon Resource Name (ARN) of the IAM role that Lambda will assume when it executes your function.
+     * </p>
+     */
+    private String lambdaRoleArn;
+    /**
      * <p>The Amazon Resource Name (ARN) assigned to the function</p>
      */
     private String functionArn;
@@ -186,6 +192,10 @@ public class LambdaFunction {
         this.publish = publish;
     }
 
+    public String getLambdaRoleArn() { return lambdaRoleArn; }
+
+    public void setLambdaRoleArn(String lambdaRoleArn) { this.lambdaRoleArn = lambdaRoleArn; }
+
     public String getFunctionArn() {
         return functionArn;
     }
@@ -278,6 +288,11 @@ public class LambdaFunction {
         return this;
     }
 
+    public LambdaFunction withLambdaRoleArn(String lambdaRoleArn) {
+        this.lambdaRoleArn = lambdaRoleArn;
+        return this;
+    }
+
     public LambdaFunction withFunctionArn(String functionArn) {
         this.functionArn = functionArn;
         return this;
@@ -330,6 +345,7 @@ public class LambdaFunction {
                 .append(", subnetIds=").append(subnetIds)
                 .append(", aliases=").append(aliases)
                 .append(", publish=").append(publish)
+                .append(", lambdaRoleArn=").append(lambdaRoleArn)
                 .append(", triggers=").append(triggers)
                 .append(", keepAlive=").append(keepAlive)
                 .append(", environmentVariables=").append(environmentVariables)
