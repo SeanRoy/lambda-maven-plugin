@@ -71,6 +71,12 @@ import com.amazonaws.services.sns.model.SubscribeRequest;
 import com.amazonaws.services.sns.model.SubscribeResult;
 import com.amazonaws.services.sns.model.Subscription;
 import com.amazonaws.services.sns.model.UnsubscribeRequest;
+import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
+import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
+import com.amazonaws.services.sqs.model.GetQueueUrlRequest;
+import com.amazonaws.services.sqs.model.GetQueueUrlResult;
+import com.amazonaws.services.sqs.model.QueueAttributeName;
+
 
 /**
  * I am a deploy mojo responsible to upload and create or update lambda function in AWS.
@@ -318,6 +324,29 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
 
         return findorUpdateMappingConfiguration(trigger, lambdaFunction, streamArn);
     };
+    
+    
+    private BiFunction<Trigger, LambdaFunction, Trigger> createOrUpdateSQSTrigger = (Trigger trigger, LambdaFunction lambdaFunction) -> {
+        getLog().info("About to create or update " + trigger.getIntegration() + " trigger for " + trigger.getStandardQueue());
+        String queueArn = null;
+        
+        Optional<GetQueueUrlResult> getQueueUrlOptionalResult = ofNullable(sqsClient.getQueueUrl(new GetQueueUrlRequest()
+    			.withQueueName(trigger.getStandardQueue())));
+        
+        if (getQueueUrlOptionalResult.isPresent()) {
+        	String queueUrl = getQueueUrlOptionalResult.get().getQueueUrl();
+			GetQueueAttributesResult getQueueAttributesResult = sqsClient.getQueueAttributes( new GetQueueAttributesRequest()
+	    			.withQueueUrl(queueUrl).withAttributeNames(QueueAttributeName.QueueArn));
+	    	
+	    	queueArn = getQueueAttributesResult.getAttributes().get(QueueAttributeName.QueueArn.name());
+
+        } else {
+        	throw new IllegalArgumentException("Unable to find queue " + trigger.getStandardQueue());
+        }
+        
+		
+        return findorUpdateMappingConfiguration(trigger, lambdaFunction, queueArn);
+    };
 
     private BiFunction<Trigger, LambdaFunction, Trigger> createOrUpdateKinesisStream = (Trigger trigger, LambdaFunction lambdaFunction) -> {
         getLog().info("About to create or update " + trigger.getIntegration() + " trigger for " + trigger.getKinesisStream());
@@ -354,12 +383,17 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
             trigger.withTriggerArn(updateEventSourceMappingResult.getEventSourceArn());
             getLog().info("Updated " + trigger.getIntegration() + " trigger " + trigger.getTriggerArn());
         } else {
-            CreateEventSourceMappingRequest createEventSourceMappingRequest = new CreateEventSourceMappingRequest()
+        	
+        	CreateEventSourceMappingRequest createEventSourceMappingRequest = new CreateEventSourceMappingRequest()
                     .withFunctionName(lambdaFunction.getUnqualifiedFunctionArn())
                     .withEventSourceArn(streamArn)
                     .withBatchSize(ofNullable(trigger.getBatchSize()).orElse(10))
-                    .withStartingPosition(EventSourcePosition.fromValue(ofNullable(trigger.getStartingPosition()).orElse(LATEST.toString())))
                     .withEnabled(ofNullable(trigger.getEnabled()).orElse(true));
+        	// For SQS starting position is not valid
+        	if (!streamArn.contains(":sqs:")) {
+        		createEventSourceMappingRequest.setStartingPosition(EventSourcePosition.fromValue(ofNullable(trigger.getStartingPosition()).orElse(LATEST.toString())));
+        	}
+            
             CreateEventSourceMappingResult createEventSourceMappingResult = lambdaClient.createEventSourceMapping(createEventSourceMappingRequest);
             trigger.withTriggerArn(createEventSourceMappingResult.getEventSourceArn());
             getLog().info("Created " + trigger.getIntegration() + " trigger " + trigger.getTriggerArn());
@@ -382,6 +416,8 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 addAlexaSkillsKitPermission.apply(trigger, lambdaFunction);
             } else if (TRIG_INT_LABEL_LEX.equals(trigger.getIntegration())) {
                 addLexPermission.apply(trigger, lambdaFunction);
+            } else if (TRIG_INT_LABEL_SQS.equals(trigger.getIntegration())) {
+                createOrUpdateSQSTrigger.apply(trigger, lambdaFunction);
             } else {
                 throw new IllegalArgumentException("Unknown integration for trigger " + trigger.getIntegration() + ". Correct your configuration");
             }
@@ -583,6 +619,47 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
         
         return lambdaFunction; 
     };
+
+    
+    /**
+     * Removes orphaned SQS triggers.
+     */
+    Function<LambdaFunction, LambdaFunction> cleanUpOrphanedSQSTriggers = lambdaFunction -> {
+        ListEventSourceMappingsResult listEventSourceMappingsResult = 
+                lambdaClient.listEventSourceMappings(new ListEventSourceMappingsRequest()
+                        .withFunctionName(lambdaFunction.getUnqualifiedFunctionArn()));
+
+        
+        List<String> standardQueues = new ArrayList<String>();
+        
+        lambdaFunction.getTriggers().stream().forEach(t -> {
+            ofNullable(t.getStandardQueue()).ifPresent(x -> standardQueues.add(x));
+        });
+        
+        listEventSourceMappingsResult.getEventSourceMappings().stream().forEach(s -> {
+            if ( s.getEventSourceArn().contains(":sqs:")) {
+            	// This API hit may not required, added here only for double check or cross verification
+            	Optional<GetQueueUrlResult> getQueueUrlOptionalResult = ofNullable(sqsClient.getQueueUrl(new GetQueueUrlRequest()
+            			.withQueueName(s.getEventSourceArn().substring(s.getEventSourceArn().lastIndexOf(':')+1))));
+            	
+            	getQueueUrlOptionalResult.ifPresent(queue -> {
+            			String queueName = queue.getQueueUrl().substring(queue.getQueueUrl().lastIndexOf('/')+1);
+	        			if ( ! standardQueues.contains(queueName) ) {    
+	                        getLog().info("    Removing orphaned SQS trigger for queue " + queueName);
+	                        try {    
+	                            lambdaClient.deleteEventSourceMapping(new DeleteEventSourceMappingRequest().withUUID(s.getUUID()));
+	                        } catch (Exception exp) {
+	                            getLog().error("    Error removing SQS trigger for queue " + queueName + ", Error Message :" + exp.getMessage());
+	                        }
+	                    }
+	            	}
+            			
+            	);
+            }
+        });
+        
+        return lambdaFunction; 
+     };
     
     /**
      * Removes orphaned dynamo db triggers.
@@ -732,6 +809,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                 .andThen(cleanUpOrphanedSNSTriggers)
                 .andThen(cleanUpOrphanedAlexaSkillsTriggers)
                 .andThen(cleanUpOrphanedLexSkillsTriggers)
+                .andThen(cleanUpOrphanedSQSTriggers)
                 .apply(lambdaFunction);
             
         } catch (ResourceNotFoundException ign1) {

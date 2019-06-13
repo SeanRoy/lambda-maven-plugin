@@ -50,6 +50,7 @@ public class DeleteLambdaMojo extends AbstractLambdaMojo {
     private Function<LambdaFunction, LambdaFunction> deleteKinesisTrigger = lambdaFunction -> {return lambdaFunction;};
     private Function<LambdaFunction, LambdaFunction> deleteSNSTrigger = lambdaFunction -> {return lambdaFunction;};
     private Function<LambdaFunction, LambdaFunction> deleteAlexaSkillsTrigger = lambdaFunction -> {return lambdaFunction;};
+    private Function<LambdaFunction, LambdaFunction> deleteSQSTrigger = lambdaFunction -> {return lambdaFunction;};
     
     
     /*
@@ -111,6 +112,7 @@ public class DeleteLambdaMojo extends AbstractLambdaMojo {
                 .andThen(deleteKinesisTrigger)
                 .andThen(deleteSNSTrigger)
                 .andThen(deleteAlexaSkillsTrigger)
+                .andThen(deleteSQSTrigger)
                 .apply(lambdaFunction);
     };
 }

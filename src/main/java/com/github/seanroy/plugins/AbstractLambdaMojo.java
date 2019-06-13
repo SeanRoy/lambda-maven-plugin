@@ -48,6 +48,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sns.AmazonSNSClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.github.seanroy.utils.AWSEncryption;
 import com.github.seanroy.utils.JsonUtil;
 import com.google.gson.GsonBuilder;
@@ -66,6 +68,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     public static final String TRIG_INT_LABEL_SNS = "SNS";
     public static final String TRIG_INT_LABEL_ALEXA_SK = "Alexa Skills Kit";
     public static final String TRIG_INT_LABEL_LEX = "Lex";
+    public static final String TRIG_INT_LABEL_SQS = "SQS";
     
     public static final String PERM_LAMBDA_INVOKE = "lambda:InvokeFunction";
     
@@ -73,6 +76,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     public static final String PRINCIPAL_LEX    = "lex.amazonaws.com";
     public static final String PRINCIPAL_SNS    = "sns.amazonaws.com";
     public static final String PRINCIPAL_EVENTS = "events.amazonaws.com"; // Cloudwatch events
+    public static final String PRINCIPAL_SQS    = "sqs.amazonaws.com";
     
     /**
      * <p>The AWS access key.</p>
@@ -236,6 +240,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     public AmazonDynamoDBStreams dynamoDBStreamsClient;
     public AmazonKinesis kinesisClient;
     public AmazonCloudWatchEvents cloudWatchEventsClient;
+    public AmazonSQS sqsClient;
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -372,6 +377,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
         dynamoDBStreamsClient = (AmazonDynamoDBStreams) clientFactory.apply(AmazonDynamoDBStreamsClientBuilder.standard(), clientConfig);
         kinesisClient = (AmazonKinesis) clientFactory.apply(AmazonKinesisClientBuilder.standard(), clientConfig);
         cloudWatchEventsClient = (AmazonCloudWatchEvents) clientFactory.apply(AmazonCloudWatchEventsClientBuilder.standard(), clientConfig);
+        sqsClient = (AmazonSQS) clientFactory.apply(AmazonSQSClientBuilder.standard(), clientConfig);
     }
 
     private void initLambdaFunctionsConfiguration() throws MojoExecutionException, IOException {
@@ -400,6 +406,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
                                                                                                              trigger.withSNSTopic(addSuffix(trigger.getSNSTopic()));
                                                                                                              trigger.withDynamoDBTable(addSuffix(trigger.getDynamoDBTable()));
                                                                                                              trigger.withLexBotName(addSuffix(trigger.getLexBotName()));
+                                                                                                             trigger.withStandardQueue(addSuffix(trigger.getStandardQueue()));
                                                                                                              return trigger;
                                                                                                          })
                                                                                                          .collect(toList()))

@@ -5,7 +5,7 @@
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambda-maven-plugin`<br />
-`version: 2.3.2`<br />
+`version: 2.3.3`<br />
 <br/><br/>
 Please note that the artifact has been renamed from lambduh-maven-plugin to
 lambda-maven-plugin.
@@ -44,7 +44,7 @@ All of the AWS Lambda configuration parameters may be set within the lambda plug
 * `publish` This boolean parameter can be used to request AWS Lambda to update the Lambda function and publish a version as an atomic operation. This is global for all functions and won't overwrite publish paramter in provided Lambda configuration. Setting to false will only update $LATEST.
 * `functionNameSuffix` The suffix for the lambda function. Function name is automatically suffixed with it. When left blank no suffix will be applied.
 * `forceUpdate` This boolean parameter can be used to force update of existing configuration. Use it when you don't publish a function and want to deploy code in your Lambda function.
-* `triggers` A list of one or more triggers that execute Lambda function. Currently `CloudWatch Events - Schedule`, `SNS`, `DynamoDB` and `Kinesis` are supported. When `functionNameSuffix` is present then suffix will be added automatically.
+* `triggers` A list of one or more triggers that execute Lambda function. Currently `CloudWatch Events - Schedule`, `SNS`, `SQS`, `DynamoDB` and `Kinesis` are supported. When `functionNameSuffix` is present then suffix will be added automatically.
 * `environmentVariables` Map to define environment variables for Lambda functions enable you to dynamically pass settings to your function code and libraries, without making changes to your code. Deployment functionality merges those variables with the one provided in json configuration.
 * `keepAlive` When specified, a CloudWatch event is scheduled to "ping" your function every X minutes, where X is the
  value you specify.  This keeps your lambda function resident and ready to receive real requests at all times.  This is
@@ -148,6 +148,10 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                                   {
                                     "integration": "Lex",
                                     "lexBotName": "BookCar"
+                                  },
+                                  {
+                                    "integration": "SQS",
+                                    "standardQueue": "queueName"
                                   }
                                 ],
                                 "environmentVariables": {
@@ -196,6 +200,7 @@ IAM permissions required by this plugin:
 * action `events:PutRule` on  resource `arn:aws:events:<region>:<acount-number>:rule/*`
 * action `events:PutTargets` on  resource `arn:aws:events:<region>:<acount-number>:rule/*`
 * action `kinesis:GetRecords, GetShardIterator, DescribeStream, and ListStreams on Kinesis streams`
+* action `sqs:GetQueueUrl, sqs:GetQueueAttributes on SQS`
 
 ### Developers
 If you are interested in contributing to this project, please note that current development can be found in the SNAPSHOT branch of the coming release.  When making pull requests, please create them against this branch.
@@ -208,6 +213,9 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.3.3
+* Added Support for SQS Trigger 
+
 2.3.2
 * Resolves [Issue 89](https://github.com/SeanRoy/lambda-maven-plugin/issues/89), allowing for encryption of environment variables defined on the command line.  See kmsEncryptionKey and encryptedPassThrough above.
 

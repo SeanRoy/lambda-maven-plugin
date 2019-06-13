@@ -7,6 +7,7 @@ package com.github.seanroy.plugins;
  */
 public class Trigger {
     // By now can be "DynamoDB" or "CloudWatch Events - Schedule"
+	// SQS for Simple Queue Service
     private String integration;
 
     // Support for DynamoDB
@@ -31,6 +32,11 @@ public class Trigger {
     
     // Support for Lex Bots
     private String lexBotName;
+    
+    // Support for SQS
+    // SQS Trigger requires batch size as well, it is already
+    // created as part of Dynamo DB Table
+    private String standardQueue;
 
     // After create Trigger gets own arn
     private String triggerArn;
@@ -136,8 +142,16 @@ public class Trigger {
     public String getLexBotName() {
         return lexBotName;
     }
+    
+    public String getStandardQueue() {
+		return standardQueue;
+	}
 
-    public Trigger withIntegration(String integration) {
+	public void setStandardQueue(String standardQueue) {
+		this.standardQueue = standardQueue;
+	}
+
+	public Trigger withIntegration(String integration) {
         this.integration = integration;
         return this;
     }
@@ -186,6 +200,11 @@ public class Trigger {
         this.lexBotName = arn;
         return this;
     }
+    
+    public Trigger withStandardQueue(String standardQueue) {
+        this.standardQueue = standardQueue;
+        return this;
+    }
 
     @Override
     public String toString() {
@@ -201,6 +220,7 @@ public class Trigger {
                 .append(", SNSTopic='").append(SNSTopic).append('\'')
                 .append(", triggerArn='").append(triggerArn).append('\'')
                 .append(", lextBotName='").append(lexBotName).append('\'')
+                .append(", standardQueue='").append(standardQueue).append('\'')
                 .append(", enabled=").append(enabled)
                 .append('}').toString();
     }
