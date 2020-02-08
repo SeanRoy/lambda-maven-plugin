@@ -227,7 +227,8 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
                     .withPrincipal(PRINCIPAL_ALEXA)
                     .withFunctionName(lambdaFunction.getFunctionName())
                     .withQualifier(lambdaFunction.getQualifier())
-                    .withStatementId(getAlexaPermissionStatementId());
+                    .withStatementId(getAlexaPermissionStatementId())
+                    .withEventSourceToken(trigger.getAlexaSkillId());
     
             AddPermissionResult addPermissionResult = lambdaClient.addPermission(addPermissionRequest);
         }
