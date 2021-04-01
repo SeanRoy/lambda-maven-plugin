@@ -10,16 +10,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.amazonaws.services.lambda.model.UpdateFunctionCodeRequest;
-import com.amazonaws.services.lambda.model.UpdateFunctionCodeResult;
-import com.amazonaws.services.s3.model.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -44,12 +46,21 @@ import com.amazonaws.services.lambda.AWSLambda;
 import com.amazonaws.services.lambda.AWSLambdaClientBuilder;
 import com.amazonaws.services.lambda.model.GetFunctionConfigurationRequest;
 import com.amazonaws.services.lambda.model.ResourceNotFoundException;
+import com.amazonaws.services.lambda.model.UpdateFunctionCodeRequest;
+import com.amazonaws.services.lambda.model.UpdateFunctionCodeResult;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.PutObjectResult;
+import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sns.AmazonSNSClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.elderresearch.commons.lang.Documentation;
+import com.elderresearch.commons.lang.Documentation.IsDocumented;
 import com.github.seanroy.utils.AWSEncryption;
 import com.github.seanroy.utils.JsonUtil;
 import com.google.gson.GsonBuilder;
@@ -96,7 +107,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     /**
      * <p>The version of deliverable. Example value can be 1.0-SNAPSHOT.</p>
      */
-    @Parameter(property = "version", defaultValue = "${version}", required = true)
+    @Parameter(property = "version", defaultValue = "${version}")
     public String version;
     
     @Parameter(property = "alias")
@@ -354,7 +365,7 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     }
 
     private void initVersion() {
-        version = version.replace(".", "-");
+    	if (version != null) { version = version.replace(".", "-"); }
     }
     
     @SuppressWarnings("rawtypes")
@@ -387,19 +398,20 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
         validate(lambdaFunctions);
 
         lambdaFunctions = lambdaFunctions.stream().map(lambdaFunction -> {
+        	initFromAnnotations(lambdaFunction);
+        	
             String functionName = ofNullable(lambdaFunction.getFunctionName()).orElseThrow(() -> new IllegalArgumentException("Configuration error. LambdaFunction -> 'functionName' is required"));
 
             lambdaFunction.withFunctionName(addSuffix(functionName))
-                          .withHandler(ofNullable(lambdaFunction.getHandler()).orElseThrow(() -> new IllegalArgumentException("Configuration error. LambdaFunction -> 'handler' is required")))
                           .withDescription(ofNullable(lambdaFunction.getDescription()).orElse(""))
                           .withTimeout(ofNullable(lambdaFunction.getTimeout()).orElse(timeout))
                           .withMemorySize(ofNullable(lambdaFunction.getMemorySize()).orElse(memorySize))
                           .withSubnetIds(ofNullable(vpcSubnetIds).orElse(new ArrayList<>()))
                           .withSecurityGroupsIds(ofNullable(vpcSecurityGroupIds).orElse(new ArrayList<>()))
-                          .withVersion(version)
                           .withPublish(ofNullable(lambdaFunction.isPublish()).orElse(publish))
                           .withLambdaRoleArn(ofNullable(lambdaFunction.getLambdaRoleArn()).orElse(lambdaRoleArn))
                           .withAliases(aliases(lambdaFunction.isPublish()))
+                          .withEnvironmentVariables(environmentVariables(lambdaFunction))
                           .withTriggers(ofNullable(lambdaFunction.getTriggers()).map(triggers -> triggers.stream()
                                                                                                          .map(trigger -> {
                                                                                                              trigger.withRuleName(addSuffix(trigger.getRuleName()));
@@ -410,11 +422,32 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
                                                                                                              return trigger;
                                                                                                          })
                                                                                                          .collect(toList()))
-                                                                                .orElse(new ArrayList<>()))
-                          .withEnvironmentVariables(environmentVariables(lambdaFunction));                          
-
+                                                                                .orElse(Collections.emptyList()));
+            
+            if (lambdaFunction.getVersion() == null) {
+            	lambdaFunction.setVersion(ofNullable(version).orElseThrow(() -> new IllegalArgumentException("Configuration error. Version is required if handlers don't self-identify their version via annotations.")));
+            }
+            
             return lambdaFunction;
         }).collect(toList());
+    }
+    
+    private void initFromAnnotations(LambdaFunction lf) {
+    	String handler = ofNullable(lf.getHandler()).orElseThrow(() -> new IllegalArgumentException("Configuration error. LambdaFunction -> 'handler' is required"));
+    	try {
+			Class<?> c = Class.forName(handler);
+			Object obj = c.newInstance();
+			if (obj instanceof IsDocumented) {
+				Documentation d = ((IsDocumented) obj).getDocumentation();
+				if (lf.getFunctionName() == null && d.getName() != null) { lf.setFunctionName(d.getName().toString()); }
+				if (lf.getDescription() == null && d.getDescription() != null) { lf.setDescription(d.getDescription().toString()); }
+				if (lf.getVersion() == null && d.getVersion() != null) { lf.setVersion(d.getVersion().toString()); }
+			}
+		} catch (ClassNotFoundException e) {
+			getLog().warn("Handler class " + handler + " not on classpath and can't be introspected for function metadata annotations. If you would like to specify function metadata via annotations, ensure that this project is in the plugin's dependencies.");
+		} catch (InstantiationException | IllegalAccessException e) {
+			getLog().warn("Handler class " + handler + " can't be instantiated for function metadata annotations. If you would like to specify function metadata via annotations, ensure your handler has a no-arg constructor.");
+		}
     }
 
     @SuppressWarnings("unchecked")
