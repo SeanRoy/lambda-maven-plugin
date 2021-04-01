@@ -62,7 +62,7 @@
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
-            <version>3.3.3</version>
+            <version>3.6.3</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugin-testing</groupId>
@@ -176,6 +176,11 @@
 		    <artifactId>gson</artifactId>
 		    <version>2.8.1</version>
 		</dependency>
+		<dependency>
+        	<groupId>javax.xml.bind</groupId>
+			<artifactId>jaxb-api</artifactId>
+			<version>2.3.1</version>
+		</dependency>
         <dependency>
         	<groupId>org.mockito</groupId>
         	<artifactId>mockito-core</artifactId>
@@ -227,6 +232,9 @@
                         <goals>
                             <goal>jar</goal>
                         </goals>
+                        <configuration>
+                        	<source>8</source>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -262,7 +270,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-plugin-plugin</artifactId>
-                <version>3.4</version>
+                <version>3.6.0</version>
                 <executions>
                     <execution>
                         <id>default-descriptor</id>
