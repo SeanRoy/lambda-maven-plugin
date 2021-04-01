@@ -44,7 +44,7 @@ public class JsonUtil {
         return mapper.writeValueAsString(message);
     }
 
-    public static <T> T fromJson(String body) throws IOException {
+    public static List<LambdaFunction> fromJson(String body) throws IOException {
         return mapper.readValue(body, new TypeReference<List<LambdaFunction>>(){});
     }
 }
