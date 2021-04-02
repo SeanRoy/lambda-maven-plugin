@@ -108,15 +108,15 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     }
     
     private boolean shouldUpdate(LambdaFunction lambdaFunction, GetFunctionResult getFunctionResult) {
-        boolean isConfigurationChanged = isConfigurationChanged(lambdaFunction, getFunctionResult);
-        if (!isConfigurationChanged) {
-            getLog().info("Config hasn't changed for " + lambdaFunction.getFunctionName());
-        }
-        if (ObjectUtils.defaultIfNull(forceUpdate, StringUtils.containsIgnoreCase(version, "SNAPSHOT"))) {
+    	if (ObjectUtils.defaultIfNull(forceUpdate, StringUtils.containsIgnoreCase(version, "SNAPSHOT"))) {
             getLog().info("Forcing update for " + lambdaFunction.getFunctionName());
+            return true;
         }
-
-        return forceUpdate || isConfigurationChanged;
+        if (isConfigurationChanged(lambdaFunction, getFunctionResult)) {
+        	return true;
+        }
+        getLog().info("Config hasn't changed for " + lambdaFunction.getFunctionName());
+        return false;
     }
     
     /*
