@@ -17,6 +17,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.amazonaws.services.lambda.model.GetFunctionRequest;
+import com.amazonaws.services.lambda.model.GetFunctionResult;
 import com.amazonaws.services.lambda.model.UpdateFunctionCodeRequest;
 import com.amazonaws.services.lambda.model.UpdateFunctionCodeResult;
 import com.amazonaws.services.s3.model.*;
@@ -293,6 +295,24 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
                 .withS3Key(fileName)
                 .withPublish(lambdaFunction.isPublish());
         UpdateFunctionCodeResult updateFunctionCodeResult = lambdaClient.updateFunctionCode(updateFunctionRequest);
+
+        // wait until the UpdateFunctionCode finishes processing to avoid com.amazonaws.services.lambda.model.ResourceConflictException. See: https://docs.aws.amazon.com/lambda/latest/dg/functions-states.html
+        GetFunctionRequest getFunctionRequest = new GetFunctionRequest()
+                .withFunctionName(lambdaFunction.getFunctionName());
+        GetFunctionResult getFunctionResult = lambdaClient.getFunction(getFunctionRequest);
+
+        while (!getFunctionResult.getConfiguration().getState().equals("Active")
+                || !getFunctionResult.getConfiguration().getLastUpdateStatus().equals("Successful")) {
+            try {
+                getLog().info(String.format("UpdateFunctionCode for %s is still processing <State: %s, LastUpdateStatus: %s>, waiting... ", lambdaFunction.getFunctionName(), getFunctionResult.getConfiguration().getState(), getFunctionResult.getConfiguration().getLastUpdateStatus()));
+                Thread.sleep(3000);
+                getFunctionResult = lambdaClient.getFunction(getFunctionRequest);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        getLog().info("UpdateFunctionCode finished successfully for " + lambdaFunction.getFunctionName());
+
         return lambdaFunction
                 .withVersion(updateFunctionCodeResult.getVersion())
                 .withFunctionArn(updateFunctionCodeResult.getFunctionArn());
