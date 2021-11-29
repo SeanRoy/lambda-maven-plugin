@@ -5,7 +5,7 @@
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambda-maven-plugin`<br />
-`version: 2.3.3`<br />
+`version: 2.3.4`<br />
 <br/><br/>
 Please note that the artifact has been renamed from lambduh-maven-plugin to
 lambda-maven-plugin.
@@ -220,6 +220,10 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.3.4
+* Resolves [Issue 117](https://github.com/SeanRoy/lambda-maven-plugin/issues/117) https://github.com/juger89
+* Thanks [juger89@gmail.com](mailto:juger89@gmail.com)
+
 2.3.3
 * Added Support for SQS Trigger 
 
