@@ -20,20 +20,20 @@ public class AWSEncryption {
     
     public String encryptString(String data) {
         // Instantiate the SDK
-        final AwsCrypto crypto = new AwsCrypto();
+        final AwsCrypto crypto = AwsCrypto.builder().build();
 
         // Set up the KmsMasterKeyProvider backed by the default credentials        
-        final KmsMasterKeyProvider prov = new KmsMasterKeyProvider(keyArn);
+        final KmsMasterKeyProvider prov = KmsMasterKeyProvider.builder().buildStrict(keyArn);
 
         return crypto.encryptString(prov, data).getResult();
     }
     
     public String decryptString(String cipherText) {
         // Instantiate the SDK
-        final AwsCrypto crypto = new AwsCrypto();
+        final AwsCrypto crypto = AwsCrypto.builder().build();
         
         // Set up the KmsMasterKeyProvider backed by the default credentials        
-        final KmsMasterKeyProvider prov = new KmsMasterKeyProvider(keyArn);
+        final KmsMasterKeyProvider prov = KmsMasterKeyProvider.builder().buildStrict(keyArn);
         
         // Decrypt the data
         final CryptoResult<String, KmsMasterKey> decryptResult = crypto.decryptString(prov, cipherText);
