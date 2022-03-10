@@ -16,6 +16,8 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 
@@ -106,15 +108,15 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
     }
     
     private boolean shouldUpdate(LambdaFunction lambdaFunction, GetFunctionResult getFunctionResult) {
-        boolean isConfigurationChanged = isConfigurationChanged(lambdaFunction, getFunctionResult);
-        if (!isConfigurationChanged) {
-            getLog().info("Config hasn't changed for " + lambdaFunction.getFunctionName());
-        }
-        if (forceUpdate) {
+    	if (ObjectUtils.defaultIfNull(forceUpdate, StringUtils.containsIgnoreCase(version, "SNAPSHOT"))) {
             getLog().info("Forcing update for " + lambdaFunction.getFunctionName());
+            return true;
         }
-
-        return forceUpdate || isConfigurationChanged;
+        if (isConfigurationChanged(lambdaFunction, getFunctionResult)) {
+        	return true;
+        }
+        getLog().info("Config hasn't changed for " + lambdaFunction.getFunctionName());
+        return false;
     }
     
     /*
