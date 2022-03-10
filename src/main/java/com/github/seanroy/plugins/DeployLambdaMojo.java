@@ -88,6 +88,7 @@ public class DeployLambdaMojo extends AbstractLambdaMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+        if(checkSkip()) return;
         super.execute();
         try {
             uploadJarToS3();
