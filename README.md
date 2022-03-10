@@ -87,6 +87,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                     <artifactId>lambda-maven-plugin</artifactId>
                     <version>2.3.2</version>
                     <configuration>
+                        <skip>false</skip>
                         <functionCode>${lambda.functionCode}</functionCode>
                         <version>${lambda.version}</version>
                         <alias>development</alias>

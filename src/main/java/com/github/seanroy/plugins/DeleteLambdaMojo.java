@@ -1,8 +1,6 @@
 package com.github.seanroy.plugins;
 
 
-import static java.util.Optional.ofNullable;
-
 import java.util.List;
 import java.util.function.Function;
 
@@ -30,6 +28,7 @@ public class DeleteLambdaMojo extends AbstractLambdaMojo {
      * The entry point into the AWS lambda function.
      */
     public void execute() throws MojoExecutionException {
+        if(checkSkip()) return;
         super.execute();
         try {
             lambdaFunctions.forEach(context -> {
