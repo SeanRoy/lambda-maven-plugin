@@ -38,6 +38,9 @@ public class Trigger {
     // created as part of Dynamo DB Table
     private String standardQueue;
 
+    // Support for Alexa Skills Kit
+    private String alexaSkillId;
+
     // After create Trigger gets own arn
     private String triggerArn;
 
@@ -151,7 +154,15 @@ public class Trigger {
 		this.standardQueue = standardQueue;
 	}
 
-	public Trigger withIntegration(String integration) {
+    public String getAlexaSkillId() {
+        return alexaSkillId;
+    }
+
+    public void setAlexaSkillId(String alexaSkillId) {
+        this.alexaSkillId = alexaSkillId;
+    }
+
+    public Trigger withIntegration(String integration) {
         this.integration = integration;
         return this;
     }
@@ -206,6 +217,11 @@ public class Trigger {
         return this;
     }
 
+    public Trigger withAlexaSkillId(String alexaSkillId) {
+        this.alexaSkillId = alexaSkillId;
+        return this;
+    }
+
     @Override
     public String toString() {
         return new StringBuilder("Trigger{")
@@ -221,6 +237,7 @@ public class Trigger {
                 .append(", triggerArn='").append(triggerArn).append('\'')
                 .append(", lextBotName='").append(lexBotName).append('\'')
                 .append(", standardQueue='").append(standardQueue).append('\'')
+                .append(", alexaSkillId='").append(alexaSkillId).append('\'')
                 .append(", enabled=").append(enabled)
                 .append('}').toString();
     }
