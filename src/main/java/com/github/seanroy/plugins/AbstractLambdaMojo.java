@@ -79,7 +79,10 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     public static final String PRINCIPAL_SNS    = "sns.amazonaws.com";
     public static final String PRINCIPAL_EVENTS = "events.amazonaws.com"; // Cloudwatch events
     public static final String PRINCIPAL_SQS    = "sqs.amazonaws.com";
-    
+
+    @Parameter(property = "skip", defaultValue = "false")
+    public boolean skip;
+
     /**
      * <p>The AWS access key.</p>
      */
@@ -208,10 +211,11 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     @Parameter(property = "functionNameSuffix")
     public String functionNameSuffix;
     /**
-     * <p>This boolean parameter can be used to force update of existing configuration. Use it when you don't publish a function and want to replece code in your Lambda function.</p>
+     * <p>This boolean parameter can be used to force update of existing configuration. Use it when you don't publish a function and want to replece code in your Lambda function.
+     * The default value is {@code true} iff the version contains {@code SNAPSHOT} (case insensitive).</p>
      */
-    @Parameter(property = "forceUpdate", defaultValue = "false")
-    public boolean forceUpdate;
+    @Parameter(property = "forceUpdate")
+    public Boolean forceUpdate;
     /**
      * <p>This map parameter can be used to define environment variables for Lambda functions enable you to dynamically pass settings to your function code and libraries, without making changes to your code. Deployment functionality merges those variables with the one provided in json configuration.</p>
      */
@@ -243,6 +247,13 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     public AmazonKinesis kinesisClient;
     public AmazonCloudWatchEvents cloudWatchEventsClient;
     public AmazonSQS sqsClient;
+
+    protected boolean checkSkip() {
+        if(skip) {
+            getLog().info("Execution skipped.");
+        }
+        return skip;
+    }
 
     @Override
     public void execute() throws MojoExecutionException {

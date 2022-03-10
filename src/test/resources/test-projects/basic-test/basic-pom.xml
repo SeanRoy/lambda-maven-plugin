@@ -28,6 +28,7 @@
       <plugin>
         <artifactId>lambda-maven-plugin</artifactId>
         <configuration>
+          <skip>false</skip>
           <functionCode>src/test/resources/test-projects/basic-test/lambda-test-0.0.1-SNAPSHOT.jar</functionCode>
           <version>0.1.1-Test</version>
           <memorySize>512</memorySize>
