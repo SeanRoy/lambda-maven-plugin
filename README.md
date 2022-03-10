@@ -5,7 +5,7 @@
 ### Usage
 `group id: com.github.seanroy`<br />
 `artifact id: lambda-maven-plugin`<br />
-`version: 2.3.4`<br />
+`version: 2.3.5`<br />
 <br/><br/>
 Please note that the artifact has been renamed from lambduh-maven-plugin to
 lambda-maven-plugin.
@@ -144,6 +144,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                                   },
                                   {
                                     "integration": "Alexa Skills Kit"
+                                    "alexaSkillId": "amzn1.ask.skill..."
                                   },
                                   {
                                     "integration": "Lex",
@@ -220,6 +221,10 @@ to the file.  If you add more pom's as part of enhancing the test suite,
 please remember to add them to .gitignore.
 
 ### Releases
+2.3.5
+* Ability to set skill Id for Alexa Skills Kit trigger. Thanks [mphartman1@gmail.com](mailto:mphartman1@gmail.com)
+* Auto force update if version contains SNAPSHOT. Thanks [dimeo@elderresearch.com](mailto:dimeo@elderresearch.com)
+
 2.3.4
 * Resolves [Issue 117](https://github.com/SeanRoy/lambda-maven-plugin/issues/117) https://github.com/juger89
 * Thanks [juger89@gmail.com](mailto:juger89@gmail.com)
