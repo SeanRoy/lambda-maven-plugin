@@ -106,6 +106,15 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
     
     @Parameter(property = "alias")
     public String alias;
+
+    /**
+     * <p>
+     *     If both publish and generateDefaultAlias is true, an alias with the same name as the function's version will be created.
+     *     The default value is true.
+     * </p>
+     */
+    @Parameter(property = "generateDefaultAlias", defaultValue = "true")
+    public boolean generateDefaultAlias;
     
     /**
      * <p>Amazon region. Default value is us-east-1.</p>
@@ -515,7 +524,14 @@ public abstract class AbstractLambdaMojo extends AbstractMojo {
 
     private List<String> aliases(boolean publish) {
         if (publish) {
-            return new ArrayList<String>() {{ add(version); ofNullable(alias).ifPresent(a -> add(a)); }};
+            List<String> aliases = new ArrayList<>();
+            if(generateDefaultAlias) {
+                aliases.add(version);
+            }
+            if(alias != null) {
+                aliases.add(alias);
+            }
+            return aliases;
         }
         return emptyList();
     }
