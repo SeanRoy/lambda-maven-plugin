@@ -91,6 +91,7 @@ Current configuration of LambdaFunction can be found in LambdaFunction.java.
                         <functionCode>${lambda.functionCode}</functionCode>
                         <version>${lambda.version}</version>
                         <alias>development</alias>
+                        <generateDefaultAlias>true</generateDefaultAlias>
                         <vpcSecurityGroupIds>sg-123456</vpcSecurityGroupIds>
                         <vpcSubnetIds>subnet-123456,subnet-123456,subnet-123456</vpcSubnetIds>
                         <lambdaRoleArn>arn:aws:iam::1234567:role/YourLambdaS3Role</lambdaRoleArn>
